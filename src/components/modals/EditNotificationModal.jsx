@@ -34,12 +34,24 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
   useEffect(() => {
     if (notification) {
       setTitle(notification.title);
-      setMessage(notification.message);
-      setType(notification.type || 'promotional');
+      setMessage(notification.message || notification.description);
+      setType(notification.type?.toLowerCase() || 'promotional');
       setTargetAudience(notification.targetAudience || 'all');
       setImage(notification.image || null);
       setSelectedRoles(notification.selectedRoles || []);
       setSelectedBranches(notification.selectedBranches || []);
+
+      // Pre-fill schedule data if notification has scheduled status
+      if (notification.status === 'scheduled' || notification.scheduledDate || notification.scheduledTime) {
+        setDelivery('schedule');
+        // Set default schedule date/time if provided
+        const today = new Date().toISOString().split('T')[0];
+        const now = new Date().toTimeString().slice(0, 5);
+        setScheduledDate(notification.scheduledDate || today);
+        setScheduledTime(notification.scheduledTime || now);
+      } else {
+        setDelivery('now');
+      }
     }
   }, [notification]);
 
@@ -72,22 +84,26 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
 
   const handleSave = () => {
     if (!notification) return;
-    
+
     const updatedNotification = {
       ...notification,
       title,
       message,
+      description: message,
       type,
       targetAudience,
       selectedRoles,
       selectedBranches,
       image,
+      status: delivery === 'draft' ? 'draft' : delivery === 'schedule' ? 'scheduled' : 'sent',
+      scheduledDate: delivery === 'schedule' ? scheduledDate : undefined,
+      scheduledTime: delivery === 'schedule' ? scheduledTime : undefined,
     };
-    
+
     if (onSave) {
       onSave(updatedNotification);
     }
-    
+
     onOpenChange(false);
   };
 
@@ -96,10 +112,10 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
   };
 
   // Get current time
-  const currentTime = new Date().toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
+  const currentTime = new Date().toLocaleTimeString('en-US', {
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: false 
+    hour12: false
   });
 
   return (
@@ -193,7 +209,7 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                     All Users
                   </Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="branches" id="edit-specific-branches" className="h-4 w-4" />
                   <Label htmlFor="edit-specific-branches" className="text-xs font-normal cursor-pointer">
@@ -204,7 +220,7 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                   <div className="ml-6 mt-2 space-y-2 border-l-2 border-gray-200 pl-4">
                     {branches.map((branch) => (
                       <div key={branch.id} className="flex items-center space-x-2">
-                        <Checkbox 
+                        <Checkbox
                           id={`edit-branch-${branch.id}`}
                           className="h-4 w-4"
                           checked={selectedBranches.includes(branch.id)}
@@ -217,7 +233,7 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                     ))}
                   </div>
                 )}
-                
+
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="role" id="edit-by-role" className="h-4 w-4" />
                   <Label htmlFor="edit-by-role" className="text-xs font-normal cursor-pointer">
@@ -227,8 +243,8 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                 {targetAudience === 'role' && (
                   <div className="ml-6 mt-2 space-y-2 border-l-2 border-gray-200 pl-4">
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="edit-role-delivery-staff" 
+                      <Checkbox
+                        id="edit-role-delivery-staff"
                         className="h-4 w-4"
                         checked={selectedRoles.includes('delivery-staff')}
                         onCheckedChange={() => handleRoleToggle('delivery-staff')}
@@ -238,8 +254,8 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="edit-role-branch-admins" 
+                      <Checkbox
+                        id="edit-role-branch-admins"
                         className="h-4 w-4"
                         checked={selectedRoles.includes('branch-admins')}
                         onCheckedChange={() => handleRoleToggle('branch-admins')}
@@ -249,8 +265,8 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="edit-role-customers" 
+                      <Checkbox
+                        id="edit-role-customers"
                         className="h-4 w-4"
                         checked={selectedRoles.includes('customers')}
                         onCheckedChange={() => handleRoleToggle('customers')}
@@ -261,7 +277,7 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                     </div>
                   </div>
                 )}
-                
+
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="specific-customers" id="edit-specific-customers" className="h-4 w-4" />
                   <Label htmlFor="edit-specific-customers" className="text-xs font-normal cursor-pointer">
@@ -280,14 +296,14 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                     Send Now
                   </Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="schedule" id="edit-schedule" className="h-4 w-4" />
                   <Label htmlFor="edit-schedule" className="text-xs font-normal cursor-pointer">
                     Schedule
                   </Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="draft" id="edit-draft" className="h-4 w-4" />
                   <Label htmlFor="edit-draft" className="text-xs font-normal cursor-pointer">
@@ -295,7 +311,7 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                   </Label>
                 </div>
               </RadioGroup>
-              
+
               {delivery === 'schedule' && (
                 <div className="ml-6 mt-2 space-y-3">
                   <div className="flex gap-2">
@@ -318,7 +334,7 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-1">
                     <Label className="text-xs">Recurring</Label>
                     <Select value={recurring} onValueChange={setRecurring}>
@@ -362,7 +378,7 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
                       <div className="h-10 w-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Bell className="h-5 w-5 text-white" />
                       </div>
-                      
+
                       {/* Notification Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
@@ -406,7 +422,7 @@ export function EditNotificationModal({ open, onOpenChange, notification, onSave
             className="flex-1 bg-blue-500 hover:bg-blue-600 h-9 text-xs"
             disabled={!isFormValid()}
           >
-            Send Now
+            {delivery === 'draft' ? 'Save Draft' : delivery === 'schedule' ? 'Schedule' : 'Send Now'}
           </Button>
         </div>
       </DialogContent>

@@ -4,22 +4,24 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { products as initialProducts, branches } from '../lib/mockData';
+import { branches } from '../lib/mockData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+// Removed: import { Product } from '../types';
 import { AddProductModal } from '../components/modals/AddProductModal';
 import { EditModal } from '../components/modals/EditModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { usePersistentProducts } from '../lib/usePersistentData';
 
 export function Products() {
-  const [productList, setProductList] = useState(initialProducts);
-  const [selectedBranch, setSelectedBranch] = useState('all');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [productList, setProductList] = usePersistentProducts();
+  const [selectedBranch, setSelectedBranch] = useState('all'); // Removed: :string
+  const [selectedCategory, setSelectedCategory] = useState('all'); // Removed: :string
+  const [selectedStatus, setSelectedStatus] = useState('all'); // Removed: :string
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null); // Removed: <Product | null>
   const [searchQuery, setSearchQuery] = useState('');
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
 
@@ -57,11 +59,11 @@ export function Products() {
     return sortOrder === 'asc' ? compareValue : -compareValue;
   });
 
-  const handleAddProduct = (product) => {
-    setProductList([...productList, product]);
+  const handleAddProduct = (product) => { // Removed: : Partial<Product>
+    setProductList([...productList, product]); // Removed: as Product
   };
 
-  const handleEditProduct = (updatedData) => {
+  const handleEditProduct = (updatedData) => { // Removed: : Product
     setProductList(productList.map(p => p.id === updatedData.id ? updatedData : p));
   };
 

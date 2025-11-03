@@ -11,14 +11,17 @@ import {
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { revenueDataMonthly, revenueDataWeekly, revenueDataToday, orderSummaryDataWeekly, orderSummaryDataMonthly, orders, products } from '../lib/mockData';
+import { revenueDataMonthly, revenueDataWeekly, revenueDataToday, orderSummaryDataWeekly, orderSummaryDataMonthly, products } from '../lib/mockData';
+import { usePersistentOrders, usePersistentCustomers } from '../lib/usePersistentData';
 import { DeliveryBoysCard } from '../components/DeliveryBoysCard';
 import { useState } from 'react';
 import { motion } from 'motion/react';
 
 export function Dashboard() {
-  const [revenueView, setRevenueView] = useState('monthly');
-  const [orderView, setOrderView] = useState('weekly');
+  const [orders] = usePersistentOrders();
+  const [customers] = usePersistentCustomers();
+  const [revenueView, setRevenueView] = useState('monthly'); // Removed type
+  const [orderView, setOrderView] = useState('weekly'); // Removed type
   const [dateFilter, setDateFilter] = useState('last30');
 
   // Filter orders based on date filter
@@ -59,10 +62,10 @@ export function Dashboard() {
   };
 
   const filteredOrders = getFilteredOrders();
-
+  
   // Calculate stats based on filtered orders
   const getTotalOrdersCount = () => filteredOrders.length;
-
+  
   const getTotalRevenue = () => {
     return filteredOrders
       .filter(o => o.status === 'completed')
@@ -208,30 +211,30 @@ export function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="month" fontSize={10} />
               <YAxis fontSize={10} />
-              <Tooltip
+              <Tooltip 
                 contentStyle={{ fontSize: '11px' }}
                 labelStyle={{ fontSize: '11px' }}
               />
-              <Legend
+              <Legend 
                 iconType="circle"
                 wrapperStyle={{ fontSize: '11px' }}
                 iconSize={8}
               />
-              <Line
-                type="monotone"
-                dataKey="expenses"
-                stroke="#9ca3af"
-                strokeWidth={2}
+              <Line 
+                type="monotone" 
+                dataKey="expenses" 
+                stroke="#9ca3af" 
+                strokeWidth={2} 
                 name="Expenses"
                 animationDuration={800}
                 animationBegin={0}
                 dot={{ r: 3, animationBegin: 800, animationDuration: 400 }}
               />
-              <Line
-                type="monotone"
-                dataKey="income"
-                stroke="#ef4444"
-                strokeWidth={2}
+              <Line 
+                type="monotone" 
+                dataKey="income" 
+                stroke="#ef4444" 
+                strokeWidth={2} 
                 name="Income"
                 animationDuration={800}
                 animationBegin={0}
@@ -271,27 +274,27 @@ export function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" fontSize={10} />
               <YAxis fontSize={10} />
-              <Tooltip
+              <Tooltip 
                 contentStyle={{ fontSize: '11px' }}
                 labelStyle={{ fontSize: '11px' }}
               />
-              <Legend
+              <Legend 
                 iconType="circle"
                 wrapperStyle={{ fontSize: '11px' }}
                 iconSize={8}
               />
-              <Bar
-                dataKey="completed"
-                fill="#ef4444"
+              <Bar 
+                dataKey="completed" 
+                fill="#ef4444" 
                 name="Completed"
                 animationBegin={0}
                 animationDuration={1000}
                 animationEasing="ease-out"
                 radius={[4, 4, 0, 0]}
               />
-              <Bar
-                dataKey="pending"
-                fill="#9ca3af"
+              <Bar 
+                dataKey="pending" 
+                fill="#9ca3af" 
                 name="Pending"
                 animationBegin={0}
                 animationDuration={1000}
@@ -343,11 +346,11 @@ export function Dashboard() {
                       <td className="py-3 px-4">
                         <Badge
                           variant="secondary"
-                          className={order.status === 'completed'
-                            ? 'bg-green-50 text-green-700 hover:bg-green-50'
+                          className={order.status === 'completed' 
+                            ? 'bg-green-50 text-green-700 hover:bg-green-50' 
                             : order.status === 'pending'
-                              ? 'bg-orange-50 text-orange-700 hover:bg-orange-50'
-                              : 'bg-red-50 text-red-700 hover:bg-red-50'}
+                            ? 'bg-orange-50 text-orange-700 hover:bg-orange-50'
+                            : 'bg-red-50 text-red-700 hover:bg-red-50'}
                         >
                           {order.status}
                         </Badge>
@@ -383,7 +386,7 @@ export function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DeliveryBoysCard />
-
+        
         <Card className="p-6">
           <h3 className="mb-4">Top Selling Products</h3>
           <div className="space-y-4">

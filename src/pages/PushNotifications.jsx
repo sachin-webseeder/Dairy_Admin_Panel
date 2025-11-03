@@ -21,8 +21,67 @@ import { Search, Eye, Edit2, Copy, Trash2 } from 'lucide-react';
 import { CreateNotificationModal } from '../components/modals/CreateNotificationModal';
 import { EditNotificationModal } from '../components/modals/EditNotificationModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
+import { usePersistentPushNotifications } from '../lib/usePersistentData';
+
+// Removed the 'Notification' interface
+
+const defaultNotifications = [ // Removed: : Notification[]
+  {
+    id: '1',
+    title: 'Weekend Special Offer!',
+    description: 'Get 50% off on all pizzas this weekend. Limited time offer!',
+    audience: 'All Users',
+    type: 'Promo',
+    status: 'sent',
+    delivered: 12450,
+    opened: 8725,
+    clickRate: '37.0%',
+    date: '4 Oct 2025',
+    time: '03:30 PM',
+  },
+  {
+    id: '2',
+    title: 'System Maintenance Notice',
+    description: 'Our app will be under maintenance from 2 AM to 4 AM tomorrow.',
+    audience: 'All Users',
+    type: 'System',
+    status: 'scheduled',
+    delivered: 0,
+    opened: 0,
+    clickRate: '0.0%',
+    date: '4 Oct 2025',
+    time: '02:00 AM',
+  },
+  {
+    id: '3',
+    title: 'New Menu Items Available!',
+    description: 'Check out our delicious new pasta collection. Order now!',
+    audience: 'Downtown Branch',
+    type: 'Promo',
+    status: 'draft',
+    delivered: 0,
+    opened: 0,
+    clickRate: '0.0%',
+    date: 'N/A',
+    time: '',
+  },
+  {
+    id: '4',
+    title: 'Order Ready for Pickup',
+    description: 'Your order #ORD-1234 is ready for pickup at Downtown Branch.',
+    audience: 'Specific Customers',
+    type: 'Order',
+    status: 'sent',
+    delivered: 1,
+    opened: 1,
+    clickRate: '100%',
+    date: '3 Oct 2025',
+    time: '12:45 PM',
+  },
+];
 
 export function PushNotifications() {
+  const [notifications, setNotifications] = usePersistentPushNotifications(defaultNotifications);
   const [searchQuery, setSearchQuery] = useState('');
   const [audienceFilter, setAudienceFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -31,62 +90,7 @@ export function PushNotifications() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState(null);
-
-  const [notifications, setNotifications] = useState([
-    {
-      id: '1',
-      title: 'Weekend Special Offer!',
-      description: 'Get 50% off on all pizzas this weekend. Limited time offer!',
-      audience: 'All Users',
-      type: 'Promo',
-      status: 'sent',
-      delivered: 12450,
-      opened: 8725,
-      clickRate: '37.0%',
-      date: '4 Oct 2025',
-      time: '03:30 PM',
-    },
-    {
-      id: '2',
-      title: 'System Maintenance Notice',
-      description: 'Our app will be under maintenance from 2 AM to 4 AM tomorrow.',
-      audience: 'All Users',
-      type: 'System',
-      status: 'scheduled',
-      delivered: 0,
-      opened: 0,
-      clickRate: '0.0%',
-      date: '4 Oct 2025',
-      time: '02:00 AM',
-    },
-    {
-      id: '3',
-      title: 'New Menu Items Available!',
-      description: 'Check out our delicious new pasta collection. Order now!',
-      audience: 'Downtown Branch',
-      type: 'Promo',
-      status: 'draft',
-      delivered: 0,
-      opened: 0,
-      clickRate: '0.0%',
-      date: 'N/A',
-      time: '',
-    },
-    {
-      id: '4',
-      title: 'Order Ready for Pickup',
-      description: 'Your order #ORD-1234 is ready for pickup at Downtown Branch.',
-      audience: 'Specific Customers',
-      type: 'Order',
-      status: 'sent',
-      delivered: 1,
-      opened: 1,
-      clickRate: '100%',
-      date: '3 Oct 2025',
-      time: '12:45 PM',
-    },
-  ]);
+  const [selectedNotification, setSelectedNotification] = useState(null); // Removed: <Notification | null>
 
   const filteredNotifications = notifications.filter(notif => {
     const matchesSearch = notif.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -109,11 +113,11 @@ export function PushNotifications() {
     console.log('Refreshing notifications...');
   };
 
-  const handleView = (id) => {
+  const handleView = (id) => { // Removed: : string
     console.log('Viewing notification:', id);
   };
 
-  const handleEdit = (id) => {
+  const handleEdit = (id) => { // Removed: : string
     const notification = notifications.find(n => n.id === id);
     if (notification) {
       setSelectedNotification(notification);
@@ -121,7 +125,7 @@ export function PushNotifications() {
     }
   };
 
-  const handleSaveEdit = (updatedData) => {
+  const handleSaveEdit = (updatedData) => { // Removed: : any
     if (selectedNotification) {
       setNotifications(notifications.map(n =>
         n.id === selectedNotification.id
@@ -133,10 +137,10 @@ export function PushNotifications() {
     }
   };
 
-  const handleDuplicate = (id) => {
+  const handleDuplicate = (id) => { // Removed: : string
     const notification = notifications.find(n => n.id === id);
     if (notification) {
-      const duplicated = {
+      const duplicated = { // Removed: : Notification
         ...notification,
         id: Date.now().toString(),
         title: `${notification.title} (Copy)`,
@@ -151,7 +155,7 @@ export function PushNotifications() {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id) => { // Removed: : string
     const notification = notifications.find(n => n.id === id);
     if (notification) {
       setSelectedNotification(notification);
@@ -335,9 +339,9 @@ export function PushNotifications() {
                 <TableCell>
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
                     notification.type === 'Promo' ? 'bg-blue-50 text-blue-700' :
-                    notification.type === 'System' ? 'bg-orange-50 text-orange-700' :
-                    'bg-green-50 text-green-700'
-                  }`}>
+                      notification.type === 'System' ? 'bg-orange-50 text-orange-700' :
+                        'bg-green-50 text-green-700'
+                    }`}>
                     {notification.type === 'Promo' && '🎁'}
                     {notification.type === 'System' && '⚙️'}
                     {notification.type === 'Order' && '📦'}
@@ -347,9 +351,9 @@ export function PushNotifications() {
                 <TableCell>
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
                     notification.status === 'sent' ? 'bg-[#e8f5e9] text-[#2e7d32]' :
-                    notification.status === 'scheduled' ? 'bg-blue-50 text-blue-700' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
+                      notification.status === 'scheduled' ? 'bg-blue-50 text-blue-700' :
+                        'bg-gray-100 text-gray-600'
+                    }`}>
                     {notification.status === 'sent' && '✓'}
                     {notification.status === 'scheduled' && '⏰'}
                     {notification.status === 'draft' && '📝'}

@@ -10,19 +10,24 @@ import {
 } from '../components/ui/select';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { ShoppingCart, DollarSign, Users, Building2, Download } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { branches, orders, products, customers } from '../lib/mockData';
+import { usePersistentOrders, usePersistentProducts, usePersistentCustomers, usePersistentBranches } from '../lib/usePersistentData';
 
 export function Reports() {
+  const [orders] = usePersistentOrders();
+  const [products] = usePersistentProducts();
+  const [customers] = usePersistentCustomers();
+  const [branches] = usePersistentBranches();
+  
   const [branch, setBranch] = useState('all');
   const [dateRange, setDateRange] = useState('year');
   const [activeTab, setActiveTab] = useState('overview');
   const [showCustomRange, setShowCustomRange] = useState(false);
   const [fromDate, setFromDate] = useState('2025-01-01');
   const [toDate, setToDate] = useState('2025-12-31');
-
+  
   // Filtered data state
   const [filteredOrders, setFilteredOrders] = useState(orders);
   const [stats, setStats] = useState({
@@ -111,12 +116,12 @@ export function Reports() {
     // Calculate stats based on filtered data
     const completedOrders = filtered.filter(o => o.status === 'completed');
     const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0);
-
+    
     // Get unique customers from filtered orders
     const uniqueCustomers = new Set(filtered.map(o => o.customerName));
-
+    
     // Get active branches
-    const activeBranches = branch === 'all'
+    const activeBranches = branch === 'all' 
       ? branches.filter(b => b.status === 'active').length
       : 1;
 
@@ -128,15 +133,15 @@ export function Reports() {
     });
   };
 
-  // Initialize with default filters
+  // Initialize with default filters and update when data changes
   useEffect(() => {
     handleApplyFilters();
-  }, []);
+  }, [orders, branch, dateRange, fromDate, toDate]);
 
   // Calculate chart data based on filtered orders
   const getRevenueByBranch = () => {
     const branchRevenue = {};
-
+    
     filteredOrders.forEach(order => {
       if (order.status === 'completed') {
         branchRevenue[order.branch] = (branchRevenue[order.branch] || 0) + order.total;
@@ -152,7 +157,7 @@ export function Reports() {
   // Get top selling products from filtered orders
   const getTopSellingProducts = () => {
     const productSales = {};
-
+    
     filteredOrders.forEach(order => {
       order.products.forEach(p => {
         if (!productSales[p.productId]) {
@@ -170,7 +175,7 @@ export function Reports() {
       .slice(0, 5);
 
     const colors = ['#EF5350', '#26C6DA', '#42A5F5', '#FFA726', '#AB47BC'];
-
+    
     return sorted.map((item, index) => ({
       name: item.product.productName,
       value: item.count,
@@ -181,7 +186,7 @@ export function Reports() {
   // Get branch performance
   const getBranchPerformance = () => {
     const branchStats = {};
-
+    
     filteredOrders.forEach(order => {
       if (!branchStats[order.branch]) {
         branchStats[order.branch] = { revenue: 0, orders: 0 };
@@ -217,23 +222,23 @@ export function Reports() {
     const total = filteredOrders.length || 1;
 
     return [
-      {
-        status: 'Completed',
-        count: statusCounts.completed,
-        percentage: `${((statusCounts.completed / total) * 100).toFixed(1)}%`,
-        color: '#10B981'
+      { 
+        status: 'Completed', 
+        count: statusCounts.completed, 
+        percentage: `${((statusCounts.completed / total) * 100).toFixed(1)}%`, 
+        color: '#10B981' 
       },
-      {
-        status: 'Pending',
-        count: statusCounts.pending,
-        percentage: `${((statusCounts.pending / total) * 100).toFixed(1)}%`,
-        color: '#F59E0B'
+      { 
+        status: 'Pending', 
+        count: statusCounts.pending, 
+        percentage: `${((statusCounts.pending / total) * 100).toFixed(1)}%`, 
+        color: '#F59E0B' 
       },
-      {
-        status: 'Cancelled',
-        count: statusCounts.cancelled,
-        percentage: `${((statusCounts.cancelled / total) * 100).toFixed(1)}%`,
-        color: '#EF4444'
+      { 
+        status: 'Cancelled', 
+        count: statusCounts.cancelled, 
+        percentage: `${((statusCounts.cancelled / total) * 100).toFixed(1)}%`, 
+        color: '#EF4444' 
       },
     ];
   };
@@ -241,25 +246,65 @@ export function Reports() {
   // Sales trend data
   const getSalesTrendData = () => {
     const dailySales = {};
-
+    
     filteredOrders.forEach(order => {
       if (order.status === 'completed') {
-        const date = new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        if (!dailySales[date]) {
-          dailySales[date] = { sales: 0, profit: 0 };
+        const dateObj = new Date(order.date);
+        const dateKey = dateObj.toISOString().split('T')[0]; // Use ISO date as key for proper sorting
+        const dateLabel = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        if (!dailySales[dateKey]) {
+          dailySales[dateKey] = { dateObj, orders: 0, revenue: 0, profit: 0 };
         }
-        dailySales[date].sales += order.total;
-        dailySales[date].profit += Math.round(order.total * 0.2); // Assume 20% profit margin
+        dailySales[dateKey].orders += 1;
+        dailySales[dateKey].revenue += order.total;
+        // Calculate profit as 30% of revenue (you can adjust this percentage)
+        dailySales[dateKey].profit += order.total * 0.3;
       }
     });
 
+    // Sort by date and format for display
     return Object.entries(dailySales)
-      .map(([date, data]) => ({
-        date,
-        sales: data.sales,
-        profit: data.profit
+      .sort((a, b) => a[1].dateObj.getTime() - b[1].dateObj.getTime()) // Sort chronologically
+      .map(([dateKey, data]) => ({
+        date: data.dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        sales: data.revenue, // Renamed from revenue to sales
+        profit: data.profit,
+        orders: data.orders
       }))
       .slice(-7); // Last 7 days
+  };
+  
+  // Get popular items for the chart legend
+  const getPopularItems = () => {
+    const itemCounts = {};
+    
+    filteredOrders.forEach(order => {
+      // Check if order has products array
+      if (order.products && Array.isArray(order.products)) {
+        order.products.forEach((product) => {
+          const itemName = product.productName || product.name;
+          if (itemName) {
+            itemCounts[itemName] = (itemCounts[itemName] || 0) + (product.quantity || 1);
+          }
+        });
+      }
+    });
+    
+    // If no items found, return default popular items
+    if (Object.keys(itemCounts).length === 0) {
+      return [
+        { name: 'Full Cream Milk', count: 45 },
+        { name: 'Paneer', count: 32 },
+        { name: 'Fresh Curd', count: 28 },
+        { name: 'Butter', count: 21 },
+      ];
+    }
+    
+    return Object.entries(itemCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([name, count]) => ({ name, count }));
   };
 
   const revenueByBranch = getRevenueByBranch();
@@ -267,6 +312,7 @@ export function Reports() {
   const branchPerformance = getBranchPerformance();
   const ordersByStatus = getOrdersByStatus();
   const salesTrendData = getSalesTrendData();
+  const popularItems = getPopularItems();
 
   const newVsReturningData = [
     { name: 'New', value: 2845, color: '#4DD0E1' },
@@ -360,7 +406,7 @@ export function Reports() {
               </>
             )}
 
-            <Button
+            <Button 
               onClick={handleApplyFilters}
               className="h-9 text-xs bg-blue-500 hover:bg-blue-600"
             >
@@ -369,7 +415,7 @@ export function Reports() {
           </div>
 
           <div className="flex gap-2">
-            <Button
+            <Button 
               variant="outline"
               size="sm"
               onClick={handleRefresh}
@@ -377,7 +423,7 @@ export function Reports() {
             >
               🔄 Refresh
             </Button>
-            <Button
+            <Button 
               variant="outline"
               size="sm"
               onClick={handleExport}
@@ -530,13 +576,70 @@ export function Reports() {
             {salesTrendData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={salesTrendData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="sales" stroke="#3B82F6" strokeWidth={2} dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="profit" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 11, fill: '#666' }} 
+                    tickLine={false}
+                    axisLine={{ stroke: '#edf0efff', strokeWidth: 2 }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 11, fill: '#666' }} 
+                    tickLine={false}
+                    axisLine={{ stroke: '#edf0efff' }}
+                    domain={[0, 'auto']}
+                    ticks={[0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800]}
+                    tickFormatter={(value) => value}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}
+                    labelStyle={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}
+                    itemStyle={{ fontSize: '11px', padding: '2px 0' }}
+                    formatter={(value, name) => {
+                      if (name === 'sales') {
+                        return [`₹${Number(value).toLocaleString()}`, 'Sales'];
+                      }
+                      if (name === 'profit') {
+                        return [`₹${Number(value).toLocaleString()}`, 'Profit'];
+                      }
+                      return [value, name];
+                    }}
+                  />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36}
+                    iconType="line"
+                    formatter={(value) => {
+                      if (!value) return '';
+                      return value.charAt(0).toUpperCase() + value.slice(1);
+                    }}
+                  />
+                  {/* Sales line - Dark Blue */}
+                  <Line 
+                    type="monotone" 
+                    dataKey="sales" 
+                    stroke="#1E40AF" 
+                    strokeWidth={2.5} 
+                    dot={{ r: 5, fill: '#32bbddff', strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 7 }}
+                    name="Sales"
+                  />
+                  {/* Profit line - Green */}
+                  <Line 
+                    type="monotone" 
+                    dataKey="profit" 
+                    stroke="#10B981" 
+                    strokeWidth={2.5} 
+                    dot={{ r: 5, fill: '#10B981', strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 7 }}
+                    name="Profit"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -554,9 +657,9 @@ export function Reports() {
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-medium">Branch Performance</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
+                <Button 
+                  variant="outline" 
+                  size="sm" 
                   className="text-xs h-8"
                   onClick={handleExportCSV}
                 >
@@ -678,8 +781,8 @@ export function Reports() {
                 {ordersByStatus.map((status, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-4 h-4 rounded-full"
+                      <div 
+                        className="w-4 h-4 rounded-full" 
                         style={{ backgroundColor: status.color }}
                       />
                       <span className="text-sm">{status.status}</span>
@@ -699,9 +802,9 @@ export function Reports() {
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={peakHoursData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                  <XAxis
-                    dataKey="hour"
-                    tick={{ fontSize: 10 }}
+                  <XAxis 
+                    dataKey="hour" 
+                    tick={{ fontSize: 10 }} 
                     angle={-45}
                     textAnchor="end"
                     height={60}

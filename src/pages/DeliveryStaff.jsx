@@ -20,20 +20,23 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { deliveryBoys as initialDeliveryBoys } from '../lib/mockData';
+import { usePersistentDeliveryBoys } from '../lib/usePersistentData';
+// Removed: import { DeliveryBoy } from '../types';
 import { AddDeliveryStaffModal } from '../components/modals/AddDeliveryStaffModal';
 import { EditModal } from '../components/modals/EditModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 
 export function DeliveryStaff() {
+  const [deliveryStaffList, setDeliveryStaffList] = usePersistentDeliveryBoys();
   const [searchQuery, setSearchQuery] = useState('');
   const [branchFilter, setBranchFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [deliveryStaffList, setDeliveryStaffList] = useState(initialDeliveryBoys);
+  // Removed: <string[]>
   const [selectedStaff, setSelectedStaff] = useState([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  // Removed: <DeliveryBoy | null>
   const [selectedStaffMember, setSelectedStaffMember] = useState(null);
   const [bulkAction, setBulkAction] = useState('');
 
@@ -43,14 +46,17 @@ export function DeliveryStaff() {
       staff.phone?.includes(searchQuery);
     const matchesBranch = branchFilter === 'all' || staff.branch === branchFilter;
     const matchesStatus = statusFilter === 'all' || staff.status === statusFilter;
-
+    
     return matchesSearch && matchesBranch && matchesStatus;
   });
 
+  // Removed: : Partial<DeliveryBoy>
   const handleAddStaff = (staff) => {
+    // Removed: as DeliveryBoy
     setDeliveryStaffList([...deliveryStaffList, staff]);
   };
 
+  // Removed: : DeliveryBoy
   const handleEditStaff = (updatedData) => {
     setDeliveryStaffList(deliveryStaffList.map(s => s.id === updatedData.id ? updatedData : s));
   };
@@ -62,6 +68,7 @@ export function DeliveryStaff() {
     }
   };
 
+  // Removed: : boolean
   const handleSelectAll = (checked) => {
     if (checked) {
       setSelectedStaff(filteredStaff.map(s => s.id));
@@ -70,6 +77,7 @@ export function DeliveryStaff() {
     }
   };
 
+  // Removed: : string, : boolean
   const handleSelectStaff = (staffId, checked) => {
     if (checked) {
       setSelectedStaff([...selectedStaff, staffId]);
@@ -80,11 +88,13 @@ export function DeliveryStaff() {
 
   const handleBulkAction = () => {
     if (bulkAction === 'activate') {
-      setDeliveryStaffList(deliveryStaffList.map(s =>
+      setDeliveryStaffList(deliveryStaffList.map(s => 
+        // Removed: as 'active'
         selectedStaff.includes(s.id) ? { ...s, status: 'active' } : s
       ));
     } else if (bulkAction === 'deactivate') {
-      setDeliveryStaffList(deliveryStaffList.map(s =>
+      setDeliveryStaffList(deliveryStaffList.map(s => 
+        // Removed: as 'inactive'
         selectedStaff.includes(s.id) ? { ...s, status: 'inactive' } : s
       ));
     } else if (bulkAction === 'delete') {
@@ -105,14 +115,14 @@ export function DeliveryStaff() {
       {/* Top Buttons */}
       <div className="mb-4 flex items-center justify-end">
         <div className="flex gap-2">
-          <Button
+          <Button 
             variant="outline"
             size="sm"
             className="transition-all duration-200 h-9 text-xs border border-gray-300"
           >
             📤 Export
           </Button>
-          <Button
+          <Button 
             size="sm"
             className="bg-red-500 hover:bg-red-600 transition-all duration-200 h-9 text-xs border border-red-500"
             onClick={() => setAddModalOpen(true)}
@@ -180,6 +190,7 @@ export function DeliveryStaff() {
               <SelectContent>
                 <SelectItem value="all" className="text-xs">All Branches</SelectItem>
                 {branches.map(branch => (
+                  // Removed: !
                   <SelectItem key={branch} value={branch} className="text-xs">{branch}</SelectItem>
                 ))}
               </SelectContent>
@@ -209,7 +220,7 @@ export function DeliveryStaff() {
                   </SelectContent>
                 </Select>
 
-                <Button
+                <Button 
                   size="sm"
                   className="bg-red-500 hover:bg-red-600 h-9 text-xs border border-red-500"
                   onClick={handleBulkAction}
@@ -226,7 +237,7 @@ export function DeliveryStaff() {
           <TableHeader>
             <TableRow className="text-xs">
               <TableHead className="w-12">
-                <Checkbox
+                <Checkbox 
                   checked={selectedStaff.length === filteredStaff.length && filteredStaff.length > 0}
                   onCheckedChange={handleSelectAll}
                 />
@@ -246,8 +257,9 @@ export function DeliveryStaff() {
               return (
                 <TableRow key={staff.id} className="hover:bg-gray-50 transition-colors duration-200 text-xs">
                   <TableCell>
-                    <Checkbox
+                    <Checkbox 
                       checked={selectedStaff.includes(staff.id)}
+                      // Removed: as boolean
                       onCheckedChange={(checked) => handleSelectStaff(staff.id, checked)}
                     />
                   </TableCell>
@@ -270,11 +282,11 @@ export function DeliveryStaff() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{staff.branch || 'N/A'}</TableCell>
                   <TableCell>
-                    <Badge
+                    <Badge 
                       variant={staff.status === 'active' ? 'default' : 'secondary'}
                       className={`text-[10px] h-5 ${
-                        staff.status === 'active'
-                          ? 'bg-[#e8f5e9] text-[#2e7d32] border-[#2e7d32]/20 hover:bg-[#e8f5e9]'
+                        staff.status === 'active' 
+                          ? 'bg-[#e8f5e9] text-[#2e7d32] border-[#2e7d32]/20 hover:bg-[#e8f5e9]' 
                           : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-50'
                       }`}
                     >

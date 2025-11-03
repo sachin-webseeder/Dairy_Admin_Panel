@@ -33,14 +33,14 @@ export const customers = [
 
 // ==================== ORDERS (7 Total) ====================
 export const orders = [
-  {
-    id: 'ORD-1234',
-    customerName: 'Rajesh Kumar',
-    items: 5,
-    total: 425,
-    status: 'completed',
-    date: '2025-10-28',
-    branch: 'Koramangala Branch',
+  { 
+    id: 'ORD-1234', 
+    customerName: 'Rajesh Kumar', 
+    items: 5, 
+    total: 425, 
+    status: 'completed', 
+    date: '2025-10-28', 
+    branch: 'Koramangala Branch', 
     payment: 'UPI',
     products: [
       { productId: '1', productName: 'Full Cream Milk', quantity: 2, price: 65 },
@@ -48,14 +48,14 @@ export const orders = [
       { productId: '4', productName: 'Fresh Curd', quantity: 2, price: 45 }
     ]
   },
-  {
-    id: 'ORD-1235',
-    customerName: 'Priya Sharma',
-    items: 3,
-    total: 285,
-    status: 'completed',
-    date: '2025-10-28',
-    branch: 'Andheri West Branch',
+  { 
+    id: 'ORD-1235', 
+    customerName: 'Priya Sharma', 
+    items: 3, 
+    total: 285, 
+    status: 'completed', 
+    date: '2025-10-28', 
+    branch: 'Andheri West Branch', 
     payment: 'Card',
     products: [
       { productId: '2', productName: 'Toned Milk', quantity: 2, price: 55 },
@@ -63,68 +63,68 @@ export const orders = [
       { productId: '8', productName: 'Lassi', quantity: 1, price: 35 }
     ]
   },
-  {
-    id: 'ORD-1236',
-    customerName: 'Amit Patel',
-    items: 7,
-    total: 670,
-    status: 'pending',
-    date: '2025-10-28',
-    branch: 'T. Nagar Branch',
+  { 
+    id: 'ORD-1236', 
+    customerName: 'Amit Patel', 
+    items: 7, 
+    total: 670, 
+    status: 'pending', 
+    date: '2025-10-28', 
+    branch: 'T. Nagar Branch', 
     payment: 'Cash',
     products: [
       { productId: '4', productName: 'Fresh Curd', quantity: 3, price: 45 },
       { productId: '8', productName: 'Lassi', quantity: 4, price: 35 }
     ]
   },
-  {
-    id: 'ORD-1237',
-    customerName: 'Neha Singh',
-    items: 2,
-    total: 190,
-    status: 'completed',
-    date: '2025-10-27',
-    branch: 'Koramangala Branch',
+  { 
+    id: 'ORD-1237', 
+    customerName: 'Neha Singh', 
+    items: 2, 
+    total: 190, 
+    status: 'completed', 
+    date: '2025-10-27', 
+    branch: 'Koramangala Branch', 
     payment: 'UPI',
     products: [
       { productId: '5', productName: 'Butter', quantity: 2, price: 95 }
     ]
   },
-  {
-    id: 'ORD-1238',
-    customerName: 'Vijay Reddy',
-    items: 4,
-    total: 380,
-    status: 'pending',
-    date: '2025-10-27',
-    branch: 'Sector 29 Branch',
+  { 
+    id: 'ORD-1238', 
+    customerName: 'Vijay Reddy', 
+    items: 4, 
+    total: 380, 
+    status: 'pending', 
+    date: '2025-10-27', 
+    branch: 'Sector 29 Branch', 
     payment: 'Wallet',
     products: [
       { productId: '5', productName: 'Butter', quantity: 4, price: 95 }
     ]
   },
-  {
-    id: 'ORD-1239',
-    customerName: 'Sanjana Gupta',
-    items: 6,
-    total: 545,
-    status: 'completed',
-    date: '2025-10-26',
-    branch: 'Andheri West Branch',
+  { 
+    id: 'ORD-1239', 
+    customerName: 'Sanjana Gupta', 
+    items: 6, 
+    total: 545, 
+    status: 'completed', 
+    date: '2025-10-26', 
+    branch: 'Andheri West Branch', 
     payment: 'Card',
     products: [
       { productId: '2', productName: 'Toned Milk', quantity: 3, price: 55 },
       { productId: '9', productName: 'Flavored Milk', quantity: 3, price: 40 }
     ]
   },
-  {
-    id: 'ORD-1240',
-    customerName: 'Rahul Mehta',
-    items: 3,
-    total: 225,
-    status: 'cancelled',
-    date: '2025-10-25',
-    branch: 'T. Nagar Branch',
+  { 
+    id: 'ORD-1240', 
+    customerName: 'Rahul Mehta', 
+    items: 3, 
+    total: 225, 
+    status: 'cancelled', 
+    date: '2025-10-25', 
+    branch: 'T. Nagar Branch', 
     payment: 'Cash',
     products: [
       { productId: '4', productName: 'Fresh Curd', quantity: 3, price: 45 },
@@ -244,30 +244,30 @@ export const getAllBranches = () => branches;
 export const getBranchById = (id) => branches.find(b => b.id === id);
 
 // Get products by branch
-export const getProductsByBranch = (branchName) =>
+export const getProductsByBranch = (branchName) => 
   products.filter(p => p.branch === branchName);
 
 // Get orders by branch
-export const getOrdersByBranch = (branchName) =>
+export const getOrdersByBranch = (branchName) => 
   orders.filter(o => o.branch === branchName);
 
 // Get customers by branch
-export const getCustomersByBranch = (branchName) =>
+export const getCustomersByBranch = (branchName) => 
   customers.filter(c => c.branch === branchName);
 
 // Get delivery boys by branch
-export const getDeliveryBoysByBranch = (branchName) =>
+export const getDeliveryBoysByBranch = (branchName) => 
   deliveryBoys.filter(d => d.branch === branchName);
 
 // Calculate total revenue
-export const getTotalRevenue = () =>
+export const getTotalRevenue = () => 
   orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.total, 0);
 
 // Calculate total orders count
 export const getTotalOrdersCount = () => orders.length;
 
 // Get active branches count
-export const getActiveBranchesCount = () =>
+export const getActiveBranchesCount = () => 
   branches.filter(b => b.status === 'active').length;
 
 // Get total customers count

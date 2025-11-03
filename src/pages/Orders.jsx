@@ -14,15 +14,18 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { orders as initialOrders, branches as allBranches } from '../lib/mockData';
+import { usePersistentOrders, usePersistentBranches } from '../lib/usePersistentData';
+// Removed: import { Order } from '../types';
 import { EditModal } from '../components/modals/EditModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 
 export function Orders() {
+  const [orderList, setOrderList] = usePersistentOrders();
+  const [allBranches] = usePersistentBranches();
   const [searchQuery, setSearchQuery] = useState('');
-  const [orderList, setOrderList] = useState(initialOrders);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  // Removed: <Order | null>
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [branchFilter, setBranchFilter] = useState('all');
@@ -30,33 +33,33 @@ export function Orders() {
   const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
-
+  
   // More filter states
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [timeFilter, setTimeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
-
+  
   const branches = allBranches.map(b => b.name);
 
   const filteredOrders = orderList.filter(order => {
     const matchesSearch = order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase());
-
+    
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-
+    
     const matchesBranch = branchFilter === 'all' || order.branch === branchFilter;
-
+    
     // Payment filter
     const matchesPayment = paymentFilter === 'all' || order.payment?.toLowerCase() === paymentFilter.toLowerCase();
-
+    
     // Time filter
     let matchesTime = true;
     if (timeFilter !== 'all') {
       const orderDate = new Date(order.date);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
+      
       if (timeFilter === 'today') {
         const todayStr = today.toISOString().split('T')[0];
         matchesTime = order.date === todayStr;
@@ -74,7 +77,7 @@ export function Orders() {
         matchesTime = orderDate >= monthAgo;
       }
     }
-
+    
     return matchesSearch && matchesStatus && matchesBranch && matchesPayment && matchesTime;
   }).sort((a, b) => {
     // Apply sorting
@@ -82,10 +85,11 @@ export function Orders() {
     if (sortBy === 'date') compareValue = new Date(b.date).getTime() - new Date(a.date).getTime();
     else if (sortBy === 'amount') compareValue = a.total - b.total;
     else if (sortBy === 'customer') compareValue = a.customerName.localeCompare(b.customerName);
-
+    
     return sortOrder === 'asc' ? compareValue : -compareValue;
   });
 
+  // Removed: : Order
   const handleEditOrder = (updatedData) => {
     setOrderList(orderList.map(o => o.id === updatedData.id ? updatedData : o));
   };
@@ -178,7 +182,7 @@ export function Orders() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-
+            
             {/* All Status Dropdown */}
             <div className="relative">
               <Button
@@ -265,15 +269,15 @@ export function Orders() {
                 <ChevronDown className="h-3 w-3 ml-2" />
               </Button>
             </div>
-
-            <Button
+            
+            <Button 
               variant="outline"
               size="sm"
               className="transition-all duration-200 h-9 text-xs border border-gray-300"
             >
               🔄 Refresh
             </Button>
-            <Button
+            <Button 
               variant="outline"
               size="sm"
               onClick={handleExport}
@@ -283,7 +287,7 @@ export function Orders() {
             </Button>
 
           </div>
-
+          
           {/* More Filters Row (shown when More is clicked) */}
           {moreDropdownOpen && (
             <div className="flex items-center gap-2 flex-wrap p-3 bg-gray-50">
@@ -350,7 +354,7 @@ export function Orders() {
         <div className="px-4 py-2 border-b flex items-center justify-between bg-gray-50">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>Show:</span>
-            <select
+            <select 
               value={entriesPerPage}
               onChange={(e) => setEntriesPerPage(Number(e.target.value))}
               className="border rounded px-2 py-1 text-xs"
@@ -358,7 +362,7 @@ export function Orders() {
               <option value={10}>10</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
-              <option value={100}>100</option>
+              <option value_={100}>100</option>
             </select>
             <span>entries</span>
           </div>
@@ -420,11 +424,11 @@ export function Orders() {
                     <Badge
                       variant="secondary"
                       className={
-                        order.status === 'completed'
-                          ? 'bg-[#e8f5e9] text-[#2e7d32] border-[#2e7d32]/20 hover:bg-[#e8f5e9] text-[10px] h-5'
+                        order.status === 'completed' 
+                          ? 'bg-[#e8f5e9] text-[#2e7d32] border-[#2e7d32]/20 hover:bg-[#e8f5e9] text-[10px] h-5' 
                           : order.status === 'pending'
-                            ? 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-50 text-[10px] h-5'
-                            : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-100 text-[10px] h-5'
+                          ? 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-50 text-[10px] h-5'
+                          : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-100 text-[10px] h-5'
                       }
                     >
                       {order.status}
@@ -432,15 +436,15 @@ export function Orders() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
-                      <Button
-                        variant="ghost"
+                      <Button 
+                        variant="ghost" 
                         size="icon"
                         className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
                       >
                         <Eye className="h-3 w-3" />
                       </Button>
-                      <Button
-                        variant="ghost"
+                      <Button 
+                        variant="ghost" 
                         size="icon"
                         className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
                         onClick={() => {
@@ -450,8 +454,8 @@ export function Orders() {
                       >
                         <Edit2 className="h-3 w-3" />
                       </Button>
-                      <Button
-                        variant="ghost"
+                      <Button 
+                        variant="ghost" 
                         size="icon"
                         className="h-7 w-7 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
                         onClick={() => {

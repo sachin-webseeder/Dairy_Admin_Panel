@@ -5,8 +5,40 @@ import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../components/ui/alert-dialog';
 
 export function Settings() {
+  const handleResetData = () => {
+    // Clear all localStorage except user auth
+    const keysToPreserve = ['dynasty_premium_users', 'dynasty_premium_current_user'];
+    const keysToRemove = []; // Removed :string[]
+    
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && !keysToPreserve.includes(key)) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    toast.success('Data reset successfully! Reloading...');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -20,6 +52,7 @@ export function Settings() {
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="billing">Billing</TabsTrigger>
+          <TabsTrigger value="data">Data Management</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-6">
@@ -164,6 +197,82 @@ export function Settings() {
                   <p className="text-sm text-muted-foreground">Expires 12/2026</p>
                 </div>
                 <Button variant="outline">Update</Button>
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="data" className="space-y-6">
+          <Card className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-full bg-red-50">
+                <AlertTriangle className="h-6 w-6 text-red-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="mb-2">Data Persistence</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  All changes made in the admin panel are automatically saved to your browser's local storage 
+                  and will persist across page refreshes, navigation, and logout/login sessions.
+                </p>
+                <div className="p-4 bg-muted rounded-lg space-y-2">
+                  <p className="text-sm"><strong>Persistent Data Includes:</strong></p>
+                  <ul className="text-sm text-muted-foreground space-y-1 ml-4 list-disc">
+                    <li>Products, Orders, Customers</li>
+                    <li>Branches, Delivery Staff</li>
+                    <li>Push Notifications</li>
+                    <li>Homepage Settings</li>
+                    <li>All CRUD operations</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 border-red-200">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-full bg-red-50">
+                <RotateCcw className="h-6 w-6 text-red-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="mb-2 text-red-600">Reset All Data</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This will reset all data to default values. Your user account will be preserved, 
+                  but all products, orders, customers, branches, and other data will be restored to 
+                  their original state.
+                </p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="bg-red-500 hover:bg-red-600">
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Reset All Data
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action will reset all data to defaults including:
+                        <ul className="list-disc ml-6 mt-2 space-y-1">
+                          <li>All products, orders, and customers</li>
+                          <li>Branch and delivery staff information</li>
+                          <li>Push notifications</li>
+                          <li>Homepage settings</li>
+                        </ul>
+                        <p className="mt-3 font-semibold">Your user account and login will remain intact.</p>
+                        <p className="mt-2">This action cannot be undone.</p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleResetData}
+                        className="bg-red-500 hover:bg-red-600"
+                      >
+                        Yes, Reset All Data
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </Card>

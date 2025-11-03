@@ -19,21 +19,22 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { branches as initialBranches } from '../lib/mockData';
+import { usePersistentBranches } from '../lib/usePersistentData';
+// Removed: import { Branch } from '../types';
 import { AddBranchModal } from '../components/modals/AddBranchModal';
 import { EditBranchModal } from '../components/modals/EditBranchModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 
 export function BranchManagement() {
+  const [branchList, setBranchList] = usePersistentBranches();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [cityFilter, setCityFilter] = useState('all');
   const [entriesPerPage, setEntriesPerPage] = useState('10');
-  const [branchList, setBranchList] = useState(initialBranches);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [selectedBranch, setSelectedBranch] = useState(null); // Removed: <Branch | null>
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
 
   // More filter states
@@ -75,11 +76,11 @@ export function BranchManagement() {
     return sortOrder === 'asc' ? compareValue : -compareValue;
   });
 
-  const handleAddBranch = (branch) => {
-    setBranchList([...branchList, branch]);
+  const handleAddBranch = (branch) => { // Removed: : Partial<Branch>
+    setBranchList([...branchList, branch]); // Removed: as Branch
   };
 
-  const handleEditBranch = (updatedData) => {
+  const handleEditBranch = (updatedData) => { // Removed: : Branch
     setBranchList(branchList.map(b => b.id === updatedData.id ? updatedData : b));
   };
 
@@ -90,10 +91,10 @@ export function BranchManagement() {
     }
   };
 
-  const toggleBranchStatus = (branchId) => {
+  const toggleBranchStatus = (branchId) => { // Removed: : string
     setBranchList(branchList.map(b =>
       b.id === branchId
-        ? { ...b, status: b.status === 'active' ? 'inactive' : 'active' }
+        ? { ...b, status: b.status === 'active' ? 'inactive' : 'active' } // Removed: as 'inactive' / as 'active'
         : b
     ));
   };
@@ -114,7 +115,7 @@ export function BranchManagement() {
   const totalBranches = branchList.length;
   const activeBranches = branchList.filter(b => b.status === 'active').length;
   const cities = [...new Set(branchList.map(b => b.city))].length;
-  const avgPerformance = Math.round(branchList.reduce((acc, b) => acc + b.revenue, 0) / branchList.length / 1000);
+  const avgPerformance = Math.round(branchList.reduce((acc, b) => acc + b.revenue, 0) / (branchList.length || 1) / 1000); // Added (|| 1) to prevent division by zero
 
   return (
     <div className="p-4">
