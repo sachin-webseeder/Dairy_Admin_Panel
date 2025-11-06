@@ -17,32 +17,39 @@ import { Checkbox } from '../ui/checkbox';
 import { Upload, Bell, Battery, Wifi, Signal } from 'lucide-react';
 import { branches } from '../../lib/mockData';
 
-export function CreateNotificationModal({ open, onOpenChange, onSave }) {
+// Removed TypeScript interface:
+// interface CreateNotificationModalProps {
+//   open: boolean;
+//   onOpenChange: (open: boolean) => void;
+//   onSave?: (notification: any) => void;
+// }
+
+export function CreateNotificationModal({ open, onOpenChange, onSave }) { // Removed type annotation
   const [activeTab, setActiveTab] = useState('create');
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [type, setType] = useState('promotional');
   const [targetAudience, setTargetAudience] = useState('all');
-  const [image, setImage] = useState(null);
-  const [selectedRoles, setSelectedRoles] = useState([]);
-  const [selectedBranches, setSelectedBranches] = useState([]);
+  const [image, setImage] = useState(null); // Removed <string | null>
+  const [selectedRoles, setSelectedRoles] = useState([]); // Removed <string[]>
+  const [selectedBranches, setSelectedBranches] = useState([]); // Removed <string[]>
   const [deliveryMode, setDeliveryMode] = useState('send-now');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [recurring, setRecurring] = useState('none');
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = (e) => { // Removed e: React.ChangeEvent<HTMLInputElement>
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImage(reader.result);
+        setImage(reader.result); // Removed 'as string'
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleRoleToggle = (role) => {
+  const handleRoleToggle = (role) => { // Removed role: string
     setSelectedRoles(prev =>
       prev.includes(role)
         ? prev.filter(r => r !== role)
@@ -50,7 +57,7 @@ export function CreateNotificationModal({ open, onOpenChange, onSave }) {
     );
   };
 
-  const handleBranchToggle = (branchId) => {
+  const handleBranchToggle = (branchId) => { // Removed branchId: string
     setSelectedBranches(prev =>
       prev.includes(branchId)
         ? prev.filter(b => b !== branchId)

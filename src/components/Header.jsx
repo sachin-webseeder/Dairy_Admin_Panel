@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { notifications } from '../lib/mockData';
+// import { Notification } from '../types'; // Type import removed
 import { useState } from 'react';
 import { cn } from './ui/utils';
 import { AlertTriangle, CheckCircle, Info, AlertCircle } from 'lucide-react';
@@ -24,7 +25,7 @@ const notificationColors = {
 };
 
 export function Header() {
-  const [notifs, setNotifs] = useState(notifications);
+  const [notifs, setNotifs] = useState(notifications); // Removed <Notification[]>
   const unreadCount = notifs.filter(n => !n.isRead).length;
 
   const markAllAsRead = () => {

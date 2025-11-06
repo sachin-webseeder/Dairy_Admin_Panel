@@ -6,25 +6,26 @@ import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { branches } from '../lib/mockData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-// Removed: import { Product } from '../types';
+// import { Product } from '../types'; // Removed type import
 import { AddProductModal } from '../components/modals/AddProductModal';
 import { EditModal } from '../components/modals/EditModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { usePersistentProducts } from '../lib/usePersistentData';
+import { showSuccessToast } from '../lib/toast';
 
 export function Products() {
   const [productList, setProductList] = usePersistentProducts();
-  const [selectedBranch, setSelectedBranch] = useState('all'); // Removed: :string
-  const [selectedCategory, setSelectedCategory] = useState('all'); // Removed: :string
-  const [selectedStatus, setSelectedStatus] = useState('all'); // Removed: :string
+  const [selectedBranch, setSelectedBranch] = useState('all'); // Removed <string>
+  const [selectedCategory, setSelectedCategory] = useState('all'); // Removed <string>
+  const [selectedStatus, setSelectedStatus] = useState('all'); // Removed <string>
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null); // Removed: <Product | null>
+  const [selectedProduct, setSelectedProduct] = useState(null); // Removed <Product | null>
   const [searchQuery, setSearchQuery] = useState('');
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
-
+  
   // Filter states
   const [priceFilter, setPriceFilter] = useState('all');
   const [popularityFilter, setPopularityFilter] = useState('all');
@@ -36,18 +37,18 @@ export function Products() {
     const matchesBranch = selectedBranch === 'all' || p.branch === selectedBranch;
     const matchesCategory = selectedCategory === 'all' || p.category.toLowerCase() === selectedCategory.toLowerCase();
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-
+    
     // Status filter
     let matchesStatus = true;
     if (selectedStatus === 'instock') matchesStatus = p.stock > 0;
     else if (selectedStatus === 'outofstock') matchesStatus = p.stock === 0;
-
+    
     // Price filter
     let matchesPrice = true;
     if (priceFilter === 'low') matchesPrice = p.price >= 0 && p.price < 100;
     else if (priceFilter === 'medium') matchesPrice = p.price >= 100 && p.price < 300;
     else if (priceFilter === 'high') matchesPrice = p.price >= 300;
-
+    
     return matchesBranch && matchesCategory && matchesSearch && matchesStatus && matchesPrice;
   }).sort((a, b) => {
     // Apply sorting
@@ -55,22 +56,25 @@ export function Products() {
     if (sortBy === 'name') compareValue = a.name.localeCompare(b.name);
     else if (sortBy === 'price') compareValue = a.price - b.price;
     else if (sortBy === 'stock') compareValue = a.stock - b.stock;
-
+    
     return sortOrder === 'asc' ? compareValue : -compareValue;
   });
 
-  const handleAddProduct = (product) => { // Removed: : Partial<Product>
-    setProductList([...productList, product]); // Removed: as Product
+  const handleAddProduct = (product) => { // Removed : Partial<Product>
+    setProductList([...productList, product]); // Removed as Product
+    showSuccessToast('Product added successfully!');
   };
 
-  const handleEditProduct = (updatedData) => { // Removed: : Product
+  const handleEditProduct = (updatedData) => { // Removed : Product
     setProductList(productList.map(p => p.id === updatedData.id ? updatedData : p));
+    showSuccessToast('Product updated successfully!');
   };
 
   const handleDeleteProduct = () => {
     if (selectedProduct) {
       setProductList(productList.filter(p => p.id !== selectedProduct.id));
       setSelectedProduct(null);
+      showSuccessToast('Product deleted successfully!');
     }
   };
 
@@ -147,14 +151,14 @@ export function Products() {
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                className="pl-10 border border-gray-300"
+              <Input 
+                placeholder="Search products..." 
+                className="pl-10 border border-gray-300" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-
+            
             {/* Category Filter */}
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-48 border border-gray-300">
@@ -182,7 +186,7 @@ export function Products() {
 
             {/* More Dropdown */}
             <div className="relative">
-              <Button
+              <Button 
                 variant="outline"
                 onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
                 className="gap-2 border border-gray-300"
@@ -194,7 +198,7 @@ export function Products() {
             </div>
 
             {/* Add Product Button */}
-            <Button
+            <Button 
               className="bg-red-500 hover:bg-red-600 border border-red-500"
               onClick={() => setAddModalOpen(true)}
             >
@@ -280,14 +284,14 @@ export function Products() {
           {filteredProducts.map((product) => (
             <Card key={product.id} className="overflow-hidden transition-all duration-200 hover:shadow-lg">
               <div className="relative h-48 bg-gray-100">
-                <ImageWithFallback
-                  src={product.image}
+                <ImageWithFallback 
+                  src={product.image} 
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
-                <Badge
+                <Badge 
                   className="absolute top-2 right-2 text-xs"
-                  style={{
+                  style={{ 
                     backgroundColor: product.stock > 0 ? '#e8f5e9' : '#f5f5f5',
                     color: product.stock > 0 ? '#2e7d32' : '#757575'
                   }}

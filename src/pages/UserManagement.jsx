@@ -12,24 +12,25 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { getAllUsers, deleteUserFromSystem } from '../lib/auth'; // Removed AuthUser type import
+import { getAllUsers, deleteUserFromSystem, updateUserInSystem } from '../lib/auth';
 import { AddUserModal } from '../components/modals/AddUserModal';
-import { EditModal } from '../components/modals/EditModal';
+import { EditUserModal } from '../components/modals/EditUserModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
+import { showSuccessToast } from '../lib/toast';
 
 export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [userList, setUserList] = useState([]); // Removed <AuthUser[]>
+  const [userList, setUserList] = useState([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null); // Removed <AuthUser | null>
-  const [roleFilter, setRoleFilter] = useState('all'); // Removed <string>
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [roleFilter, setRoleFilter] = useState('all');
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [moduleFilter, setModuleFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState('asc'); // Removed <'asc' | 'desc'>
+  const [sortOrder, setSortOrder] = useState('asc');
   const [moduleDropdownOpen, setModuleDropdownOpen] = useState(false);
   const [sortByDropdownOpen, setSortByDropdownOpen] = useState(false);
 
@@ -70,19 +71,20 @@ export function UserManagement() {
     return sortOrder === 'asc' ? compareValue : -compareValue;
   });
 
-  const handleAddUser = (user) => { // Removed : Partial<AuthUser>
+  const handleAddUser = (user) => {
     // Refresh user list from auth system
     setUserList(getAllUsers());
+    showSuccessToast('User created successfully!');
   };
 
-  const handleEditUser = (updatedData) => { // Removed : AuthUser
+  const handleEditUser = (updatedData) => {
     // Update user in auth system
-    const { updateUserInSystem } = require('../lib/auth');
     updateUserInSystem(updatedData.id, updatedData);
     // Refresh user list from auth system
     setUserList(getAllUsers());
     setEditModalOpen(false);
     setSelectedUser(null);
+    showSuccessToast('User updated successfully!');
   };
 
   const handleDeleteUser = () => {
@@ -90,6 +92,7 @@ export function UserManagement() {
       deleteUserFromSystem(selectedUser.id);
       setUserList(getAllUsers());
       setSelectedUser(null);
+      showSuccessToast('User deleted successfully!');
     }
   };
 
@@ -437,19 +440,22 @@ export function UserManagement() {
 
       {selectedUser && (
         <>
-          <EditModal
+          <EditUserModal
             open={editModalOpen}
-            onOpenChange={setEditModalOpen}
+            onClose={() => {
+              setEditModalOpen(false);
+              setSelectedUser(null);
+            }}
             onSave={handleEditUser}
-            data={selectedUser}
-            title="Edit User"
-            fields={[
-              { key: 'name', label: 'Name' },
-              { key: 'email', label: 'Email', type: 'email' },
-              { key: 'password', label: 'Password', type: 'password' },
-              { key: 'role', label: 'Role' },
-              { key: 'phone', label: 'Phone', type: 'tel' },
-            ]}
+            user={{
+              id: selectedUser.id,
+              name: selectedUser.name,
+              email: selectedUser.email,
+              role: selectedUser.role,
+              status: 'active',
+              joinDate: new Date().toISOString().split('T')[0],
+              permissions: selectedUser.permissions
+            }}
           />
 
           <DeleteConfirmationModal

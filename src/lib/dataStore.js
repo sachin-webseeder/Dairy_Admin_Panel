@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   USERS: 'dynasty_users',
   NOTIFICATIONS: 'dynasty_notifications',
   HOMEPAGE_SETTINGS: 'dynasty_homepage_settings',
+  SUPPORT_QUERIES: 'dynasty_support_queries',
 };
 
 // Generic save function
@@ -66,4 +67,8 @@ export const dataStore = {
   // Homepage Settings
   saveHomepageSettings: (settings) => saveToLocalStorage(STORAGE_KEYS.HOMEPAGE_SETTINGS, settings),
   loadHomepageSettings: (defaultSettings) => loadFromLocalStorage(STORAGE_KEYS.HOMEPAGE_SETTINGS, defaultSettings),
+
+  // Support Queries
+  saveSupportQueries: (queries) => saveToLocalStorage(STORAGE_KEYS.SUPPORT_QUERIES, queries),
+  loadSupportQueries: (defaultQueries) => loadFromLocalStorage(STORAGE_KEYS.SUPPORT_QUERIES, defaultQueries),
 };

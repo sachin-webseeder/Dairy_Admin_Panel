@@ -1,7 +1,14 @@
-import PropTypes from 'prop-types';
 import { Card } from './ui/card';
 
-export function StatCard({ title, value, icon: Icon }) {
+// Removed TypeScript interface:
+// interface StatCardProps {
+//   title: string;
+//   value: string;
+//   icon: LucideIcon;
+//   trend?: string;
+// }
+
+export function StatCard({ title, value, icon: Icon }) { // Removed type annotation
   return (
     <Card className="p-6 transition-all duration-200 hover:shadow-md">
       <div className="flex items-start justify-between">
@@ -16,11 +23,3 @@ export function StatCard({ title, value, icon: Icon }) {
     </Card>
   );
 }
-
-// PropTypes for runtime type checking in JavaScript
-StatCard.propTypes = {
-  title: PropTypes.string.isRequired,
-  value: PropTypes.string.isRequired,
-  icon: PropTypes.elementType.isRequired,
-  trend: PropTypes.string,
-};

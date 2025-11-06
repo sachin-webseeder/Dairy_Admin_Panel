@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types';
 import { Search, LayoutDashboard, ShoppingCart, Package, Users, Building2, Bike, Settings, Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
@@ -38,7 +37,7 @@ export function SearchPopup({ open, onOpenChange, onNavigate }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-0 gap-0">
+      <DialogContent className="max-w-2xl p-0 gap-0">
         <DialogTitle className="sr-only">
           Search Navigation
         </DialogTitle>
@@ -55,7 +54,7 @@ export function SearchPopup({ open, onOpenChange, onNavigate }) {
             autoFocus
           />
         </div>
-
+        
         <div className="max-h-[400px] overflow-y-auto">
           <div className="p-2">
             <div className="text-xs text-muted-foreground px-3 py-2">
@@ -107,10 +106,3 @@ export function SearchPopup({ open, onOpenChange, onNavigate }) {
     </Dialog>
   );
 }
-
-// PropTypes for runtime type checking in JavaScript
-SearchPopup.propTypes = {
-  open: PropTypes.bool.isRequired,
-  onOpenChange: PropTypes.func.isRequired,
-  onNavigate: PropTypes.func.isRequired,
-};

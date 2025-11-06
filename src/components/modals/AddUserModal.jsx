@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
-import { UserPlus, X } from 'lucide-react';
+import { UserPlus, X, Check } from 'lucide-react';
 import { addUserToSystem } from '../../lib/auth';
 
-export function AddUserModal({ open, onOpenChange, onSave }) {
+// Removed: interface AddUserModalProps { ... }
+
+export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop types
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -18,24 +20,43 @@ export function AddUserModal({ open, onOpenChange, onSave }) {
 
   const [permissions, setPermissions] = useState({
     // Core
-    dashboard: false,
-    userManagement: false,
+    dashboard: true,
     settings: false,
-    // Analytics & Reports
+    userManagement: false,
+    homepage: false,
     reports: false,
+    products: true,
+    orders: true,
+    customers: true,
+    deliveryStaff: false,
+    branches: false,
+    profile: true,
+    
+    // Analytics & Reports
     analytics: false,
     auditLogs: false,
+    
     // Operations
     billing: false,
     notifications: false,
     contentManagement: false,
+    
     // Development
     integrations: false,
     apiAccess: false,
     security: false,
   });
 
-  const handleSubmit = (e) => {
+  const handlePermissionChange = useCallback((key) => { // Removed :string type
+    setPermissions(prev => {
+      const currentValue = prev[key]; // Removed as any
+      const newPermissions = { ...prev, [key]: !currentValue };
+      console.log('Toggling', key, 'from', currentValue, 'to', !currentValue);
+      return newPermissions;
+    });
+  }, []);
+
+  const handleSubmit = (e) => { // Removed : React.FormEvent
     e.preventDefault();
     // Add user to auth system
     addUserToSystem({
@@ -44,9 +65,10 @@ export function AddUserModal({ open, onOpenChange, onSave }) {
       password: formData.password,
       phone: formData.phone,
       role: formData.role,
-      profilePhoto: ''
+      profilePhoto: '',
+      permissions
     });
-    onSave(formData);
+    onSave({ ...formData, permissions });
     onOpenChange(false);
     // Reset form
     setFormData({
@@ -57,24 +79,71 @@ export function AddUserModal({ open, onOpenChange, onSave }) {
       role: 'User',
     });
     setPermissions({
-      dashboard: false,
-      userManagement: false,
+      // Core
+      dashboard: true,
       settings: false,
+      userManagement: false,
+      homepage: false,
       reports: false,
+      products: true,
+      orders: true,
+      customers: true,
+      deliveryStaff: false,
+      branches: false,
+      profile: true,
+      
+      // Analytics & Reports
       analytics: false,
       auditLogs: false,
+      
+      // Operations
       billing: false,
       notifications: false,
       contentManagement: false,
+      
+      // Development
       integrations: false,
       apiAccess: false,
       security: false,
     });
   };
 
+  const PermissionCheckbox = ({ 
+    permissionKey, 
+    title, 
+    description 
+  }) => { // Removed type object
+    const isChecked = permissions[permissionKey] === true; // Removed as any
+    
+    const handleClick = useCallback((e) => { // Removed : React.MouseEvent
+      e.preventDefault();
+      e.stopPropagation();
+      handlePermissionChange(permissionKey);
+    }, [permissionKey]);
+    
+    return (
+      <div className="flex items-start gap-2">
+        <Checkbox
+          id={`add-permission-${permissionKey}`}
+          checked={isChecked}
+          onCheckedChange={() => handlePermissionChange(permissionKey)}
+          className="border-blue-500 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 mt-0.5"
+        />
+        <label 
+          htmlFor={`add-permission-${permissionKey}`} 
+          className="cursor-pointer flex-1 select-none"
+          onClick={handleClick}
+        >
+          <div className="text-xs font-medium">{title}</div>
+          <div className="text-[10px] text-muted-foreground">{description}</div>
+        </label>
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 gap-0 bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col [&>button]:hidden sm:max-w-2xl">
+      <DialogContent className="p-0 gap-0 bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col [&>button]:hidden sm:max-w-3xl">
         <DialogTitle className="sr-only">Create New User</DialogTitle>
         <DialogDescription className="sr-only">Add a new user to your organization</DialogDescription>
         
@@ -174,163 +243,138 @@ export function AddUserModal({ open, onOpenChange, onSave }) {
             <div className="mb-4">
               <h4 className="text-xs font-medium mb-3 text-red-600">* Permissions & Access</h4>
               
-              {/* Core */}
-              <div className="mb-3">
-                <p className="text-xs font-medium text-blue-600 mb-2">☑️ Core</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.dashboard}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, dashboard: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">Dashboard</p>
-                      <p className="text-xs text-muted-foreground">Main overview and metrics</p>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.userManagement}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, userManagement: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">User Management</p>
-                      <p className="text-xs text-muted-foreground">Manage users and permissions</p>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.settings}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, settings: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">Settings</p>
-                      <p className="text-xs text-muted-foreground">System configuration</p>
-                    </div>
-                  </label>
+              {/* Core Section */}
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Check className="h-3 w-3 text-blue-500" />
+                  <span className="text-xs font-medium">Core</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 ml-5">
+                  <PermissionCheckbox 
+                    permissionKey="dashboard"
+                    title="Dashboard"
+                    description="Main overview and metrics"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="settings"
+                    title="Settings"
+                    description="System configuration"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="userManagement"
+                    title="User Management"
+                    description="Manage users and permissions"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="homepage"
+                    title="Homepage"
+                    description="Homepage management"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="reports"
+                    title="Reports"
+                    description="View and generate reports"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="products"
+                    title="Products"
+                    description="Product management"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="orders"
+                    title="Orders"
+                    description="Order management"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="customers"
+                    title="Customers"
+                    description="Customer management"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="deliveryStaff"
+                    title="Delivery Staff"
+                    description="Staff management"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="branches"
+                    title="Branches"
+                    description="Branch management"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="profile"
+                    title="Profile"
+                    description="User profile access"
+                  />
                 </div>
               </div>
 
-              {/* Analytics & Reports */}
-              <div className="mb-3">
-                <p className="text-xs font-medium text-blue-600 mb-2">☑️ Analytics & Reports</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.reports}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, reports: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">Reports</p>
-                      <p className="text-xs text-muted-foreground">Generate custom reports</p>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.analytics}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, analytics: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">Analytics</p>
-                      <p className="text-xs text-muted-foreground">Advanced analytics dashboard</p>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.auditLogs}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, auditLogs: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">Audit Logs</p>
-                      <p className="text-xs text-muted-foreground">System audit trails</p>
-                    </div>
-                  </label>
+              {/* Analytics & Reports Section */}
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Check className="h-3 w-3 text-blue-500" />
+                  <span className="text-xs font-medium">Analytics & Reports</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 ml-5">
+                  <PermissionCheckbox 
+                    permissionKey="analytics"
+                    title="Analytics"
+                    description="Advanced analytics dashboard"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="auditLogs"
+                    title="Audit Logs"
+                    description="System audit trails"
+                  />
                 </div>
               </div>
 
-              {/* Operations */}
-              <div className="mb-3">
-                <p className="text-xs font-medium text-blue-600 mb-2">☑️ Operations</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.billing}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, billing: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">Billing</p>
-                      <p className="text-xs text-muted-foreground">Payment and subscription management</p>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.notifications}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, notifications: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">Notifications</p>
-                      <p className="text-xs text-muted-foreground">Email and push notifications</p>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.contentManagement}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, contentManagement: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">Content Management</p>
-                      <p className="text-xs text-muted-foreground">Content creation and editing</p>
-                    </div>
-                  </label>
+              {/* Operations Section */}
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Check className="h-3 w-3 text-blue-500" />
+                  <span className="text-xs font-medium">Operations</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 ml-5">
+                  <PermissionCheckbox 
+                    permissionKey="billing"
+                    title="Billing"
+                    description="Payment and subscription management"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="notifications"
+                    title="Notifications"
+                    description="Email and push notifications"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="contentManagement"
+                    title="Content Management"
+                    description="Content creation and editing"
+                  />
                 </div>
               </div>
 
-              {/* Development */}
-              <div className="mb-3">
-                <p className="text-xs font-medium text-blue-600 mb-2">☑️ Development</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.integrations}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, integrations: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">Integrations</p>
-                      <p className="text-xs text-muted-foreground">Third-party integrations</p>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.apiAccess}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, apiAccess: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">API Access</p>
-                      <p className="text-xs text-muted-foreground">API keys and documentation</p>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer transition-colors">
-                    <Checkbox
-                      checked={permissions.security}
-                      onCheckedChange={(checked) => setPermissions({ ...permissions, security: checked })}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-medium">Security</p>
-                      <p className="text-xs text-muted-foreground">Security settings and logs</p>
-                    </div>
-                  </label>
+              {/* Development Section */}
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Check className="h-3 w-3 text-blue-500" />
+                  <span className="text-xs font-medium">Development</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 ml-5">
+                  <PermissionCheckbox 
+                    permissionKey="integrations"
+                    title="Integrations"
+                    description="Third party integrations"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="apiAccess"
+                    title="Api Access"
+                    description="API keys and documentation"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="security"
+                    title="Security"
+                    description="Security settings and logs"
+                  />
                 </div>
               </div>
             </div>

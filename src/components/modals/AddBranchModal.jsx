@@ -5,6 +5,9 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+// Removed: import { Branch } from '../../types';
+
+// Removed: interface AddBranchModalProps { ... }
 
 export function AddBranchModal({ open, onOpenChange, onSave }) {
   const [formData, setFormData] = useState({
@@ -18,11 +21,11 @@ export function AddBranchModal({ open, onOpenChange, onSave }) {
     adminEmail: '',
     openingHours: '',
     seatingCapacity: '',
-    status: 'active',
+    status: 'active', // Removed type assertion
   });
 
   const handleSubmit = () => {
-    const newBranch = {
+    const newBranch = { // Removed Partial<Branch> type
       id: Date.now().toString(),
       name: formData.name,
       location: `${formData.city}, ${formData.state}`,

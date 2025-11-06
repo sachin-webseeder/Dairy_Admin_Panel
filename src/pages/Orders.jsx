@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Edit2, Trash2, Download, Filter, ChevronDown, X, Eye, Calendar } from 'lucide-react';
+import { Search, Edit2, Trash2, Download, Filter, ChevronDown, X, Eye, Calendar, Plus } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
@@ -15,9 +15,12 @@ import {
   TableRow,
 } from '../components/ui/table';
 import { usePersistentOrders, usePersistentBranches } from '../lib/usePersistentData';
-// Removed: import { Order } from '../types';
+// import { Order } from '../types'; // Removed type import
 import { EditModal } from '../components/modals/EditModal';
+import { EditOrderModal } from '../components/modals/EditOrderModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
+import { AddOrderModal } from '../components/modals/AddOrderModal';
+import { showSuccessToast } from '../lib/toast';
 
 export function Orders() {
   const [orderList, setOrderList] = usePersistentOrders();
@@ -25,8 +28,8 @@ export function Orders() {
   const [searchQuery, setSearchQuery] = useState('');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  // Removed: <Order | null>
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null); // Removed <Order | null>
   const [statusFilter, setStatusFilter] = useState('all');
   const [branchFilter, setBranchFilter] = useState('all');
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
@@ -89,15 +92,21 @@ export function Orders() {
     return sortOrder === 'asc' ? compareValue : -compareValue;
   });
 
-  // Removed: : Order
-  const handleEditOrder = (updatedData) => {
+  const handleAddOrder = (order) => { // Removed : Order
+    setOrderList([order, ...orderList]);
+    showSuccessToast('Order created successfully!');
+  };
+
+  const handleEditOrder = (updatedData) => { // Removed : Order
     setOrderList(orderList.map(o => o.id === updatedData.id ? updatedData : o));
+    showSuccessToast('Order updated successfully!');
   };
 
   const handleDeleteOrder = () => {
     if (selectedOrder) {
       setOrderList(orderList.filter(o => o.id !== selectedOrder.id));
       setSelectedOrder(null);
+      showSuccessToast('Order deleted successfully!');
     }
   };
 
@@ -285,6 +294,14 @@ export function Orders() {
             >
               Export
             </Button>
+            <Button 
+              size="sm"
+              onClick={() => setAddModalOpen(true)}
+              className="transition-all duration-200 h-9 text-xs bg-blue-600 text-white hover:bg-blue-700 border border-blue-600"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Order
+            </Button>
 
           </div>
           
@@ -362,7 +379,7 @@ export function Orders() {
               <option value={10}>10</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
-              <option value_={100}>100</option>
+              <option value={100}>100</option>
             </select>
             <span>entries</span>
           </div>
@@ -495,19 +512,19 @@ export function Orders() {
         </div>
       </div>
 
+      <AddOrderModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onAdd={handleAddOrder}
+      />
+
       {selectedOrder && (
         <>
-          <EditModal
+          <EditOrderModal
             open={editModalOpen}
-            onOpenChange={setEditModalOpen}
+            onClose={() => setEditModalOpen(false)}
             onSave={handleEditOrder}
-            data={selectedOrder}
-            title="Edit Order"
-            fields={[
-              { key: 'customerName', label: 'Customer Name' },
-              { key: 'items', label: 'Items', type: 'number' },
-              { key: 'total', label: 'Total', type: 'number' },
-            ]}
+            order={selectedOrder}
           />
 
           <DeleteConfirmationModal

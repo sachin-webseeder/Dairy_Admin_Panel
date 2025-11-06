@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { cn } from './ui/utils';
 
+// Removed 'SidebarProps' interface
+
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'orders', label: 'Orders', icon: ShoppingCart },
@@ -21,6 +23,7 @@ const menuItems = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
+// Removed ': SidebarProps' type from props
 export function Sidebar({ currentPage, onPageChange }) {
   return (
     <aside className="w-64 bg-white border-r border-border h-screen sticky top-0 flex flex-col">

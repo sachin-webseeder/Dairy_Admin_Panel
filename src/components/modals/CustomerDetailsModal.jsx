@@ -2,6 +2,9 @@ import { X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+// Removed 'Customer' type import
+
+// Removed 'CustomerDetailsModalProps' interface
 
 export function CustomerDetailsModal({ open, onOpenChange, customer }) {
   const initials = customer.name.split(' ').map(n => n[0]).join('').substring(0, 2);

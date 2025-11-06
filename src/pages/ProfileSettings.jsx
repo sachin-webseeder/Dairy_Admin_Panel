@@ -6,7 +6,7 @@ import { Label } from '../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Card } from '../components/ui/card';
 import { updateCurrentUser } from '../lib/auth';
-import { toast } from 'sonner';
+import { toast } from 'sonner@2.0.3';
 
 export function ProfileSettings({ onProfileUpdate, currentUser }) {
   const [name, setName] = useState('');

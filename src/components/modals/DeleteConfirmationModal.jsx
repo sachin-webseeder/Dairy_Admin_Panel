@@ -6,8 +6,8 @@ export function DeleteConfirmationModal({
   open,
   onOpenChange,
   onConfirm,
-  title,
-  description = 'This action cannot be undone.',
+  title, // This prop isn't used in your provided JSX, but it's kept here
+  description = 'This action cannot be undone.', // This prop also isn't used
 }) {
   const handleConfirm = () => {
     onConfirm();

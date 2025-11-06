@@ -22,11 +22,12 @@ import {
   TableRow,
 } from '../components/ui/table';
 import { usePersistentCustomers } from '../lib/usePersistentData';
-// import { Customer } from '../types'; // Type import removed
+// import { Customer } from '../types'; // Removed
 import { EditModal } from '../components/modals/EditModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { AddCustomerModal } from '../components/modals/AddCustomerModal';
 import { CustomerDetailsModal } from '../components/modals/CustomerDetailsModal';
+import { showSuccessToast } from '../lib/toast';
 
 export function Customers() {
   const [customerList, setCustomerList] = usePersistentCustomers();
@@ -90,25 +91,33 @@ export function Customers() {
 
   const handleEditCustomer = (updatedData) => { // Removed : Customer
     setCustomerList(customerList.map(c => c.id === updatedData.id ? updatedData : c));
+    showSuccessToast('Customer updated successfully!');
   };
 
   const handleAddCustomer = (customer) => { // Removed : Partial<Customer>
     setCustomerList([...customerList, customer]); // Removed as Customer
+    showSuccessToast('Customer added successfully!');
   };
 
   const handleDeleteCustomer = () => {
     if (selectedCustomer) {
       setCustomerList(customerList.filter(c => c.id !== selectedCustomer.id));
       setSelectedCustomer(null);
+      showSuccessToast('Customer deleted successfully!');
     }
   };
 
   const toggleCustomerStatus = (customerId) => { // Removed : string
+    const customer = customerList.find(c => c.id === customerId);
+    const newStatus = customer?.status === 'active' ? 'inactive' : 'active';
+    
     setCustomerList(customerList.map(c => 
       c.id === customerId 
-        ? { ...c, status: c.status === 'active' ? 'inactive' : 'active' } // Removed type assertions
+        ? { ...c, status: newStatus } // Removed as 'active' | 'inactive'
         : c
     ));
+    
+    showSuccessToast(`Customer ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`);
   };
 
   const handleSelectAll = (checked) => { // Removed : boolean
@@ -231,7 +240,7 @@ export function Customers() {
               <SelectContent>
                 <SelectItem value="all" className="text-xs">All Branches</SelectItem>
                 {branches.map(branch => (
-                  <SelectItem key={branch} value={branch} className="text-xs">{branch}</SelectItem> // Removed !
+                  <SelectItem key={branch} value={branch} className="text-xs">{branch}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -360,7 +369,7 @@ export function Customers() {
                   <TableCell>
                     <Checkbox 
                       checked={selectedCustomers.includes(customer.id)}
-                      onCheckedChange={(checked) => handleSelectCustomer(customer.id, checked)} // Removed as boolean
+                      onCheckedChange={(checked) => handleSelectCustomer(customer.id, checked)}
                     />
                   </TableCell>
                   <TableCell>

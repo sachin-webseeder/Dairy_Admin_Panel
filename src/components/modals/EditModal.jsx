@@ -5,6 +5,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Slider } from '../ui/slider';
 
+// Removed: interface EditModalProps<T> { ... }
+
 export function EditModal({
   open,
   onOpenChange,
@@ -13,7 +15,7 @@ export function EditModal({
   title,
   fields,
 }) {
-  const [formData, setFormData] = useState(data);
+  const [formData, setFormData] = useState(data); // Removed <T>
 
   useEffect(() => {
     setFormData(data);
@@ -40,13 +42,13 @@ export function EditModal({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">{field.min || 0}</span>
-                    <span className="font-medium">{formData[field.key]}</span>
+                    <span className="font-medium">{formData[field.key]}</span> {/* Removed as number */}
                     <span className="text-xs text-muted-foreground">{field.max || 100}</span>
                   </div>
                   <Slider
-                    value={[formData[field.key]]}
+                    value={[formData[field.key]]} // Removed as number
                     onValueChange={(value) =>
-                      setFormData({ ...formData, [field.key]: value[0] })
+                      setFormData({ ...formData, [field.key]: value[0] }) // Removed as any
                     }
                     min={field.min || 0}
                     max={field.max || 100}
@@ -57,7 +59,7 @@ export function EditModal({
               ) : (
                 <Input
                   type={field.type || 'text'}
-                  value={formData[field.key]}
+                  value={formData[field.key]} // Removed as string
                   onChange={(e) =>
                     setFormData({ ...formData, [field.key]: e.target.value })
                   }

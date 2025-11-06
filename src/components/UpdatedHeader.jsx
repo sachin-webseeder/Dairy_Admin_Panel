@@ -62,6 +62,11 @@ export function UpdatedHeader({
     onNavigate('updated-settings');
   };
 
+  const handleHelpSupportClick = () => {
+    setProfileOpen(false);
+    onNavigate('help-support');
+  };
+
   const formattedTime = currentTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
@@ -256,6 +261,7 @@ export function UpdatedHeader({
                   </button>
                   
                   <button
+                    onClick={handleHelpSupportClick}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-left"
                   >
                     <HelpCircle className="h-4 w-4 text-gray-600" />

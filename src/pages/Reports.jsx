@@ -581,12 +581,12 @@ export function Reports() {
                     dataKey="date" 
                     tick={{ fontSize: 11, fill: '#666' }} 
                     tickLine={false}
-                    axisLine={{ stroke: '#edf0efff', strokeWidth: 2 }}
+                    axisLine={{ stroke: '#10B981', strokeWidth: 2 }}
                   />
                   <YAxis 
                     tick={{ fontSize: 11, fill: '#666' }} 
                     tickLine={false}
-                    axisLine={{ stroke: '#edf0efff' }}
+                    axisLine={{ stroke: '#eee8e8ff' }}
                     domain={[0, 'auto']}
                     ticks={[0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800]}
                     tickFormatter={(value) => value}
@@ -624,9 +624,9 @@ export function Reports() {
                   <Line 
                     type="monotone" 
                     dataKey="sales" 
-                    stroke="#1E40AF" 
+                    stroke="#18b3daff" 
                     strokeWidth={2.5} 
-                    dot={{ r: 5, fill: '#32bbddff', strokeWidth: 2, stroke: '#fff' }}
+                    dot={{ r: 5, fill: '#18b3daff', strokeWidth: 2, stroke: '#fff' }}
                     activeDot={{ r: 7 }}
                     name="Sales"
                   />

@@ -10,26 +10,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
+// import { Branch } from '../../types'; // Removed type import
+
+// Removed TypeScript interface:
+// interface EditBranchModalProps {
+//   open: boolean;
+//   onOpenChange: (open: boolean) => void;
+//   onSave: (data: Branch) => void;
+//   data: Branch;
+// }
 
 export function EditBranchModal({
   open,
   onOpenChange,
   onSave,
   data,
-}) {
-  const [formData, setFormData] = useState(data);
+}) { // Removed type annotation
+  const [formData, setFormData] = useState(data); // Removed <Branch>
 
   useEffect(() => {
     setFormData(data);
   }, [data]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e) => { // Removed : React.FormEvent
     e.preventDefault();
     onSave(formData);
     onOpenChange(false);
   };
 
-  const handleChange = (field, value) => {
+  const handleChange = (field, value) => { // Removed type annotations
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -180,7 +189,7 @@ export function EditBranchModal({
                 <Label htmlFor="status" className="text-xs">Status</Label>
                 <Select
                   value={formData.status || 'active'}
-                  onValueChange={(value) => handleChange('status', value)}
+                  onValueChange={(value) => handleChange('status', value)} // Removed type assertion
                 >
                   <SelectTrigger className="text-xs h-9">
                     <SelectValue />

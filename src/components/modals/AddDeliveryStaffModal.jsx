@@ -11,9 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
+// Removed 'DeliveryBoy' type import
 import { User } from 'lucide-react';
 
+// Removed 'AddDeliveryStaffModalProps' interface
+
 export function AddDeliveryStaffModal({ open, onOpenChange, onSave }) {
+  // Removed <Partial<DeliveryBoy>> generic from useState
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,9 +26,11 @@ export function AddDeliveryStaffModal({ open, onOpenChange, onSave }) {
     status: 'active',
   });
 
+  // Removed ': React.FormEvent' type
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Removed ': Partial<DeliveryBoy>' type
     const newStaff = {
       ...formData,
       id: `DS-${Date.now()}`,
@@ -51,6 +57,7 @@ export function AddDeliveryStaffModal({ open, onOpenChange, onSave }) {
     });
   };
 
+  // Removed ': keyof DeliveryBoy' and ': any' types
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -132,6 +139,7 @@ export function AddDeliveryStaffModal({ open, onOpenChange, onSave }) {
             <Label htmlFor="status" className="text-xs">Status</Label>
             <Select 
               value={formData.status || 'active'} 
+              // Removed 'as 'active' | 'inactive'' cast
               onValueChange={(value) => handleChange('status', value)}
             >
               <SelectTrigger className="text-xs h-9">

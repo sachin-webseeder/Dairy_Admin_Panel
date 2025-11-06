@@ -21,23 +21,22 @@ import {
   TableRow,
 } from '../components/ui/table';
 import { usePersistentDeliveryBoys } from '../lib/usePersistentData';
-// Removed: import { DeliveryBoy } from '../types';
+// Removed 'DeliveryBoy' type import
 import { AddDeliveryStaffModal } from '../components/modals/AddDeliveryStaffModal';
 import { EditModal } from '../components/modals/EditModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
+import { showSuccessToast } from '../lib/toast';
 
 export function DeliveryStaff() {
   const [deliveryStaffList, setDeliveryStaffList] = usePersistentDeliveryBoys();
   const [searchQuery, setSearchQuery] = useState('');
   const [branchFilter, setBranchFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  // Removed: <string[]>
-  const [selectedStaff, setSelectedStaff] = useState([]);
+  const [selectedStaff, setSelectedStaff] = useState([]); // Removed <string[]>
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  // Removed: <DeliveryBoy | null>
-  const [selectedStaffMember, setSelectedStaffMember] = useState(null);
+  const [selectedStaffMember, setSelectedStaffMember] = useState(null); // Removed <DeliveryBoy | null>
   const [bulkAction, setBulkAction] = useState('');
 
   const filteredStaff = deliveryStaffList.filter(staff => {
@@ -50,25 +49,27 @@ export function DeliveryStaff() {
     return matchesSearch && matchesBranch && matchesStatus;
   });
 
-  // Removed: : Partial<DeliveryBoy>
+  // Removed ': Partial<DeliveryBoy>'
   const handleAddStaff = (staff) => {
-    // Removed: as DeliveryBoy
-    setDeliveryStaffList([...deliveryStaffList, staff]);
+    setDeliveryStaffList([...deliveryStaffList, staff]); // Removed 'as DeliveryBoy'
+    showSuccessToast('Delivery staff added successfully!');
   };
 
-  // Removed: : DeliveryBoy
+  // Removed ': DeliveryBoy'
   const handleEditStaff = (updatedData) => {
     setDeliveryStaffList(deliveryStaffList.map(s => s.id === updatedData.id ? updatedData : s));
+    showSuccessToast('Delivery staff updated successfully!');
   };
 
   const handleDeleteStaff = () => {
     if (selectedStaffMember) {
       setDeliveryStaffList(deliveryStaffList.filter(s => s.id !== selectedStaffMember.id));
       setSelectedStaffMember(null);
+      showSuccessToast('Delivery staff deleted successfully!');
     }
   };
 
-  // Removed: : boolean
+  // Removed ': boolean'
   const handleSelectAll = (checked) => {
     if (checked) {
       setSelectedStaff(filteredStaff.map(s => s.id));
@@ -77,7 +78,7 @@ export function DeliveryStaff() {
     }
   };
 
-  // Removed: : string, : boolean
+  // Removed ': string, : boolean'
   const handleSelectStaff = (staffId, checked) => {
     if (checked) {
       setSelectedStaff([...selectedStaff, staffId]);
@@ -89,16 +90,17 @@ export function DeliveryStaff() {
   const handleBulkAction = () => {
     if (bulkAction === 'activate') {
       setDeliveryStaffList(deliveryStaffList.map(s => 
-        // Removed: as 'active'
-        selectedStaff.includes(s.id) ? { ...s, status: 'active' } : s
+        selectedStaff.includes(s.id) ? { ...s, status: 'active' } : s // Removed 'as 'active''
       ));
+      showSuccessToast(`${selectedStaff.length} staff member(s) activated successfully!`);
     } else if (bulkAction === 'deactivate') {
       setDeliveryStaffList(deliveryStaffList.map(s => 
-        // Removed: as 'inactive'
-        selectedStaff.includes(s.id) ? { ...s, status: 'inactive' } : s
+        selectedStaff.includes(s.id) ? { ...s, status: 'inactive' } : s // Removed 'as 'inactive''
       ));
+      showSuccessToast(`${selectedStaff.length} staff member(s) deactivated successfully!`);
     } else if (bulkAction === 'delete') {
       setDeliveryStaffList(deliveryStaffList.filter(s => !selectedStaff.includes(s.id)));
+      showSuccessToast(`${selectedStaff.length} staff member(s) deleted successfully!`);
     }
     setSelectedStaff([]);
     setBulkAction('');
@@ -190,8 +192,7 @@ export function DeliveryStaff() {
               <SelectContent>
                 <SelectItem value="all" className="text-xs">All Branches</SelectItem>
                 {branches.map(branch => (
-                  // Removed: !
-                  <SelectItem key={branch} value={branch} className="text-xs">{branch}</SelectItem>
+                  <SelectItem key={branch} value={branch} className="text-xs">{branch}</SelectItem> // Removed '!'
                 ))}
               </SelectContent>
             </Select>
@@ -259,8 +260,7 @@ export function DeliveryStaff() {
                   <TableCell>
                     <Checkbox 
                       checked={selectedStaff.includes(staff.id)}
-                      // Removed: as boolean
-                      onCheckedChange={(checked) => handleSelectStaff(staff.id, checked)}
+                      onCheckedChange={(checked) => handleSelectStaff(staff.id, checked)} // Removed 'as boolean'
                     />
                   </TableCell>
                   <TableCell>

@@ -23,7 +23,7 @@ export function Settings() {
   const handleResetData = () => {
     // Clear all localStorage except user auth
     const keysToPreserve = ['dynasty_premium_users', 'dynasty_premium_current_user'];
-    const keysToRemove = []; // Removed :string[]
+    const keysToRemove = []; // Removed ': string[]'
     
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);

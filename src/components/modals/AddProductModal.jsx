@@ -6,8 +6,16 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Upload, X } from 'lucide-react';
+// import { Product } from '../../types'; // Removed type import
 
-export function AddProductModal({ open, onClose, onAdd }) {
+// Removed TypeScript interface:
+// interface AddProductModalProps {
+//  open: boolean;
+//  onClose: () => void;
+//  onAdd: (product: Partial<Product>) => void;
+// }
+
+export function AddProductModal({ open, onClose, onAdd }) { // Removed type annotation
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -20,21 +28,21 @@ export function AddProductModal({ open, onClose, onAdd }) {
     availableForOrder: true,
     vegetarian: false,
   });
-  const [imagePreview, setImagePreview] = useState('');
+  const [imagePreview, setImagePreview] = useState(''); // Removed <string>
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = (e) => { // Removed e: React.ChangeEvent<HTMLInputElement>
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
+        setImagePreview(reader.result); // Removed 'as string'
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleSubmit = () => {
-    const newProduct = {
+    const newProduct = { // Removed : Partial<Product>
       id: Date.now().toString(),
       name: formData.name,
       category: formData.category,
