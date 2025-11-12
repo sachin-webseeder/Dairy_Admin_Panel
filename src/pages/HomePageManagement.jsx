@@ -140,9 +140,9 @@ export function HomePageManagement() {
   ] = useState(false);
   const [showTopProductsSettings, setShowTopProductsSettings] =
     useState(false);
-  const [editSectionId, setEditSectionId] = useState(null); // Removed: <number | null>
-  const [editSectionTitle, setEditSectionTitle] = useState(""); // Removed: <string>
-  const [deleteSectionId, setDeleteSectionId] = useState(null); // Removed: <number | null>
+  const [editSectionId, setEditSectionId] = useState(null);
+  const [editSectionTitle, setEditSectionTitle] = useState("");
+  const [deleteSectionId, setDeleteSectionId] = useState(null);
   const [categoryVisibility, setCategoryVisibility] = useState(homepageSettings.categoryVisibility);
   const [offerVisibility, setOfferVisibility] = useState(homepageSettings.offerVisibility);
   const [offerStartDate, setOfferStartDate] = useState(homepageSettings.offerStartDate);
@@ -150,22 +150,22 @@ export function HomePageManagement() {
   const [topProductsVisibility, setTopProductsVisibility] = useState(homepageSettings.topProductsVisibility);
   const [topProductsStartTime, setTopProductsStartTime] = useState(homepageSettings.topProductsStartTime);
   const [topProductsEndTime, setTopProductsEndTime] = useState(homepageSettings.topProductsEndTime);
-
+  
   // Schedule Publication modal
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [scheduleDate, setScheduleDate] = useState(""); // Removed: <string>
-  const [scheduleTime, setScheduleTime] = useState(""); // Removed: <string>
-
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  
   // Banner Visibility Rules modal
   const [showBannerRulesModal, setShowBannerRulesModal] = useState(false);
   const [bannerVisibility, setBannerVisibility] = useState(homepageSettings.bannerVisibility);
-
+  
   // Top Products rules
-  const [topProductRules, setTopProductRules] = useState(homepageSettings.topProductRules); // Removed: <any[]>
-
+  const [topProductRules, setTopProductRules] = useState(homepageSettings.topProductRules);
+  
   // Special Offers rules
-  const [specialOfferRules, setSpecialOfferRules] = useState(homepageSettings.specialOfferRules); // Removed: <any[]>
-
+  const [specialOfferRules, setSpecialOfferRules] = useState(homepageSettings.specialOfferRules);
+  
   const [featuredCategories] = useState([
     { id: 1, name: "Milk", icon: "🥛" },
     { id: 2, name: "Dairy", icon: "🧈" },
@@ -176,8 +176,8 @@ export function HomePageManagement() {
   const [topProducts] = useState(products.slice(0, 4));
 
   // Section management
-  const [sections, setSections] = useState(homepageSettings.sections); // Removed: <any[]>
-
+  const [sections, setSections] = useState(homepageSettings.sections);
+  
   // Sync changes back to persistent storage
   useEffect(() => {
     setHomepageSettings({
@@ -200,9 +200,9 @@ export function HomePageManagement() {
       specialOfferRules,
       sections,
     });
-  }, [bannerTitle, bannerSubtitle, ctaButtonText, ctaLink, bannerImage, publishedBanner, specialOffer,
-    categoryVisibility, offerVisibility, offerStartDate, offerEndDate, topProductsVisibility,
-    topProductsStartTime, topProductsEndTime, bannerVisibility, topProductRules, specialOfferRules, sections]);
+  }, [bannerTitle, bannerSubtitle, ctaButtonText, ctaLink, bannerImage, publishedBanner, specialOffer, 
+      categoryVisibility, offerVisibility, offerStartDate, offerEndDate, topProductsVisibility, 
+      topProductsStartTime, topProductsEndTime, bannerVisibility, topProductRules, specialOfferRules, sections]);
 
   // Load saved content on mount
   useEffect(() => {
@@ -259,12 +259,12 @@ export function HomePageManagement() {
     }
   };
 
-  const handleImageUpload = (event) => { // Removed: : React.ChangeEvent<HTMLInputElement>
+  const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setBannerImage(reader.result); // Removed: as string
+        setBannerImage(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -338,11 +338,11 @@ export function HomePageManagement() {
     setTopProductRules([...topProductRules, newRule]);
   };
 
-  const handleDeleteTopProductRule = (ruleId) => { // Removed: : number
+  const handleDeleteTopProductRule = (ruleId) => {
     setTopProductRules(topProductRules.filter((r) => r.id !== ruleId));
   };
 
-  const handleUpdateTopProductRule = (ruleId, field, value) => { // Removed types
+  const handleUpdateTopProductRule = (ruleId, field, value) => {
     setTopProductRules(
       topProductRules.map((rule) =>
         rule.id === ruleId
@@ -352,7 +352,7 @@ export function HomePageManagement() {
     );
   };
 
-  const handleUpdateTopProductRuleDay = (ruleId, day, value) => { // Removed types
+  const handleUpdateTopProductRuleDay = (ruleId, day, value) => {
     setTopProductRules(
       topProductRules.map((rule) =>
         rule.id === ruleId
@@ -371,11 +371,11 @@ export function HomePageManagement() {
     setSpecialOfferRules([...specialOfferRules, newRule]);
   };
 
-  const handleDeleteSpecialOfferRule = (ruleId) => { // Removed: : number
+  const handleDeleteSpecialOfferRule = (ruleId) => {
     setSpecialOfferRules(specialOfferRules.filter((r) => r.id !== ruleId));
   };
 
-  const handleUpdateSpecialOfferRule = (ruleId, field, value) => { // Removed types
+  const handleUpdateSpecialOfferRule = (ruleId, field, value) => {
     setSpecialOfferRules(
       specialOfferRules.map((rule) =>
         rule.id === ruleId
@@ -385,11 +385,11 @@ export function HomePageManagement() {
     );
   };
 
-  const handleEditSection = (sectionId) => { // Removed: : number
+  const handleEditSection = (sectionId) => {
     const section = sections.find((s) => s.id === sectionId);
     if (section) {
       setEditSectionId(sectionId);
-      setEditSectionTitle(section.name); // Removed: as string
+      setEditSectionTitle(section.name);
       setShowEditModal(true);
     }
   };
@@ -410,7 +410,7 @@ export function HomePageManagement() {
     }
   };
 
-  const handleDeleteSection = (sectionId) => { // Removed: : number
+  const handleDeleteSection = (sectionId) => {
     setDeleteSectionId(sectionId);
     setShowDeleteModal(true);
   };
@@ -426,7 +426,7 @@ export function HomePageManagement() {
     }
   };
 
-  const handleCopySection = (sectionId) => { // Removed: : number
+  const handleCopySection = (sectionId) => {
     toast.success("Section duplicated!");
   };
 
@@ -482,7 +482,7 @@ export function HomePageManagement() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold">Top Banner</h3>
             <div className="flex gap-2 text-xs">
-              <button
+              <button 
                 className="text-blue-600"
                 onClick={() => setShowBannerRulesModal(true)}
               >
@@ -1373,9 +1373,6 @@ export function HomePageManagement() {
                     const [date, time] = datetime.split("T");
                     setScheduleDate(date);
                     setScheduleTime(time);
-                  } else {
-                    setScheduleDate("");
-                    setScheduleTime("");
                   }
                 }}
                 className="text-xs"

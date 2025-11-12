@@ -5,18 +5,26 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { usePersistentCustomers, usePersistentProducts } from '../../lib/usePersistentData';
-
+// We assume 'Order' and 'OrderProduct' types are no longer imported or needed for plain JS
+// import { Order, OrderProduct } from '../../types'; 
 import { Search, X, Plus, Minus } from 'lucide-react';
 import { Card } from '../ui/card';
 
-export function AddOrderModal({ open, onClose, onAdd }) {
+// interface AddOrderModalProps {
+//  open: boolean;
+//  onClose: () => void;
+//  onAdd: (order: Order) => void;
+// }
+
+export function AddOrderModal({ open, onClose, onAdd }) { // Removed ': AddOrderModalProps'
   const [customers] = usePersistentCustomers();
   const [products] = usePersistentProducts();
   
   const [customerSearch, setCustomerSearch] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState(''); // Removed <string>
+  const [selectedCustomerMembership, setSelectedCustomerMembership] = useState('Bronze'); // Removed <string>
   const [productSearch, setProductSearch] = useState('');
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState([]); // Removed <OrderProduct[]>
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [orderStatus, setOrderStatus] = useState('pending');
   const [paymentStatus, setPaymentStatus] = useState('pending');
@@ -37,7 +45,7 @@ export function AddOrderModal({ open, onClose, onAdd }) {
     !selectedProducts.some(sp => sp.productId === p.id)
   );
 
-  const handleAddProduct = (productId) => {
+  const handleAddProduct = (productId) => { // Removed ': string'
     const product = products.find(p => p.id === productId);
     if (product) {
       setSelectedProducts([...selectedProducts, {
@@ -50,7 +58,7 @@ export function AddOrderModal({ open, onClose, onAdd }) {
     }
   };
 
-  const handleUpdateQuantity = (productId, change) => {
+  const handleUpdateQuantity = (productId, change) => { // Removed ': string' and ': number'
     setSelectedProducts(selectedProducts.map(p => {
       if (p.productId === productId) {
         const newQuantity = Math.max(1, p.quantity + change);
@@ -60,7 +68,7 @@ export function AddOrderModal({ open, onClose, onAdd }) {
     }));
   };
 
-  const handleRemoveProduct = (productId) => {
+  const handleRemoveProduct = (productId) => { // Removed ': string'
     setSelectedProducts(selectedProducts.filter(p => p.productId !== productId));
   };
 
@@ -94,7 +102,7 @@ export function AddOrderModal({ open, onClose, onAdd }) {
       const existingOrders = JSON.parse(localStorage.getItem('dynasty_orders') || '[]');
       
       // Extract numeric parts from order IDs and find the maximum
-      const maxOrderNum = existingOrders.reduce((max, order) => {
+      const maxOrderNum = existingOrders.reduce((max, order) => { // Removed ': number' and ': Order'
         const match = order.id.match(/ORD-(\d+)/);
         if (match) {
           const num = parseInt(match[1], 10);
@@ -106,12 +114,12 @@ export function AddOrderModal({ open, onClose, onAdd }) {
       return `ORD-${maxOrderNum + 1}`;
     };
     
-    const newOrder = {
+    const newOrder = { // Removed ': Order'
       id: generateOrderId(),
       customerName: customer?.name || 'Unknown',
       items: selectedProducts.length,
       total: calculateTotal(),
-      status: orderStatus,
+      status: orderStatus, // Removed 'as 'pending' | 'completed' | 'cancelled''
       date: orderDate,
       payment: paymentStatus,
       products: selectedProducts,
@@ -135,6 +143,7 @@ export function AddOrderModal({ open, onClose, onAdd }) {
     setPackagingCharges('0');
     setInsuranceCharges('0');
     setOrderDate(new Date().toISOString().split('T')[0]);
+    setSelectedCustomerMembership('Bronze');
     onClose();
   };
 
@@ -170,10 +179,12 @@ export function AddOrderModal({ open, onClose, onAdd }) {
                       onClick={() => {
                         setSelectedCustomer(customer.id);
                         setCustomerSearch(customer.name);
+                        setSelectedCustomerMembership(customer.membership || 'Bronze');
                       }}
                     >
                       <div className="font-medium">{customer.name}</div>
                       <div className="text-muted-foreground">{customer.email} • {customer.phone}</div>
+                      <div className="text-muted-foreground mt-1">Membership: {customer.membership || 'Bronze'}</div>
                     </div>
                   ))}
                 </Card>
@@ -267,7 +278,7 @@ export function AddOrderModal({ open, onClose, onAdd }) {
           {/* Shipping & Payment */}
           <div>
             <h3 className="font-medium mb-3">SHIPPING & PAYMENT</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs">Shipping Method</Label>
                 <Select value={shippingMethod} onValueChange={setShippingMethod}>
@@ -278,6 +289,26 @@ export function AddOrderModal({ open, onClose, onAdd }) {
                     <SelectItem value="standard">Standard</SelectItem>
                     <SelectItem value="express">Express</SelectItem>
                     <SelectItem value="overnight">Overnight</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Membership Tier</Label>
+                <Select 
+                  value={selectedCustomerMembership} 
+                  onValueChange={(value) => {
+                    setSelectedCustomerMembership(value);
+                  }}
+                  disabled={!selectedCustomer}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select tier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Gold">Gold</SelectItem>
+                    <SelectItem value="Silver">Silver</SelectItem>
+                    <SelectItem value="Bronze">Bronze</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

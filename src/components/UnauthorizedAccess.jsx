@@ -2,9 +2,9 @@ import { ShieldX } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 
-// Removed: interface UnauthorizedAccessProps { ... }
+// The 'UnauthorizedAccessProps' interface is removed as it's TypeScript-specific.
 
-export function UnauthorizedAccess({ onNavigate }) { // Removed type annotation
+export function UnauthorizedAccess({ onNavigate }) {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="p-8 max-w-md text-center">

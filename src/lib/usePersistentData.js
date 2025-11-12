@@ -21,8 +21,7 @@ const STORAGE_KEYS = {
 };
 
 // Helper to load from localStorage
-// Removed: <T>, : string, : T, : T
-function loadFromStorage(key, defaultValue) {
+function loadFromStorage(key, defaultValue) { // Removed <T>, : string, : T, : T
   if (typeof window === 'undefined') return defaultValue;
   
   try {
@@ -37,8 +36,7 @@ function loadFromStorage(key, defaultValue) {
 }
 
 // Helper to save to localStorage
-// Removed: <T>, : string, : T, : void
-function saveToStorage(key, value) {
+function saveToStorage(key, value) { // Removed <T>, : string, : T, : void
   if (typeof window === 'undefined') return;
   
   try {
@@ -49,22 +47,28 @@ function saveToStorage(key, value) {
 }
 
 // Custom hook for persistent data
-// Removed: <T>, : string, : T
-export function usePersistentData(key, defaultValue) {
-  // Removed: <T>
-  const [data, setData] = useState(() => loadFromStorage(key, defaultValue));
+export function usePersistentData(key, defaultValue) { // Removed <T>, : string, : T
+  const [data, setData] = useState(() => loadFromStorage(key, defaultValue)); // Removed <T>
 
   useEffect(() => {
     saveToStorage(key, data);
   }, [key, data]);
 
-  // Removed: as const
-  return [data, setData];
+  return [data, setData]; // Removed 'as const'
 }
 
 // Specific hooks for each data type
 export function usePersistentProducts() {
-  return usePersistentData(STORAGE_KEYS.PRODUCTS, defaultProducts);
+  const [products, setProducts] = useState(() => {
+    const storedProducts = loadFromStorage(STORAGE_KEYS.PRODUCTS, null);
+    return storedProducts && storedProducts.length > 0 ? storedProducts : defaultProducts;
+  });
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.PRODUCTS, products);
+  }, [products]);
+
+  return [products, setProducts];
 }
 
 export function usePersistentOrders() {
@@ -91,14 +95,12 @@ export function usePersistentNotifications() {
   return usePersistentData(STORAGE_KEYS.NOTIFICATIONS, defaultNotifications);
 }
 
-// Removed: : any
-export function usePersistentHomepageSettings(defaultValue) {
+export function usePersistentHomepageSettings(defaultValue) { // Removed : any
   return usePersistentData(STORAGE_KEYS.HOMEPAGE_SETTINGS, defaultValue);
 }
 
 // Push notifications (different from notification bell)
-// Removed: : any
-export function usePersistentPushNotifications(defaultValue) {
+export function usePersistentPushNotifications(defaultValue) { // Removed : any
   return usePersistentData('dynasty_push_notifications', defaultValue);
 }
 

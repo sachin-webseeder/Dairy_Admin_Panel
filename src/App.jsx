@@ -1,134 +1,101 @@
-import { useState, useEffect } from 'react';
-import { SlidingSidebar } from './components/SlidingSidebar';
-import { UpdatedHeader } from './components/UpdatedHeader';
-import { Dashboard } from './pages/Dashboard';
-import { Orders } from './pages/Orders';
-import { Products } from './pages/Products';
-import { Customers } from './pages/Customers';
-import { UpdatedSettings } from './pages/UpdatedSettings';
-import { ProfileSettings } from './pages/ProfileSettings';
-import { UserManagement } from './pages/UserManagement';
-import { BranchManagement } from './pages/BranchManagement';
-import { DeliveryStaff } from './pages/DeliveryStaff';
-import { HomePageManagement } from './pages/HomePageManagement';
-import { Reports } from './pages/Reports';
-import { PushNotifications } from './pages/PushNotifications';
-import { HelpSupport } from './pages/HelpSupport';
-import { Login } from './pages/Login';
-import { Signup } from './pages/Signup';
-import { getCurrentUser, logoutUser } from './lib/auth'; // Removed AuthUser type import
-import { Toaster } from './components/ui/sonner';
-import { PermissionProvider, usePermissions } from './lib/permissions';
-import { UnauthorizedAccess } from './components/UnauthorizedAccess';
+import { useState, useEffect } from "react";
+import { SlidingSidebar } from "./components/SlidingSidebar";
+import { UpdatedHeader } from "./components/UpdatedHeader";
+import { Dashboard } from "./pages/Dashboard";
+import { Orders } from "./pages/Orders";
+import { Products } from "./pages/Products";
+import { Customers } from "./pages/Customers";
+import { UpdatedSettings } from "./pages/UpdatedSettings";
+import { ProfileSettings } from "./pages/ProfileSettings";
+import { UserManagement } from "./pages/UserManagement";
+import { DeliveryStaff } from "./pages/DeliveryStaff";
+import { HomePageManagement } from "./pages/HomePageManagement";
+import { Reports } from "./pages/Reports";
+import { PushNotifications } from "./pages/PushNotifications";
+import { HelpSupport } from "./pages/HelpSupport";
+import { Wallet } from "./pages/Wallet";
+import { Membership } from "./pages/Membership";
+import { Login } from "./pages/Login";
+import { Signup } from "./pages/Signup";
+import { getCurrentUser, logoutUser } from "./lib/auth";
+import { Toaster } from "./components/ui/sonner";
 
-function AppContent({ 
-  currentPage, 
-  setCurrentPage, 
-  currentUser, 
+function AppContent({
+  currentPage,
+  setCurrentPage,
+  currentUser,
   handleLogout,
-  handleProfileUpdate 
-}) { // Removed TS props type block
-  const { hasPermission } = usePermissions();
-
+  handleProfileUpdate,
+}) {
   const getPageInfo = () => {
     switch (currentPage) {
-      case 'dashboard':
-        return { title: 'Dashboard', subtitle: 'Overview' };
-      case 'orders':
-        return { title: 'Orders', subtitle: '' };
-      case 'products':
-        return { title: 'Products', subtitle: '' };
-      case 'customers':
-        return { title: 'Customers', subtitle: '' };
-      case 'delivery-staff':
-        return { title: 'Delivery Staff', subtitle: '' };
-      case 'user-management':
-        return { title: 'User Management', subtitle: '' };
-      case 'branches':
-        return { title: 'Branches', subtitle: '' };
-      case 'home-page':
-        return { title: 'Home Page Management', subtitle: '' };
-      case 'updated-settings':
-        return { title: 'Settings', subtitle: '' };
-      case 'profile':
-        return { title: 'Profile Settings', subtitle: '' };
-      case 'reports':
-        return { title: 'Reports', subtitle: '' };
-      case 'notifications':
-        return { title: 'Push Notifications', subtitle: '' };
-      case 'help-support':
-        return { title: 'Help & Support', subtitle: '' };
+      case "dashboard":
+        return { title: "Dashboard", subtitle: "Overview" };
+      case "orders":
+        return { title: "Orders", subtitle: "" };
+      case "products":
+        return { title: "Products", subtitle: "" };
+      case "customers":
+        return { title: "Customers", subtitle: "" };
+      case "delivery-staff":
+        return { title: "Delivery Staff", subtitle: "" };
+      case "user-management":
+        return { title: "User Management", subtitle: "" };
+      case "home-page":
+        return { title: "Home Page Management", subtitle: "" };
+      case "wallet":
+        return { title: "Wallet", subtitle: "" };
+      case "membership":
+        return { title: "Membership", subtitle: "" };
+      case "updated-settings":
+        return { title: "Settings", subtitle: "" };
+      case "profile":
+        return { title: "Profile Settings", subtitle: "" };
+      case "reports":
+        return { title: "Reports", subtitle: "" };
+      case "notifications":
+        return { title: "Push Notifications", subtitle: "" };
+      case "help-support":
+        return { title: "Help & Support", subtitle: "" };
       default:
-        return { title: 'Dashboard', subtitle: 'Overview' };
-    }
-  };
-
-  // Removed type annotations from 'page' and return value
-  const checkPermissionForPage = (page) => {
-    switch (page) {
-      case 'dashboard':
-        return hasPermission('dashboard');
-      case 'orders':
-        return hasPermission('orders');
-      case 'products':
-        return hasPermission('products');
-      case 'customers':
-        return hasPermission('customers');
-      case 'delivery-staff':
-        return hasPermission('deliveryStaff');
-      case 'user-management':
-        return hasPermission('userManagement');
-      case 'branches':
-        return hasPermission('branches');
-      case 'home-page':
-        return hasPermission('homepage');
-      case 'updated-settings':
-        return hasPermission('settings');
-      case 'reports':
-        return hasPermission('reports');
-      case 'notifications':
-        return hasPermission('notifications');
-      case 'profile':
-        return hasPermission('profile');
-      case 'help-support':
-        return true; // Help & Support should be accessible to all users
-      default:
-        return true;
+        return { title: "Dashboard", subtitle: "Overview" };
     }
   };
 
   const renderPage = () => {
-    // Check if user has permission for the current page
-    if (!checkPermissionForPage(currentPage)) {
-      return <UnauthorizedAccess onNavigate={setCurrentPage} />;
-    }
-
     switch (currentPage) {
-      case 'dashboard':
+      case "dashboard":
         return <Dashboard />;
-      case 'orders':
+      case "orders":
         return <Orders />;
-      case 'products':
+      case "products":
         return <Products />;
-      case 'customers':
+      case "customers":
         return <Customers />;
-      case 'delivery-staff':
+      case "delivery-staff":
         return <DeliveryStaff />;
-      case 'user-management':
+      case "user-management":
         return <UserManagement />;
-      case 'branches':
-        return <BranchManagement />;
-      case 'home-page':
+      case "home-page":
         return <HomePageManagement />;
-      case 'updated-settings':
+      case "wallet":
+        return <Wallet />;
+      case "membership":
+        return <Membership />;
+      case "updated-settings":
         return <UpdatedSettings />;
-      case 'profile':
-        return <ProfileSettings onProfileUpdate={handleProfileUpdate} currentUser={currentUser} />;
-      case 'reports':
+      case "profile":
+        return (
+          <ProfileSettings
+            onProfileUpdate={handleProfileUpdate}
+            currentUser={currentUser}
+          />
+        );
+      case "reports":
         return <Reports />;
-      case 'notifications':
+      case "notifications":
         return <PushNotifications />;
-      case 'help-support':
+      case "help-support":
         return <HelpSupport />;
       default:
         return <Dashboard />;
@@ -138,18 +105,18 @@ function AppContent({
   return (
     <div className="relative h-screen bg-gray-50">
       <Toaster />
-      <SlidingSidebar 
-        currentPage={currentPage} 
+      <SlidingSidebar
+        currentPage={currentPage}
         onPageChange={setCurrentPage}
         onLogout={handleLogout}
       />
       <div className="flex flex-col h-full ml-20">
-        <UpdatedHeader 
+        <UpdatedHeader
           onNavigate={setCurrentPage}
           onLogout={handleLogout}
-          profilePhoto={currentUser?.profilePhoto || ''}
-          userName={currentUser?.name || 'User'}
-          userRole={currentUser?.role || 'User'}
+          profilePhoto={currentUser?.profilePhoto || ""}
+          userName={currentUser?.name || "User"}
+          userRole={currentUser?.role || "User"}
           currentPage={currentPage}
           pageTitle={getPageInfo().title}
           pageSubtitle={getPageInfo().subtitle}
@@ -163,9 +130,9 @@ function AppContent({
 }
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('login');
+  const [currentPage, setCurrentPage] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null); // Removed <AuthUser | null>
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -173,54 +140,59 @@ export default function App() {
     if (user) {
       setIsLoggedIn(true);
       setCurrentUser(user);
-      setCurrentPage('dashboard');
+      setCurrentPage("dashboard");
     }
   }, []);
 
-  // Removed : AuthUser type
   const handleLogin = (user) => {
     setIsLoggedIn(true);
     setCurrentUser(user);
-    setCurrentPage('dashboard');
+    setCurrentPage("dashboard");
   };
 
-  // Removed : AuthUser type
   const handleSignup = (user) => {
     setIsLoggedIn(true);
     setCurrentUser(user);
-    setCurrentPage('dashboard');
+    setCurrentPage("dashboard");
   };
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to logout?')) {
+    if (confirm("Are you sure you want to logout?")) {
       logoutUser();
       setIsLoggedIn(false);
       setCurrentUser(null);
-      setCurrentPage('login');
+      setCurrentPage("login");
     }
   };
 
-  // Removed : AuthUser type
   const handleProfileUpdate = (updatedUser) => {
     setCurrentUser(updatedUser);
   };
 
   if (!isLoggedIn) {
-    if (currentPage === 'signup') {
-      return <Signup onSignup={handleSignup} onNavigate={setCurrentPage} />;
+    if (currentPage === "signup") {
+      return (
+        <Signup
+          onSignup={handleSignup}
+          onNavigate={setCurrentPage}
+        />
+      );
     }
-    return <Login onLogin={handleLogin} onNavigate={setCurrentPage} />;
+    return (
+      <Login
+        onLogin={handleLogin}
+        onNavigate={setCurrentPage}
+      />
+    );
   }
 
   return (
-    <PermissionProvider>
-      <AppContent
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        currentUser={currentUser}
-        handleLogout={handleLogout}
-        handleProfileUpdate={handleProfileUpdate}
-      />
-    </PermissionProvider>
+    <AppContent
+      currentPage={currentPage}
+      setCurrentPage={setCurrentPage}
+      currentUser={currentUser}
+      handleLogout={handleLogout}
+      handleProfileUpdate={handleProfileUpdate}
+    />
   );
 }

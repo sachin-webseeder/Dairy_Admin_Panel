@@ -20,8 +20,8 @@ import { motion } from 'motion/react';
 export function Dashboard() {
   const [orders] = usePersistentOrders();
   const [customers] = usePersistentCustomers();
-  const [revenueView, setRevenueView] = useState('monthly');
-  const [orderView, setOrderView] = useState('weekly');
+  const [revenueView, setRevenueView] = useState('monthly'); // Removed <'monthly' | 'weekly' | 'today'>
+  const [orderView, setOrderView] = useState('weekly'); // Removed <'weekly' | 'monthly'>
   const [dateFilter, setDateFilter] = useState('last30');
 
   // Filter orders based on date filter

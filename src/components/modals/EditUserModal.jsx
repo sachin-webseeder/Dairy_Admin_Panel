@@ -1,347 +1,273 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
-import { Button } from '../ui/button';
+import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '../ui/checkbox';
-import { Check } from 'lucide-react';
+import { updateUserInSystem } from '../../lib/auth';
 
-export function EditUserModal({ open, onClose, onSave, user }) {
-  const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
-  const [role, setRole] = useState(user.role);
-  const [status, setStatus] = useState(user.status);
-  const [permissions, setPermissions] = useState({
-    // Core
-    dashboard: true,
-    settings: false,
-    userManagement: false,
-    homepage: false,
-    reports: false,
-    products: true,
-    orders: true,
-    customers: true,
-    deliveryStaff: false,
-    branches: false,
-    profile: true,
-    
-    // Analytics & Reports
-    analytics: false,
-    auditLogs: false,
-    
-    // Operations
-    billing: false,
-    notifications: false,
-    contentManagement: false,
-    
-    // Development
-    integrations: false,
-    apiAccess: false,
-    security: false,
+export function EditUserModal({ open, onOpenChange, onSave, user }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    role: 'User',
+    status: 'active',
   });
 
+  const [permissions, setPermissions] = useState([
+    // Core section
+    { id: 'dashboard', label: 'Dashboard', description: 'Main overview and metrics', checked: false },
+    { id: 'products', label: 'Products', description: 'Product management', checked: false },
+    { id: 'orders', label: 'Orders', description: 'Order management', checked: false },
+    { id: 'customers', label: 'Customers', description: 'Customer management', checked: false },
+    { id: 'delivery-staff', label: 'Delivery Staff', description: 'Staff management', checked: false },
+    { id: 'membership', label: 'Membership', description: 'Membership tiers', checked: false },
+    { id: 'profile', label: 'Profile', description: 'User profile access', checked: false },
+
+    // Analytics & Reports section
+    { id: 'analytics', label: 'Analytics', description: 'Advanced analytics dashboard', checked: false },
+    { id: 'audit-logs', label: 'Audit Logs', description: 'System audit trails', checked: false },
+    { id: 'reports', label: 'Reports', description: 'View and generate reports', checked: false },
+
+    // Operations section
+    { id: 'user-management', label: 'User Management', description: 'Manage users and permissions', checked: false },
+    { id: 'wallet', label: 'Wallet', description: 'Wallet management', checked: false },
+    { id: 'billing', label: 'Billing', description: 'Payment and subscription management', checked: false },
+    { id: 'notifications', label: 'Notifications', description: 'Email and push notifications', checked: false },
+    { id: 'content-management', label: 'Content Management', description: 'Content creation and editing', checked: false },
+    { id: 'homepage', label: 'Homepage', description: 'Homepage management', checked: false },
+
+    // Development section
+    { id: 'settings', label: 'Settings', description: 'System configuration', checked: false },
+    { id: 'help-support', label: 'Help & Support', description: 'Help and support access', checked: false },
+    { id: 'integrations', label: 'Integrations', description: 'Third party integrations', checked: false },
+    { id: 'api-access', label: 'Api Access', description: 'API keys and documentation', checked: false },
+    { id: 'security', label: 'Security', description: 'Security settings and logs', checked: false },
+  ]);
+
   useEffect(() => {
-    if (open) {
-      setName(user.name);
-      setEmail(user.email);
-      setRole(user.role);
-      setStatus(user.status);
-      const initialPermissions = user.permissions || {
-        // Core
-        dashboard: true,
-        settings: false,
-        userManagement: false,
-        homepage: false,
-        reports: false,
-        products: true,
-        orders: true,
-        customers: true,
-        deliveryStaff: false,
-        branches: false,
-        profile: true,
-        
-        // Analytics & Reports
-        analytics: false,
-        auditLogs: false,
-        
-        // Operations
-        billing: false,
-        notifications: false,
-        contentManagement: false,
-        
-        // Development
-        integrations: false,
-        apiAccess: false,
-        security: false,
+    if (user) {
+      setFormData({
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status || 'active',
+      });
+
+      // Set some default permissions based on role
+      const defaultPermissions = [...permissions];
+      if (user.role === 'Super Admin' || user.role === 'Admin') {
+        // Admins get all permissions
+        defaultPermissions.forEach(p => p.checked = true);
+      } else {
+        // Regular users get basic permissions
+        defaultPermissions.forEach(p => {
+          p.checked = ['dashboard', 'orders', 'products', 'customers', 'profile'].includes(p.id);
+        });
+      }
+      setPermissions(defaultPermissions);
+    }
+  }, [user, open]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (user) {
+      const updatedUser = {
+        ...user,
+        ...formData,
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        status: formData.status || 'active',
       };
-      setPermissions(initialPermissions);
-      console.log('EditUserModal opened. Initial permissions:', initialPermissions);
+
+      updateUserInSystem(user.id, formData);
+      onSave(updatedUser);
+      onOpenChange(false);
     }
-  }, [open, user]);
-
-  // Accept an optional `checked` value from the Checkbox `onCheckedChange` handler.
-  // If `checked` is provided use it, otherwise toggle based on previous state.
-  const handlePermissionChange = useCallback((key, checked) => {
-    setPermissions(prev => {
-      console.log('handlePermissionChange: previous permissions', prev);
-      const newValue = typeof checked === 'boolean' ? checked : !prev[key];
-      const newPermissions = { ...prev, [key]: newValue };
-      console.log('handlePermissionChange: Setting', key, 'to', newValue, 'New permissions:', newPermissions);
-      return newPermissions;
-    });
-  }, []);
-
-  const handleSave = () => {
-    if (!name || !email) {
-      alert('Please fill all required fields');
-      return;
-    }
-
-    onSave({
-      ...user,
-      name,
-      email,
-      role,
-      status,
-      permissions,
-    });
-    onClose();
   };
 
-  const PermissionCheckbox = ({ 
-    permissionKey, 
-    title, 
-    description 
-  }) => {
-    const isChecked = permissions[permissionKey] === true;
-    console.log('PermissionCheckbox:', permissionKey, 'isChecked:', isChecked, 'Current permissions state:', permissions);
-    
-    return (
-      <div className="flex items-start gap-2">
-        <Checkbox
-          id={`edit-permission-${permissionKey}`}
-          checked={isChecked}
-          onCheckedChange={(checked) => handlePermissionChange(permissionKey, checked)}
-          className="border-blue-500 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 mt-0.5"
-        />
-        <label
-          htmlFor={`edit-permission-${permissionKey}`}
-          className="cursor-pointer flex-1 select-none"
-        >
-          <div className="text-xs font-medium">{title}</div>
-          <div className="text-[10px] text-muted-foreground">{description}</div>
-        </label>
-      </div>
-    );
+  const handlePermissionToggle = (id) => {
+    setPermissions(permissions.map(p =>
+      p.id === id ? { ...p, checked: !p.checked } : p
+    ));
   };
+
+  const categoryPermissions = [
+    {
+      category: 'Core',
+      items: ['dashboard', 'products', 'orders', 'customers', 'delivery-staff', 'membership', 'profile']
+    },
+    {
+      category: 'Analytics & Reports',
+      items: ['analytics', 'audit-logs', 'reports']
+    },
+    {
+      category: 'Operations',
+      items: ['user-management', 'wallet', 'billing', 'notifications', 'content-management', 'homepage']
+    },
+    {
+      category: 'Development',
+      items: ['settings', 'help-support', 'integrations', 'api-access', 'security']
+    },
+  ];
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="p-0 gap-0 bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col [&>button]:hidden sm:max-w-2xl">
+        <DialogHeader className="sr-only">
           <DialogTitle>Edit User</DialogTitle>
-          <DialogDescription className="sr-only">Edit user details and permissions</DialogDescription>
+          <DialogDescription>Edit user information and permissions</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs">Full Name *</Label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter full name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs">Email *</Label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs">Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Super Admin">Super Admin</SelectItem>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="User">User</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs">Status</Label>
-              <Select value={status} onValueChange={(value) => setStatus(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Permissions & Access Section */}
-          <div className="space-y-3 pt-4 border-t">
-            <Label className="text-xs font-medium text-red-600">* Permissions & Access</Label>
-
-            {/* Core Section */}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Check className="h-3 w-3 text-blue-500" />
-                <span className="text-xs font-medium">Core</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 ml-5">
-                <PermissionCheckbox 
-                  permissionKey="dashboard"
-                  title="Dashboard"
-                  description="Main overview and metrics"
-                />
-                <PermissionCheckbox 
-                  permissionKey="settings"
-                  title="Settings"
-                  description="System configuration"
-                />
-                <PermissionCheckbox 
-                  permissionKey="userManagement"
-                  title="User Management"
-                  description="Manage users and permissions"
-                />
-                <PermissionCheckbox 
-                  permissionKey="homepage"
-                  title="Homepage"
-                  description="Homepage management"
-                />
-                <PermissionCheckbox 
-                  permissionKey="reports"
-                  title="Reports"
-                  description="View and generate reports"
-                />
-                <PermissionCheckbox 
-                  permissionKey="products"
-                  title="Products"
-                  description="Product management"
-                />
-                <PermissionCheckbox 
-                  permissionKey="orders"
-                  title="Orders"
-                  description="Order management"
-                />
-                <PermissionCheckbox 
-                  permissionKey="customers"
-                  title="Customers"
-                  description="Customer management"
-                />
-                <PermissionCheckbox 
-                  permissionKey="deliveryStaff"
-                  title="Delivery Staff"
-                  description="Staff management"
-                />
-                <PermissionCheckbox 
-                  permissionKey="branches"
-                  title="Branches"
-                  description="Branch management"
-                />
-                <PermissionCheckbox 
-                  permissionKey="profile"
-                  title="Profile"
-                  description="User profile access"
-                />
-              </div>
-            </div>
-
-            {/* Analytics & Reports Section */}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Check className="h-3 w-3 text-blue-500" />
-                <span className="text-xs font-medium">Analytics & Reports</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 ml-5">
-                <PermissionCheckbox 
-                  permissionKey="analytics"
-                  title="Analytics"
-                  description="Advanced analytics dashboard"
-                />
-                <PermissionCheckbox 
-                  permissionKey="auditLogs"
-                  title="Audit Logs"
-                  description="System audit trails"
-                />
-              </div>
-            </div>
-
-            {/* Operations Section */}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Check className="h-3 w-3 text-blue-500" />
-                <span className="text-xs font-medium">Operations</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 ml-5">
-                <PermissionCheckbox 
-                  permissionKey="billing"
-                  title="Billing"
-                  description="Payment and subscription management"
-                />
-                <PermissionCheckbox 
-                  permissionKey="notifications"
-                  title="Notifications"
-                  description="Email and push notifications"
-                />
-                <PermissionCheckbox 
-                  permissionKey="contentManagement"
-                  title="Content Management"
-                  description="Content creation and editing"
-                />
-              </div>
-            </div>
-
-            {/* Development Section */}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Check className="h-3 w-3 text-blue-500" />
-                <span className="text-xs font-medium">Development</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 ml-5">
-                <PermissionCheckbox 
-                  permissionKey="integrations"
-                  title="Integrations"
-                  description="Third party integrations"
-                />
-                <PermissionCheckbox 
-                  permissionKey="apiAccess"
-                  title="Api Access"
-                  description="API keys and documentation"
-                />
-                <PermissionCheckbox 
-                  permissionKey="security"
-                  title="Security"
-                  description="Security settings and logs"
-                />
-              </div>
-            </div>
-          </div>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
+          <h2 className="text-base font-medium">Edit User</h2>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <form onSubmit={handleSubmit} id="edit-user-form">
+            {/* Full Name and Email */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="name" className="text-xs font-normal">
+                  Full Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  className="h-9 text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs font-normal">
+                  Email <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                  className="h-9 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Role and Status */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="role" className="text-xs font-normal">Role</Label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                >
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Super Admin" className="text-xs">Super Admin</SelectItem>
+                    <SelectItem value="Admin" className="text-xs">Admin</SelectItem>
+                    <SelectItem value="Manager" className="text-xs">Manager</SelectItem>
+                    <SelectItem value="Staff" className="text-xs">Staff</SelectItem>
+                    <SelectItem value="User" className="text-xs">User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="status" className="text-xs font-normal">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                >
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active" className="text-xs">Active</SelectItem>
+                    <SelectItem value="inactive" className="text-xs">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Permissions Section */}
+            <div className="space-y-3 mt-5">
+              <Label className="text-xs font-normal text-red-500">* Permissions & Access</Label>
+
+              <div className="space-y-4">
+                {categoryPermissions.map((category, idx) => (
+                  <div key={idx} className="space-y-2">
+                    {category.category && (
+                      <div className="flex items-center gap-2">
+                        <div className="h-px bg-gray-200 flex-1"></div>
+                        <p className="text-xs text-gray-700 font-semibold">{category.category}</p>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                      {category.items.map((itemId) => {
+                        const permission = permissions.find(p => p.id === itemId);
+                        if (!permission) return null;
+
+                        return (
+                          <div key={permission.id} className="flex items-start gap-2">
+                            <Checkbox
+                              id={permission.id}
+                              checked={permission.checked}
+                              onCheckedChange={() => handlePermissionToggle(permission.id)}
+                              className="mt-0.5 h-4 w-4 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                            />
+                            <div className="flex-1">
+                              <Label
+                                htmlFor={permission.id}
+                                className="cursor-pointer text-xs font-normal leading-tight"
+                              >
+                                {permission.label}
+                              </Label>
+                              {permission.description && (
+                                <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                                  {permission.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="h-9 text-xs px-4"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
+          <Button
+            type="submit"
+            form="edit-user-form"
+            className="bg-blue-600 hover:bg-blue-700 h-9 text-xs px-4"
+          >
             Update
           </Button>
         </div>

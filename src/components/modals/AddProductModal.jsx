@@ -6,16 +6,11 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Upload, X } from 'lucide-react';
-// import { Product } from '../../types'; // Removed type import
+// We remove the 'Product' type import
 
-// Removed TypeScript interface:
-// interface AddProductModalProps {
-//  open: boolean;
-//  onClose: () => void;
-//  onAdd: (product: Partial<Product>) => void;
-// }
+// We remove the 'AddProductModalProps' interface
 
-export function AddProductModal({ open, onClose, onAdd }) { // Removed type annotation
+export function AddProductModal({ open, onClose, onAdd }) {
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -24,25 +19,24 @@ export function AddProductModal({ open, onClose, onAdd }) { // Removed type anno
     preparationTime: '',
     calories: '',
     description: '',
-    branch: '',
     availableForOrder: true,
     vegetarian: false,
   });
-  const [imagePreview, setImagePreview] = useState(''); // Removed <string>
+  const [imagePreview, setImagePreview] = useState(''); // Removed <string> type
 
   const handleImageUpload = (e) => { // Removed e: React.ChangeEvent<HTMLInputElement>
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result); // Removed 'as string'
+        setImagePreview(reader.result); // Removed 'as string' assertion
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleSubmit = () => {
-    const newProduct = { // Removed : Partial<Product>
+    const newProduct = { // Removed : Partial<Product> type
       id: Date.now().toString(),
       name: formData.name,
       category: formData.category,
@@ -50,7 +44,6 @@ export function AddProductModal({ open, onClose, onAdd }) { // Removed type anno
       stock: 100, // Default stock
       unit: '1 unit',
       image: imagePreview || undefined,
-      branch: formData.branch || 'Rajouri Garden',
     };
     onAdd(newProduct);
     onClose();
@@ -66,32 +59,23 @@ export function AddProductModal({ open, onClose, onAdd }) { // Removed type anno
       preparationTime: '',
       calories: '',
       description: '',
-      branch: '',
       availableForOrder: true,
       vegetarian: false,
     });
     setImagePreview('');
   };
 
-  const branches = [
-    { id: 'rajouri-garden', name: 'Rajouri Garden' },
-    { id: 'lajpat-nagar', name: 'Lajpat Nagar' },
-    { id: 'karol-bagh', name: 'Karol Bagh' },
-    { id: 'connaught-place', name: 'Connaught Place' },
-    { id: 'dwarka', name: 'Dwarka' },
-  ];
-
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Dish</DialogTitle>
+          <DialogTitle>Add New Product</DialogTitle>
           <DialogDescription className="sr-only">Add a new product to your inventory</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4 mt-4">
           <div className="space-y-2">
-            <Label>Dish Name *</Label>
+            <Label>Product Name *</Label>
             <Input
               placeholder="Enter dish name"
               value={formData.name}
@@ -165,22 +149,6 @@ export function AddProductModal({ open, onClose, onAdd }) { // Removed type anno
           </div>
 
           <div className="space-y-2">
-            <Label>Branch *</Label>
-            <Select value={formData.branch} onValueChange={(value) => setFormData({ ...formData, branch: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Branch" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <Label>Product Image</Label>
             <div className="flex gap-2">
               <label className="flex-1 cursor-pointer">
@@ -240,7 +208,7 @@ export function AddProductModal({ open, onClose, onAdd }) { // Removed type anno
             onClick={handleSubmit}
             className="flex-1 bg-blue-600 hover:bg-blue-700"
           >
-            Add Dish
+            Add Product
           </Button>
         </div>
       </DialogContent>

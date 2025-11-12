@@ -7,9 +7,9 @@ import { Checkbox } from '../ui/checkbox';
 import { UserPlus, X, Check } from 'lucide-react';
 import { addUserToSystem } from '../../lib/auth';
 
-// Removed: interface AddUserModalProps { ... }
+// The 'AddUserModalProps' interface is removed as it's TypeScript-specific.
 
-export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop types
+export function AddUserModal({ open, onOpenChange, onSave }) { // The ': AddUserModalProps' annotation is removed
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -21,42 +21,44 @@ export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop t
   const [permissions, setPermissions] = useState({
     // Core
     dashboard: true,
-    settings: false,
-    userManagement: false,
-    homepage: false,
-    reports: false,
     products: true,
     orders: true,
     customers: true,
     deliveryStaff: false,
-    branches: false,
+    membership: false,
     profile: true,
     
     // Analytics & Reports
     analytics: false,
     auditLogs: false,
+    reports: false,
     
     // Operations
+    userManagement: false,
+    wallet: false,
     billing: false,
     notifications: false,
     contentManagement: false,
+    homepage: false,
     
     // Development
+    settings: false,
+    helpSupport: false,
     integrations: false,
     apiAccess: false,
     security: false,
   });
 
-  const handlePermissionChange = useCallback((key) => { // Removed :string type
+  const handlePermissionChange = useCallback((key) => { // Removed ': string' from key
     setPermissions(prev => {
-      const currentValue = prev[key]; // Removed as any
+      const currentValue = prev[key]; // Removed 'as any'
       const newPermissions = { ...prev, [key]: !currentValue };
       console.log('Toggling', key, 'from', currentValue, 'to', !currentValue);
       return newPermissions;
     });
   }, []);
 
-  const handleSubmit = (e) => { // Removed : React.FormEvent
+  const handleSubmit = (e) => { // Removed ': React.FormEvent'
     e.preventDefault();
     // Add user to auth system
     addUserToSystem({
@@ -81,27 +83,29 @@ export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop t
     setPermissions({
       // Core
       dashboard: true,
-      settings: false,
-      userManagement: false,
-      homepage: false,
-      reports: false,
       products: true,
       orders: true,
       customers: true,
       deliveryStaff: false,
-      branches: false,
+      membership: false,
       profile: true,
       
       // Analytics & Reports
       analytics: false,
       auditLogs: false,
+      reports: false,
       
       // Operations
+      userManagement: false,
+      wallet: false,
       billing: false,
       notifications: false,
       contentManagement: false,
+      homepage: false,
       
       // Development
+      settings: false,
+      helpSupport: false,
       integrations: false,
       apiAccess: false,
       security: false,
@@ -112,10 +116,10 @@ export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop t
     permissionKey, 
     title, 
     description 
-  }) => { // Removed type object
-    const isChecked = permissions[permissionKey] === true; // Removed as any
+  }) => { // Removed the TypeScript object type annotation
+    const isChecked = permissions[permissionKey] === true; // Removed 'as any'
     
-    const handleClick = useCallback((e) => { // Removed : React.MouseEvent
+    const handleClick = useCallback((e) => { // Removed ': React.MouseEvent'
       e.preventDefault();
       e.stopPropagation();
       handlePermissionChange(permissionKey);
@@ -144,8 +148,10 @@ export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop t
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 gap-0 bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col [&>button]:hidden sm:max-w-3xl">
-        <DialogTitle className="sr-only">Create New User</DialogTitle>
-        <DialogDescription className="sr-only">Add a new user to your organization</DialogDescription>
+        <DialogHeader className="sr-only">
+          <DialogTitle>Create New User</DialogTitle>
+          <DialogDescription>Add a new user to your organization</DialogDescription>
+        </DialogHeader>
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b shrink-0">
@@ -246,34 +252,14 @@ export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop t
               {/* Core Section */}
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Check className="h-3 w-3 text-blue-500" />
-                  <span className="text-xs font-medium">Core</span>
+                  <div className="h-px bg-gray-200 flex-1"></div>
+                  <span className="text-xs text-gray-700 font-semibold">Core</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 ml-5">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                   <PermissionCheckbox 
                     permissionKey="dashboard"
                     title="Dashboard"
                     description="Main overview and metrics"
-                  />
-                  <PermissionCheckbox 
-                    permissionKey="settings"
-                    title="Settings"
-                    description="System configuration"
-                  />
-                  <PermissionCheckbox 
-                    permissionKey="userManagement"
-                    title="User Management"
-                    description="Manage users and permissions"
-                  />
-                  <PermissionCheckbox 
-                    permissionKey="homepage"
-                    title="Homepage"
-                    description="Homepage management"
-                  />
-                  <PermissionCheckbox 
-                    permissionKey="reports"
-                    title="Reports"
-                    description="View and generate reports"
                   />
                   <PermissionCheckbox 
                     permissionKey="products"
@@ -296,9 +282,9 @@ export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop t
                     description="Staff management"
                   />
                   <PermissionCheckbox 
-                    permissionKey="branches"
-                    title="Branches"
-                    description="Branch management"
+                    permissionKey="membership"
+                    title="Membership"
+                    description="Membership tiers"
                   />
                   <PermissionCheckbox 
                     permissionKey="profile"
@@ -311,10 +297,10 @@ export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop t
               {/* Analytics & Reports Section */}
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Check className="h-3 w-3 text-blue-500" />
-                  <span className="text-xs font-medium">Analytics & Reports</span>
+                  <div className="h-px bg-gray-200 flex-1"></div>
+                  <span className="text-xs text-gray-700 font-semibold">Analytics & Reports</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 ml-5">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                   <PermissionCheckbox 
                     permissionKey="analytics"
                     title="Analytics"
@@ -325,16 +311,31 @@ export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop t
                     title="Audit Logs"
                     description="System audit trails"
                   />
+                  <PermissionCheckbox 
+                    permissionKey="reports"
+                    title="Reports"
+                    description="View and generate reports"
+                  />
                 </div>
               </div>
 
               {/* Operations Section */}
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Check className="h-3 w-3 text-blue-500" />
-                  <span className="text-xs font-medium">Operations</span>
+                  <div className="h-px bg-gray-200 flex-1"></div>
+                  <span className="text-xs text-gray-700 font-semibold">Operations</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 ml-5">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                  <PermissionCheckbox 
+                    permissionKey="userManagement"
+                    title="User Management"
+                    description="Manage users and permissions"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="wallet"
+                    title="Wallet"
+                    description="Wallet management"
+                  />
                   <PermissionCheckbox 
                     permissionKey="billing"
                     title="Billing"
@@ -350,16 +351,31 @@ export function AddUserModal({ open, onOpenChange, onSave }) { // Removed prop t
                     title="Content Management"
                     description="Content creation and editing"
                   />
+                  <PermissionCheckbox 
+                    permissionKey="homepage"
+                    title="Homepage"
+                    description="Homepage management"
+                  />
                 </div>
               </div>
 
               {/* Development Section */}
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Check className="h-3 w-3 text-blue-500" />
-                  <span className="text-xs font-medium">Development</span>
+                  <div className="h-px bg-gray-200 flex-1"></div>
+                  <span className="text-xs text-gray-700 font-semibold">Development</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 ml-5">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                  <PermissionCheckbox 
+                    permissionKey="settings"
+                    title="Settings"
+                    description="System configuration"
+                  />
+                  <PermissionCheckbox 
+                    permissionKey="helpSupport"
+                    title="Help & Support"
+                    description="Help and support access"
+                  />
                   <PermissionCheckbox 
                     permissionKey="integrations"
                     title="Integrations"

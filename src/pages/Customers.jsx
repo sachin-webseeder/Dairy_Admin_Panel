@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Edit2, Trash2, MoreVertical, Users, UserCheck, Repeat, TrendingUp, Mail, Phone, MapPin, Calendar, Filter, ChevronDown, X, Eye } from 'lucide-react';
+import { Search, Edit2, Trash2, MoreVertical, Users, UserCheck, Repeat, TrendingUp, Mail, Phone, MapPin, Calendar, Filter, ChevronDown, X, Eye, Crown } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
@@ -22,8 +22,8 @@ import {
   TableRow,
 } from '../components/ui/table';
 import { usePersistentCustomers } from '../lib/usePersistentData';
-// import { Customer } from '../types'; // Removed
-import { EditModal } from '../components/modals/EditModal';
+// import { Customer } from '../types'; // Removed type import
+import { EditCustomerModal } from '../components/modals/EditCustomerModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { AddCustomerModal } from '../components/modals/AddCustomerModal';
 import { CustomerDetailsModal } from '../components/modals/CustomerDetailsModal';
@@ -34,6 +34,7 @@ export function Customers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [branchFilter, setBranchFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [membershipFilter, setMembershipFilter] = useState('all');
   const [entriesPerPage, setEntriesPerPage] = useState('10');
   const [selectedCustomers, setSelectedCustomers] = useState([]); // Removed <string[]>
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -52,7 +53,6 @@ export function Customers() {
     const matchesSearch = customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.phone.includes(searchQuery);
-    const matchesBranch = branchFilter === 'all' || customer.branch === branchFilter;
     
     let matchesStatus = true;
     if (statusFilter === 'active' || statusFilter === 'inactive') {
@@ -62,6 +62,16 @@ export function Customers() {
     } else if (statusFilter === 'occasional') {
       matchesStatus = customer.totalOrders < 10;
     }
+    
+    // Membership filter
+    const getMembershipTier = () => {
+      if (customer.membership) return customer.membership;
+      if (customer.totalSpent > 10000) return 'Gold';
+      if (customer.totalSpent > 5000) return 'Silver';
+      return 'Bronze';
+    };
+    const membershipTier = getMembershipTier();
+    const matchesMembership = membershipFilter === 'all' || membershipTier === membershipFilter;
     
     // Time filter
     let matchesTime = true;
@@ -78,7 +88,7 @@ export function Customers() {
       matchesTime = customer.lastOrderDate ? new Date(customer.lastOrderDate) >= monthAgo : false;
     }
     
-    return matchesSearch && matchesBranch && matchesStatus && matchesTime;
+    return matchesSearch && matchesStatus && matchesMembership && matchesTime;
   }).sort((a, b) => {
     // Apply sorting
     let compareValue = 0;
@@ -89,13 +99,13 @@ export function Customers() {
     return sortOrder === 'asc' ? compareValue : -compareValue;
   });
 
-  const handleEditCustomer = (updatedData) => { // Removed : Customer
+  const handleEditCustomer = (updatedData) => { // Removed 'Customer' type
     setCustomerList(customerList.map(c => c.id === updatedData.id ? updatedData : c));
     showSuccessToast('Customer updated successfully!');
   };
 
-  const handleAddCustomer = (customer) => { // Removed : Partial<Customer>
-    setCustomerList([...customerList, customer]); // Removed as Customer
+  const handleAddCustomer = (customer) => { // Removed 'Partial<Customer>' type
+    setCustomerList([...customerList, customer]); // Removed 'as Customer'
     showSuccessToast('Customer added successfully!');
   };
 
@@ -107,20 +117,20 @@ export function Customers() {
     }
   };
 
-  const toggleCustomerStatus = (customerId) => { // Removed : string
+  const toggleCustomerStatus = (customerId) => { // Removed 'string' type
     const customer = customerList.find(c => c.id === customerId);
     const newStatus = customer?.status === 'active' ? 'inactive' : 'active';
     
     setCustomerList(customerList.map(c => 
       c.id === customerId 
-        ? { ...c, status: newStatus } // Removed as 'active' | 'inactive'
+        ? { ...c, status: newStatus } // Removed 'as 'active' | 'inactive''
         : c
     ));
     
     showSuccessToast(`Customer ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`);
   };
 
-  const handleSelectAll = (checked) => { // Removed : boolean
+  const handleSelectAll = (checked) => { // Removed 'boolean' type
     if (checked) {
       setSelectedCustomers(filteredCustomers.map(c => c.id));
     } else {
@@ -128,7 +138,7 @@ export function Customers() {
     }
   };
 
-  const handleSelectCustomer = (customerId, checked) => { // Removed : string, : boolean
+  const handleSelectCustomer = (customerId, checked) => { // Removed 'string' and 'boolean' types
     if (checked) {
       setSelectedCustomers([...selectedCustomers, customerId]);
     } else {
@@ -140,8 +150,6 @@ export function Customers() {
   const activeCustomers = customerList.filter(c => c.status === 'active').length;
   const returningCustomers = customerList.filter(c => c.customerType === 'returning').length;
   const highValueCustomers = customerList.filter(c => c.customerType === 'high-value').length;
-
-  const branches = [...new Set(customerList.map(c => c.branch).filter(Boolean))];
 
   return (
     <div className="p-4">
@@ -233,18 +241,6 @@ export function Customers() {
               />
             </div>
 
-            <Select value={branchFilter} onValueChange={setBranchFilter}>
-              <SelectTrigger className="h-9 text-xs w-[140px] border border-gray-300">
-                <SelectValue placeholder="All Branches" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">All Branches</SelectItem>
-                {branches.map(branch => (
-                  <SelectItem key={branch} value={branch} className="text-xs">{branch}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-9 text-xs w-[140px] border border-gray-300">
                 <SelectValue placeholder="All Status" />
@@ -255,6 +251,18 @@ export function Customers() {
                 <SelectItem value="inactive" className="text-xs">Inactive</SelectItem>
                 <SelectItem value="frequent" className="text-xs">Frequent (20+ orders)</SelectItem>
                 <SelectItem value="occasional" className="text-xs">Occasional (&lt;10 orders)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={membershipFilter} onValueChange={setMembershipFilter}>
+              <SelectTrigger className="h-9 text-xs w-[140px] border border-gray-300">
+                <SelectValue placeholder="All Memberships" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All Memberships</SelectItem>
+                <SelectItem value="Gold" className="text-xs">Gold</SelectItem>
+                <SelectItem value="Silver" className="text-xs">Silver</SelectItem>
+                <SelectItem value="Bronze" className="text-xs">Bronze</SelectItem>
               </SelectContent>
             </Select>
 
@@ -344,8 +352,8 @@ export function Customers() {
               </TableHead>
               <TableHead>
                 <div className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  Branch
+                  <Crown className="h-3 w-3" />
+                  Membership
                 </div>
               </TableHead>
               <TableHead>Orders</TableHead>
@@ -364,6 +372,15 @@ export function Customers() {
           <TableBody>
             {filteredCustomers.slice(0, parseInt(entriesPerPage)).map((customer) => {
               const initials = customer.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+              // Get membership tier
+              const getMembershipTier = () => {
+                if (customer.membership) return customer.membership;
+                if (customer.totalSpent > 10000) return 'Gold';
+                if (customer.totalSpent > 5000) return 'Silver';
+                return 'Bronze';
+              };
+              const membershipTier = getMembershipTier();
+              
               return (
                 <TableRow key={customer.id} className="hover:bg-gray-50 transition-colors duration-200 text-xs">
                   <TableCell>
@@ -401,7 +418,17 @@ export function Customers() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-muted-foreground">{customer.branch || '-'}</span>
+                    <Badge
+                      className={
+                        membershipTier === 'Gold'
+                          ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
+                          : membershipTier === 'Silver'
+                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-100'
+                          : 'bg-orange-100 text-orange-700 hover:bg-orange-100'
+                      }
+                    >
+                      {membershipTier}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <span className="font-medium">{customer.totalOrders}</span>
@@ -503,25 +530,15 @@ export function Customers() {
         open={addModalOpen}
         onOpenChange={setAddModalOpen}
         onSave={handleAddCustomer}
-        branches={branches}
       />
 
-      {/* Edit Modal */}
-      {selectedCustomer && (
-        <EditModal
-          open={editModalOpen}
-          onOpenChange={setEditModalOpen}
-          onSave={handleEditCustomer}
-          data={selectedCustomer}
-          title="Edit Customer"
-          fields={[
-            { key: 'name', label: 'Customer Name', type: 'text' },
-            { key: 'email', label: 'Email', type: 'email' },
-            { key: 'phone', label: 'Phone', type: 'text' },
-            { key: 'branch', label: 'Branch', type: 'text' },
-          ]}
-        />
-      )}
+      {/* Edit Customer Modal */}
+      <EditCustomerModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        onSave={handleEditCustomer}
+        customer={selectedCustomer}
+      />
 
       {/* Delete Modal */}
       <DeleteConfirmationModal

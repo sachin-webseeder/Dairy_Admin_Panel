@@ -14,44 +14,43 @@ import {
   FileText,
   Bell,
   ChevronDown,
-  TrendingUp
+  TrendingUp,
+  Wallet as WalletIcon,
+  Crown
 } from 'lucide-react';
 import { cn } from '../components/ui/utils';
-import { usePermissions } from '../lib/permissions';
 
-export function SlidingSidebar({ currentPage, onPageChange, onLogout }) {
+// The 'SidebarProps' interface has been removed as it's TypeScript syntax.
+
+export function SlidingSidebar({ currentPage, onPageChange, onLogout }) { // Removed ': SidebarProps'
   const [isExpanded, setIsExpanded] = useState(false);
-  const [openMenus, setOpenMenus] = useState({
+  const [openMenus, setOpenMenus] = useState({ // Removed <{ [key: string]: boolean }>
     management: true,
     cms: false
   });
-  const { hasPermission } = usePermissions();
 
-  const toggleMenu = (menu) => {
+  const toggleMenu = (menu) => { // Removed ': string'
     setOpenMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
   };
 
-  const allManagementItems = [
-    { icon: ShoppingBag, label: 'Products', id: 'products', permission: 'products' },
-    { icon: ShoppingCart, label: 'Orders', id: 'orders', permission: 'orders' },
-    { icon: Users, label: 'Customers', id: 'customers', permission: 'customers' },
-    { icon: Building2, label: 'Branches', id: 'branches', permission: 'branches' },
-    { icon: Bike, label: 'Delivery Staff', id: 'delivery-staff', permission: 'deliveryStaff' },
-    { icon: UserCog, label: 'User Management', id: 'user-management', permission: 'userManagement' },
+  const managementItems = [
+    { icon: ShoppingBag, label: 'Products', id: 'products' },
+    { icon: ShoppingCart, label: 'Orders', id: 'orders' },
+    { icon: Users, label: 'Customers', id: 'customers' },
+    { icon: Bike, label: 'Delivery Staff', id: 'delivery-staff' },
+    { icon: UserCog, label: 'User Management', id: 'user-management' },
   ];
 
-  const allCmsItems = [
-    { icon: FileText, label: 'Home Page', id: 'home-page', permission: 'homepage' },
+  const cmsItems = [
+    { icon: FileText, label: 'Home Page', id: 'home-page' },
+    { icon: WalletIcon, label: 'Wallet', id: 'wallet' },
+    { icon: Crown, label: 'Membership', id: 'membership' },
   ];
-
-  // Filter items based on permissions
-  const managementItems = allManagementItems.filter(item => hasPermission(item.permission));
-  const cmsItems = allCmsItems.filter(item => hasPermission(item.permission));
 
   return (
     <div
       className={cn(
-        "fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 ease-in-out flex flex-col z-50 shadow-lg",
+        "fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-200 ease-in-out flex flex-col z-50 shadow-lg",
         isExpanded ? "w-64" : "w-20"
       )}
       onMouseEnter={() => setIsExpanded(true)}
@@ -61,13 +60,13 @@ export function SlidingSidebar({ currentPage, onPageChange, onLogout }) {
       <div className="h-12 flex items-center px-4 border-b border-gray-200 bg-white">
         {isExpanded ? (
           <div className="flex flex-col">
-            <span className="text-red-500 whitespace-nowrap transition-opacity duration-300 text-sm font-semibold">
+            <span className="text-red-500 whitespace-nowrap transition-opacity duration-200 text-sm font-semibold">
               Dynasty Premium
             </span>
-            <p className="text-xs text-gray-600 whitespace-nowrap transition-opacity duration-300">Welcome Admin!</p>
+            <p className="text-xs text-gray-600 whitespace-nowrap transition-opacity duration-200">Welcome Admin!</p>
           </div>
         ) : (
-          <div className="h-8 w-8 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 mx-auto">
+          <div className="h-8 w-8 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 mx-auto">
             <Package className="h-4 w-4 text-white" />
           </div>
         )}
@@ -77,23 +76,21 @@ export function SlidingSidebar({ currentPage, onPageChange, onLogout }) {
       <nav className="flex-1 py-4 px-3 overflow-y-auto">
         <div className="space-y-1">
           {/* Dashboard */}
-          {hasPermission('dashboard') && (
-            <button
-              onClick={() => onPageChange('dashboard')}
-              className={cn(
-                "w-full flex items-center gap-3 rounded-lg transition-all duration-200 text-xs",
-                isExpanded ? "px-3 py-2" : "px-0 py-2 justify-center",
-                currentPage === 'dashboard'
-                  ? "bg-red-500 text-white" 
-                  : "text-gray-600 hover:bg-gray-50"
-              )}
-            >
-              <Home className={cn("h-4 w-4 flex-shrink-0 transition-colors duration-200")} />
-              {isExpanded && (
-                <span className="whitespace-nowrap transition-opacity duration-300">Dashboard</span>
-              )}
-            </button>
-          )}
+          <button
+            onClick={() => onPageChange('dashboard')}
+            className={cn(
+              "w-full flex items-center gap-3 rounded-lg transition-all duration-200 text-xs",
+              isExpanded ? "px-3 py-2" : "px-0 py-2 justify-center",
+              currentPage === 'dashboard'
+                ? "bg-red-500 text-white" 
+                : "text-gray-600 hover:bg-gray-50"
+            )}
+          >
+            <Home className={cn("h-4 w-4 flex-shrink-0 transition-colors duration-200")} />
+            {isExpanded && (
+              <span className="whitespace-nowrap transition-opacity duration-200">Dashboard</span>
+            )}
+          </button>
 
           {/* Management Section */}
           <div className="space-y-1">
@@ -190,61 +187,55 @@ export function SlidingSidebar({ currentPage, onPageChange, onLogout }) {
           </div>
 
           {/* Reports */}
-          {hasPermission('reports') && (
-            <button
-              onClick={() => onPageChange('reports')}
-              className={cn(
-                "w-full flex items-center gap-3 rounded-lg transition-all duration-200 text-xs",
-                isExpanded ? "px-3 py-2" : "px-0 py-2 justify-center",
-                currentPage === 'reports'
-                  ? "bg-red-50 text-red-600" 
-                  : "text-gray-600 hover:bg-gray-50"
-              )}
-            >
-              <TrendingUp className={cn("h-4 w-4 flex-shrink-0", currentPage === 'reports' && "text-red-600")} />
-              {isExpanded && (
-                <span className="whitespace-nowrap transition-opacity duration-300">Reports</span>
-              )}
-            </button>
-          )}
+          <button
+            onClick={() => onPageChange('reports')}
+            className={cn(
+              "w-full flex items-center gap-3 rounded-lg transition-all duration-200 text-xs",
+              isExpanded ? "px-3 py-2" : "px-0 py-2 justify-center",
+              currentPage === 'reports'
+                ? "bg-red-50 text-red-600" 
+                : "text-gray-600 hover:bg-gray-50"
+            )}
+          >
+            <TrendingUp className={cn("h-4 w-4 flex-shrink-0", currentPage === 'reports' && "text-red-600")} />
+            {isExpanded && (
+              <span className="whitespace-nowrap transition-opacity duration-200">Reports</span>
+            )}
+          </button>
 
           {/* Push Notifications */}
-          {hasPermission('notifications') && (
-            <button
-              onClick={() => onPageChange('notifications')}
-              className={cn(
-                "w-full flex items-center gap-3 rounded-lg transition-all duration-200 text-xs",
-                isExpanded ? "px-3 py-2" : "px-0 py-2 justify-center",
-                currentPage === 'notifications'
-                  ? "bg-red-50 text-red-600" 
-                  : "text-gray-600 hover:bg-gray-50"
-              )}
-            >
-              <Bell className={cn("h-4 w-4 flex-shrink-0", currentPage === 'notifications' && "text-red-600")} />
-              {isExpanded && (
-                <span className="whitespace-nowrap transition-opacity duration-300">Push Notifications</span>
-              )}
-            </button>
-          )}
+          <button
+            onClick={() => onPageChange('notifications')}
+            className={cn(
+              "w-full flex items-center gap-3 rounded-lg transition-all duration-200 text-xs",
+              isExpanded ? "px-3 py-2" : "px-0 py-2 justify-center",
+              currentPage === 'notifications'
+                ? "bg-red-50 text-red-600" 
+                : "text-gray-600 hover:bg-gray-50"
+            )}
+          >
+            <Bell className={cn("h-4 w-4 flex-shrink-0", currentPage === 'notifications' && "text-red-600")} />
+            {isExpanded && (
+              <span className="whitespace-nowrap transition-opacity duration-200">Push Notifications</span>
+            )}
+          </button>
 
           {/* Settings */}
-          {hasPermission('settings') && (
-            <button
-              onClick={() => onPageChange('updated-settings')}
-              className={cn(
-                "w-full flex items-center gap-3 rounded-lg transition-all duration-200 text-xs",
-                isExpanded ? "px-3 py-2" : "px-0 py-2 justify-center",
-                currentPage === 'updated-settings'
-                  ? "bg-red-50 text-red-600" 
-                  : "text-gray-600 hover:bg-gray-50"
-              )}
-            >
-              <Settings className={cn("h-4 w-4 flex-shrink-0", currentPage === 'updated-settings' && "text-red-600")} />
-              {isExpanded && (
-                <span className="whitespace-nowrap transition-opacity duration-300">Settings</span>
-              )}
-            </button>
-          )}
+          <button
+            onClick={() => onPageChange('updated-settings')}
+            className={cn(
+              "w-full flex items-center gap-3 rounded-lg transition-all duration-200 text-xs",
+              isExpanded ? "px-3 py-2" : "px-0 py-2 justify-center",
+              currentPage === 'updated-settings'
+                ? "bg-red-50 text-red-600" 
+                : "text-gray-600 hover:bg-gray-50"
+            )}
+          >
+            <Settings className={cn("h-4 w-4 flex-shrink-0", currentPage === 'updated-settings' && "text-red-600")} />
+            {isExpanded && (
+              <span className="whitespace-nowrap transition-opacity duration-200">Settings</span>
+            )}
+          </button>
         </div>
       </nav>
 
@@ -256,7 +247,7 @@ export function SlidingSidebar({ currentPage, onPageChange, onLogout }) {
         >
           <LogOut className="h-4 w-4 flex-shrink-0" />
           {isExpanded && (
-            <span className="whitespace-nowrap transition-opacity duration-300">Logout</span>
+            <span className="whitespace-nowrap transition-opacity duration-200">Logout</span>
           )}
         </button>
       </div>

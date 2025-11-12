@@ -14,26 +14,28 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { usePersistentOrders, usePersistentBranches } from '../lib/usePersistentData';
+import { usePersistentOrders } from '../lib/usePersistentData';
 // import { Order } from '../types'; // Removed type import
 import { EditModal } from '../components/modals/EditModal';
 import { EditOrderModal } from '../components/modals/EditOrderModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { AddOrderModal } from '../components/modals/AddOrderModal';
+import { OrderDetailsModal } from '../components/modals/OrderDetailsModal';
 import { showSuccessToast } from '../lib/toast';
+import { customers } from '../lib/mockData';
 
 export function Orders() {
   const [orderList, setOrderList] = usePersistentOrders();
-  const [allBranches] = usePersistentBranches();
   const [searchQuery, setSearchQuery] = useState('');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null); // Removed <Order | null>
   const [statusFilter, setStatusFilter] = useState('all');
-  const [branchFilter, setBranchFilter] = useState('all');
+  const [membershipFilter, setMembershipFilter] = useState('all');
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
-  const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
+  const [membershipDropdownOpen, setMembershipDropdownOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   
@@ -42,8 +44,6 @@ export function Orders() {
   const [timeFilter, setTimeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
-  
-  const branches = allBranches.map(b => b.name);
 
   const filteredOrders = orderList.filter(order => {
     const matchesSearch = order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -51,7 +51,10 @@ export function Orders() {
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
-    const matchesBranch = branchFilter === 'all' || order.branch === branchFilter;
+    // Membership filter
+    const customer = customers.find(c => c.name === order.customerName);
+    const customerMembership = customer?.membership || 'Bronze';
+    const matchesMembership = membershipFilter === 'all' || customerMembership === membershipFilter;
     
     // Payment filter
     const matchesPayment = paymentFilter === 'all' || order.payment?.toLowerCase() === paymentFilter.toLowerCase();
@@ -81,7 +84,7 @@ export function Orders() {
       }
     }
     
-    return matchesSearch && matchesStatus && matchesBranch && matchesPayment && matchesTime;
+    return matchesSearch && matchesStatus && matchesMembership && matchesPayment && matchesTime;
   }).sort((a, b) => {
     // Apply sorting
     let compareValue = 0;
@@ -92,12 +95,12 @@ export function Orders() {
     return sortOrder === 'asc' ? compareValue : -compareValue;
   });
 
-  const handleAddOrder = (order) => { // Removed : Order
+  const handleAddOrder = (order) => { // Removed 'Order' type
     setOrderList([order, ...orderList]);
     showSuccessToast('Order created successfully!');
   };
 
-  const handleEditOrder = (updatedData) => { // Removed : Order
+  const handleEditOrder = (updatedData) => { // Removed 'Order' type
     setOrderList(orderList.map(o => o.id === updatedData.id ? updatedData : o));
     showSuccessToast('Order updated successfully!');
   };
@@ -116,7 +119,7 @@ export function Orders() {
 
   const handleClearFilters = () => {
     setStatusFilter('all');
-    setBranchFilter('all');
+    setMembershipFilter('all');
     setSearchQuery('');
     setPaymentFilter('all');
     setTimeFilter('all');
@@ -224,40 +227,31 @@ export function Orders() {
               )}
             </div>
 
-            {/* All Branches Dropdown */}
+            {/* Membership Dropdown */}
             <div className="relative">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setBranchDropdownOpen(!branchDropdownOpen)}
+                onClick={() => setMembershipDropdownOpen(!membershipDropdownOpen)}
                 className="transition-all duration-200 text-xs h-9 border border-gray-300"
               >
-                All Branches
+                {membershipFilter === 'all' ? 'All Membership' : membershipFilter}
                 <ChevronDown className="h-3 w-3 ml-2" />
               </Button>
-              {branchDropdownOpen && (
+              {membershipDropdownOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setBranchDropdownOpen(false)} />
-                  <div className="absolute top-full mt-2 left-0 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2 max-h-60 overflow-y-auto">
-                    <button
-                      onClick={() => {
-                        setBranchFilter('all');
-                        setBranchDropdownOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors duration-200 text-xs"
-                    >
-                      All Branches
-                    </button>
-                    {branches.map((branch) => (
+                  <div className="fixed inset-0 z-40" onClick={() => setMembershipDropdownOpen(false)} />
+                  <div className="absolute top-full mt-2 left-0 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
+                    {['all', 'Gold', 'Silver', 'Bronze'].map((tier) => (
                       <button
-                        key={branch}
+                        key={tier}
                         onClick={() => {
-                          setBranchFilter(branch);
-                          setBranchDropdownOpen(false);
+                          setMembershipFilter(tier);
+                          setMembershipDropdownOpen(false);
                         }}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors duration-200 text-xs"
                       >
-                        {branch}
+                        {tier === 'all' ? 'All Membership' : tier}
                       </button>
                     ))}
                   </div>
@@ -396,7 +390,7 @@ export function Orders() {
               </TableHead>
               <TableHead>Order ID</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>Branch</TableHead>
+              <TableHead>Membership</TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Payment</TableHead>
@@ -408,6 +402,10 @@ export function Orders() {
           <TableBody>
             {filteredOrders.slice(0, entriesPerPage).map((order) => {
               const initials = order.customerName.split(' ').map(n => n[0]).join('');
+              // Find customer's membership tier
+              const customer = customers.find(c => c.name === order.customerName);
+              const membership = customer?.membership || 'Bronze';
+              
               return (
                 <TableRow key={order.id} className="hover:bg-gray-50 transition-colors duration-200 text-xs">
                   <TableCell>
@@ -426,7 +424,20 @@ export function Orders() {
                       <span className="font-medium">{order.customerName}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{order.branch || 'N/A'}</TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant="secondary"
+                      className={
+                        membership === 'Gold'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50 text-[10px] h-5'
+                          : membership === 'Silver'
+                          ? 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-100 text-[10px] h-5'
+                          : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-50 text-[10px] h-5'
+                      }
+                    >
+                      {membership}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{order.items}</TableCell>
                   <TableCell className="font-medium">₹{order.total}</TableCell>
                   <TableCell>
@@ -457,6 +468,10 @@ export function Orders() {
                         variant="ghost" 
                         size="icon"
                         className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setDetailsModalOpen(true);
+                        }}
                       >
                         <Eye className="h-3 w-3" />
                       </Button>
@@ -533,6 +548,12 @@ export function Orders() {
             onConfirm={handleDeleteOrder}
             title="Are you sure you want to delete?"
             description="This order will be permanently removed from the system."
+          />
+
+          <OrderDetailsModal
+            open={detailsModalOpen}
+            onOpenChange={setDetailsModalOpen}
+            order={selectedOrder}
           />
         </>
       )}

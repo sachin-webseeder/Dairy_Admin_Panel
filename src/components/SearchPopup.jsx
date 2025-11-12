@@ -1,108 +1,127 @@
-import { useState } from 'react';
-import { Search, LayoutDashboard, ShoppingCart, Package, Users, Building2, Bike, Settings, Home } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from './ui/dialog';
+import { X, Home, Package, ShoppingCart, Users, UserCog, Bike, Wallet, Crown, Layout, Settings, User, HelpCircle } from 'lucide-react';
 import { Input } from './ui/input';
-import { cn } from './ui/utils';
+import { useState } from 'react';
 
-const searchItems = [
-  { id: '1', title: 'Dashboard', subtitle: 'Overview & Analytics', icon: LayoutDashboard, page: 'dashboard' },
-  { id: '2', title: 'User Management', subtitle: 'Manage users', icon: Users, page: 'user-management' },
-  { id: '3', title: 'Branch Management', subtitle: 'Manage branches', icon: Building2, page: 'branches' },
-  { id: '4', title: 'Menu Management', subtitle: 'Manage menu items', icon: Home, page: 'home-page' },
-  { id: '5', title: 'Orders', subtitle: 'View all orders', icon: ShoppingCart, page: 'orders' },
-  { id: '6', title: 'Products', subtitle: 'Manage products', icon: Package, page: 'products' },
-  { id: '7', title: 'Customers', subtitle: 'Customer list', icon: Users, page: 'customers' },
-  { id: '8', title: 'Delivery Staff', subtitle: 'Manage delivery team', icon: Bike, page: 'delivery-staff' },
-  { id: '9', title: 'Settings', subtitle: 'App settings', icon: Settings, page: 'updated-settings' },
+const searchOptions = [
+  { id: 'dashboard', label: 'Dashboard', description: 'Main overview and metrics', icon: Home, page: 'dashboard' },
+  { id: 'products', label: 'Products', description: 'Manage products', icon: Package, page: 'products' },
+  { id: 'orders', label: 'Orders', description: 'View all orders', icon: ShoppingCart, page: 'orders' },
+  { id: 'user-management', label: 'User Management', description: 'Manage users and permissions', icon: UserCog, page: 'user-management' },
+  { id: 'customers', label: 'Customers', description: 'Customer list', icon: Users, page: 'customers' },
+  { id: 'delivery-staff', label: 'Delivery Staff', description: 'Manage delivery team', icon: Bike, page: 'delivery-staff' },
+  { id: 'wallet', label: 'Wallet', description: 'Wallet management', icon: Wallet, page: 'wallet' },
+  { id: 'membership', label: 'Membership', description: 'Membership tiers', icon: Crown, page: 'membership' },
+  { id: 'homepage', label: 'Homepage', description: 'Homepage management', icon: Layout, page: 'homepage' },
+  { id: 'settings', label: 'Settings', description: 'App settings', icon: Settings, page: 'updated-settings' },
+  { id: 'profile', label: 'Profile', description: 'User profile access', icon: User, page: 'profile' },
+  { id: 'help-support', label: 'Help and Support', description: 'Get help', icon: HelpCircle, page: 'help-support' },
 ];
 
-export function SearchPopup({ open, onOpenChange, onNavigate }) {
-  const [query, setQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
+export function SearchPopup({ isOpen, onClose, onNavigate }) {
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredItems = query
-    ? searchItems.filter(
-        (item) =>
-          item.title.toLowerCase().includes(query.toLowerCase()) ||
-          item.subtitle.toLowerCase().includes(query.toLowerCase())
-      )
-    : searchItems;
+  if (!isOpen) return null;
 
-  const handleSelect = (page) => {
+  const filteredOptions = searchOptions.filter(option =>
+    option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    option.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleOptionClick = (page) => {
     onNavigate(page);
-    onOpenChange(false);
-    setQuery('');
-    setSelectedIndex(0);
+    onClose();
+    setSearchQuery('');
+  };
+
+  const handleKeyPress = (e, action) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (action === 'Navigate') {
+        // Navigate to first option if available
+        if (filteredOptions.length > 0) {
+          handleOptionClick(filteredOptions[0].page);
+        }
+      } else if (action === 'Open') {
+        // Open action
+      } else if (action === 'Close') {
+        onClose();
+      }
+    } else if (e.key === 'Escape') {
+      onClose();
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 gap-0">
-        <DialogTitle className="sr-only">
-          Search Navigation
-        </DialogTitle>
-        <DialogDescription className="sr-only">
-          Search for pages and navigate quickly through the admin panel
-        </DialogDescription>
-        <div className="flex items-center border-b px-4 py-3">
-          <Search className="h-5 w-5 text-muted-foreground mr-3" />
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 z-50"
+        onClick={onClose}
+      />
+
+      {/* Search Modal - Smaller and Centered */}
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-lg shadow-xl z-50 overflow-hidden">
+        {/* Header */}
+        <div className="p-3 border-b border-gray-200 flex items-center gap-2">
           <Input
             placeholder="Search modules..."
-            className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 border-gray-300 h-9"
             autoFocus
+            onKeyDown={(e) => handleKeyPress(e, 'Navigate')}
           />
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4 text-gray-500" />
+          </button>
         </div>
-        
-        <div className="max-h-[400px] overflow-y-auto">
-          <div className="p-2">
-            <div className="text-xs text-muted-foreground px-3 py-2">
-              {filteredItems.length} results
-            </div>
-            {filteredItems.map((item, index) => {
-              const Icon = item.icon;
+
+        {/* Options List */}
+        <div className="max-h-[320px] overflow-y-auto p-1.5">
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option) => {
+              const Icon = option.icon;
               return (
                 <button
-                  key={item.id}
-                  onClick={() => handleSelect(item.page)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-3 rounded-md hover:bg-blue-50 transition-colors text-left group",
-                    index === selectedIndex && "bg-blue-50"
-                  )}
-                  onMouseEnter={() => setSelectedIndex(index)}
+                  key={option.id}
+                  onClick={() => handleOptionClick(option.page)}
+                  className="w-full flex items-center gap-2.5 p-2 hover:bg-gray-50 rounded-md transition-colors text-left group"
                 >
-                  <div className="h-10 w-10 rounded-lg bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
-                    <Icon className="h-5 w-5 text-gray-600 group-hover:text-blue-600" />
+                  <div className="h-8 w-8 bg-gray-100 rounded-md flex items-center justify-center group-hover:bg-red-50 transition-colors flex-shrink-0">
+                    <Icon className="h-4 w-4 text-gray-600 group-hover:text-red-500 transition-colors" />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{item.title}</p>
-                    <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-900">{option.label}</p>
+                    <p className="text-xs text-gray-500 truncate">{option.description}</p>
                   </div>
                 </button>
               );
-            })}
-          </div>
+            })
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-sm text-gray-500">No modules found</p>
+            </div>
+          )}
         </div>
 
-        <div className="border-t px-4 py-3 flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-4">
+        {/* Footer */}
+        <div className="px-2.5 py-2 border-t border-gray-200 bg-gray-50 flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              <kbd className="px-2 py-1 bg-muted rounded">↑</kbd>
-              <kbd className="px-2 py-1 bg-muted rounded">↓</kbd>
-              <span className="ml-1">Navigate</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <kbd className="px-2 py-1 bg-muted rounded">↵</kbd>
-              <span className="ml-1">Open</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <kbd className="px-2 py-1 bg-muted rounded">ESC</kbd>
-              <span className="ml-1">Close</span>
+              <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs">↵</kbd>
+              <span>Open</span>
             </div>
           </div>
+          <div className="flex items-center gap-1">
+            <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs">ESC</kbd>
+            <span>Close</span>
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </>
   );
 }

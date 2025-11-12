@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import { slideshowImages } from '../assets/images';
 import { registerUser } from '../lib/auth';
+import { Shield, Zap, TrendingUp, Users, Star, Globe } from 'lucide-react';
 
 // Import the CSS file
-import '../styles/Signup.css';
+import '../styles/signup.css';
 
 const slidesData = [
   {
@@ -12,8 +12,8 @@ const slidesData = [
     title: "Welcome to Dynasty Premium",
     subtitle: "Create your account and get started",
     features: [
-      { icon: "🛡️", heading: "Secure Registration", description: "Your information is protected with advanced encryption" },
-      { icon: "⚡", heading: "Quick Setup", description: "Get your account ready in just a few simple steps" }
+      { icon: Shield, heading: "Secure Registration", description: "Your information is protected with advanced encryption" },
+      { icon: Zap, heading: "Quick Setup", description: "Get your account ready in just a few simple steps" }
     ]
   },
   {
@@ -21,8 +21,8 @@ const slidesData = [
     title: "Unlock New Possibilities",
     subtitle: "Access powerful tools and features",
     features: [
-      { icon: "📈", heading: "Data Insights", description: "Gain valuable insights from your data with ease" },
-      { icon: "🤝", heading: "Collaborate Seamlessly", description: "Work with your team efficiently on shared projects" }
+      { icon: TrendingUp, heading: "Data Insights", description: "Gain valuable insights from your data with ease" },
+      { icon: Users, heading: "Collaborate Seamlessly", description: "Work with your team efficiently on shared projects" }
     ]
   },
   {
@@ -30,8 +30,8 @@ const slidesData = [
     title: "Your Journey Starts Here",
     subtitle: "Join our community and grow with us",
     features: [
-      { icon: "🌟", heading: "Personalized Experience", description: "Tailor your dashboard to fit your unique needs" },
-      { icon: "🌐", heading: "Global Reach", description: "Connect with users and resources worldwide" }
+      { icon: Star, heading: "Personalized Experience", description: "Tailor your dashboard to fit your unique needs" },
+      { icon: Globe, heading: "Global Reach", description: "Connect with users and resources worldwide" }
     ]
   }
 ];
@@ -117,15 +117,20 @@ export function Signup({ onSignup, onNavigate }) {
               <p className="slide-subtitle">{currentSlide.subtitle}</p>
             </div>
             <div className="features">
-              {currentSlide.features.map((feature, index) => (
-                <div className="feature" key={index}>
-                  <div className="featureIcon">{feature.icon}</div>
-                  <div className="featureContent">
-                    <h4>{feature.heading}</h4>
-                    <p>{feature.description}</p>
+              {currentSlide.features.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <div className="feature" key={index}>
+                    <div className="featureIcon">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="featureContent">
+                      <h4>{feature.heading}</h4>
+                      <p>{feature.description}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -260,8 +265,3 @@ export function Signup({ onSignup, onNavigate }) {
     </div>
   );
 }
-
-Signup.propTypes = {
-  onSignup: PropTypes.func.isRequired,
-  onNavigate: PropTypes.func.isRequired,
-};

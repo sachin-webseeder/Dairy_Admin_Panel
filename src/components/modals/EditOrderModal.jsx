@@ -5,22 +5,28 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { usePersistentCustomers, usePersistentProducts } from '../../lib/usePersistentData';
-// Removed Order, OrderProduct type imports
+// We assume 'Order' and 'OrderProduct' types are no longer imported or needed
+// import { Order, OrderProduct } from '../../types'; 
 import { Search, X, Plus, Minus } from 'lucide-react';
 import { Card } from '../ui/card';
 
-// Removed EditOrderModalProps interface
+// interface EditOrderModalProps {
+//  open: boolean;
+//  onClose: () => void;
+//  onSave: (order: Order) => void;
+//  order: Order;
+// }
 
-export function EditOrderModal({ open, onClose, onSave, order }) {
+export function EditOrderModal({ open, onClose, onSave, order }) { // Removed ': EditOrderModalProps'
   const [customers] = usePersistentCustomers();
   const [products] = usePersistentProducts();
   
   const [customerSearch, setCustomerSearch] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState(''); // Removed <string>
   const [productSearch, setProductSearch] = useState('');
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState([]); // Removed <OrderProduct[]>
   const [shippingMethod, setShippingMethod] = useState('standard');
-  const [orderStatus, setOrderStatus] = useState('pending');
+  const [orderStatus, setOrderStatus] = useState('pending'); // Removed <'pending' | 'completed' | 'cancelled'>
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [discount, setDiscount] = useState('0');
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
@@ -51,7 +57,7 @@ export function EditOrderModal({ open, onClose, onSave, order }) {
     !selectedProducts.some(sp => sp.productId === p.id)
   );
 
-  const handleAddProduct = (productId) => {
+  const handleAddProduct = (productId) => { // Removed ': string'
     const product = products.find(p => p.id === productId);
     if (product) {
       setSelectedProducts([...selectedProducts, {
@@ -64,7 +70,7 @@ export function EditOrderModal({ open, onClose, onSave, order }) {
     }
   };
 
-  const handleUpdateQuantity = (productId, change) => {
+  const handleUpdateQuantity = (productId, change) => { // Removed ': string' and ': number'
     setSelectedProducts(selectedProducts.map(p => {
       if (p.productId === productId) {
         const newQuantity = Math.max(1, p.quantity + change);
@@ -74,7 +80,7 @@ export function EditOrderModal({ open, onClose, onSave, order }) {
     }));
   };
 
-  const handleRemoveProduct = (productId) => {
+  const handleRemoveProduct = (productId) => { // Removed ': string'
     setSelectedProducts(selectedProducts.filter(p => p.productId !== productId));
   };
 
@@ -101,8 +107,7 @@ export function EditOrderModal({ open, onClose, onSave, order }) {
     }
 
     const customer = customers.find(c => c.id === selectedCustomer);
-    // Removed : Order type
-    const updatedOrder = {
+    const updatedOrder = { // Removed ': Order'
       ...order,
       customerName: customer?.name || order.customerName,
       items: selectedProducts.length,
@@ -176,6 +181,7 @@ export function EditOrderModal({ open, onClose, onSave, order }) {
                       >
                         <div className="font-medium">{customer.name}</div>
                         <div className="text-muted-foreground">{customer.email} • {customer.phone}</div>
+                        <div className="text-muted-foreground mt-1">Membership: {customer.membership || 'Bronze'}</div>
                       </div>
                     ))}
                   </Card>
@@ -270,7 +276,7 @@ export function EditOrderModal({ open, onClose, onSave, order }) {
           {/* Shipping & Payment */}
           <div>
             <h3 className="font-medium mb-3">SHIPPING & PAYMENT</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs">Shipping Method</Label>
                 <Select value={shippingMethod} onValueChange={setShippingMethod}>
@@ -286,9 +292,31 @@ export function EditOrderModal({ open, onClose, onSave, order }) {
               </div>
 
               <div className="space-y-2">
+                <Label className="text-xs">Membership Tier</Label>
+                <Select 
+                  value={customers.find(c => c.id === selectedCustomer)?.membershipTier?.toString() || '3'} 
+                  onValueChange={(value) => {
+                    const customer = customers.find(c => c.id === selectedCustomer);
+                    if (customer) {
+                      customer.membershipTier = parseInt(value);
+                    }
+                  }}
+                  disabled={!selectedCustomer}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Gold</SelectItem>
+                    <SelectItem value="2">Silver</SelectItem>
+                    <SelectItem value="3">Bronze</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label className="text-xs">Order Status</Label>
-                {/* Removed union type from 'value' */}
-                <Select value={orderStatus} onValueChange={(value) => setOrderStatus(value)}>
+                <Select value={orderStatus} onValueChange={(value) => setOrderStatus(value)}> {/* Removed specific type */}
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

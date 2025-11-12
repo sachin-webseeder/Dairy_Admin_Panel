@@ -12,7 +12,7 @@ const statusColors = {
 const statusTextColors = {
   active: 'text-green-600',
   inactive: 'text-gray-600',
-};
+};// The 'statusTextColors' variable was defined but not used, so it can be removed.
 
 export function DeliveryBoysCard() {
   return (

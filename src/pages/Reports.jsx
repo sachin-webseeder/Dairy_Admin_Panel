@@ -11,7 +11,7 @@ import {
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { ShoppingCart, DollarSign, Users, Building2, Download } from 'lucide-react';
+import { ShoppingCart, DollarSign, Users, Building2, Download, BarChart3, TrendingUp, Package } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { usePersistentOrders, usePersistentProducts, usePersistentCustomers, usePersistentBranches } from '../lib/usePersistentData';
 
@@ -21,7 +21,7 @@ export function Reports() {
   const [customers] = usePersistentCustomers();
   const [branches] = usePersistentBranches();
   
-  const [branch, setBranch] = useState('all');
+  const [membership, setMembership] = useState('all');
   const [dateRange, setDateRange] = useState('year');
   const [activeTab, setActiveTab] = useState('overview');
   const [showCustomRange, setShowCustomRange] = useState(false);
@@ -87,17 +87,17 @@ export function Reports() {
     return { startDate, endDate };
   };
 
-  // Filter orders based on branch and date range
+  // Filter orders based on membership and date range
   const filterData = () => {
     let filtered = [...orders];
     const { startDate, endDate } = getDateRange();
 
-    // Filter by branch
-    if (branch !== 'all') {
-      const selectedBranch = branches.find(b => b.id === branch);
-      if (selectedBranch) {
-        filtered = filtered.filter(o => o.branch === selectedBranch.name);
-      }
+    // Filter by membership
+    if (membership !== 'all') {
+      filtered = filtered.filter(o => {
+        const customer = customers.find(c => c.name === o.customerName);
+        return customer?.membership === membership;
+      });
     }
 
     // Filter by date range
@@ -121,9 +121,7 @@ export function Reports() {
     const uniqueCustomers = new Set(filtered.map(o => o.customerName));
     
     // Get active branches
-    const activeBranches = branch === 'all' 
-      ? branches.filter(b => b.status === 'active').length
-      : 1;
+    const activeBranches = branches.filter(b => b.status === 'active').length;
 
     setStats({
       totalOrders: filtered.length,
@@ -136,27 +134,29 @@ export function Reports() {
   // Initialize with default filters and update when data changes
   useEffect(() => {
     handleApplyFilters();
-  }, [orders, branch, dateRange, fromDate, toDate]);
+  }, [orders, membership, dateRange, fromDate, toDate]);
 
-  // Calculate chart data based on filtered orders
-  const getRevenueByBranch = () => {
-    const branchRevenue = {};
+  // Calculate revenue data based on filtered orders
+  const getRevenueData = () => {
+    const revenueByDate = {}; // Removed type annotation
     
     filteredOrders.forEach(order => {
       if (order.status === 'completed') {
-        branchRevenue[order.branch] = (branchRevenue[order.branch] || 0) + order.total;
+        const dateObj = new Date(order.date);
+        const dateKey = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        revenueByDate[dateKey] = (revenueByDate[dateKey] || 0) + order.total;
       }
     });
 
-    return Object.entries(branchRevenue).map(([name, revenue]) => ({
+    return Object.entries(revenueByDate).map(([name, revenue]) => ({
       name,
       revenue
-    }));
+    })).slice(-7); // Last 7 days
   };
 
   // Get top selling products from filtered orders
   const getTopSellingProducts = () => {
-    const productSales = {};
+    const productSales = {}; // Removed type annotation
     
     filteredOrders.forEach(order => {
       order.products.forEach(p => {
@@ -185,7 +185,7 @@ export function Reports() {
 
   // Get branch performance
   const getBranchPerformance = () => {
-    const branchStats = {};
+    const branchStats = {}; // Removed type annotation
     
     filteredOrders.forEach(order => {
       if (!branchStats[order.branch]) {
@@ -215,7 +215,7 @@ export function Reports() {
 
     filteredOrders.forEach(order => {
       if (order.status in statusCounts) {
-        statusCounts[order.status]++;
+        statusCounts[order.status]++; // Removed 'as keyof typeof statusCounts'
       }
     });
 
@@ -245,7 +245,7 @@ export function Reports() {
 
   // Sales trend data
   const getSalesTrendData = () => {
-    const dailySales = {};
+    const dailySales = {}; // Removed type annotation
     
     filteredOrders.forEach(order => {
       if (order.status === 'completed') {
@@ -277,12 +277,12 @@ export function Reports() {
   
   // Get popular items for the chart legend
   const getPopularItems = () => {
-    const itemCounts = {};
+    const itemCounts = {}; // Removed type annotation
     
     filteredOrders.forEach(order => {
       // Check if order has products array
       if (order.products && Array.isArray(order.products)) {
-        order.products.forEach((product) => {
+        order.products.forEach((product) => { // Removed : any
           const itemName = product.productName || product.name;
           if (itemName) {
             itemCounts[itemName] = (itemCounts[itemName] || 0) + (product.quantity || 1);
@@ -307,7 +307,7 @@ export function Reports() {
       .map(([name, count]) => ({ name, count }));
   };
 
-  const revenueByBranch = getRevenueByBranch();
+  const revenueData = getRevenueData();
   const topSellingProducts = getTopSellingProducts();
   const branchPerformance = getBranchPerformance();
   const ordersByStatus = getOrdersByStatus();
@@ -361,15 +361,15 @@ export function Reports() {
       <div className="mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Select value={branch} onValueChange={setBranch}>
+            <Select value={membership} onValueChange={setMembership}>
               <SelectTrigger className="w-40 h-9 text-xs border border-gray-300">
-                <SelectValue placeholder="All Branches" />
+                <SelectValue placeholder="All Membership" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="text-xs">All Branches</SelectItem>
-                {branches.map((b) => (
-                  <SelectItem key={b.id} value={b.id} className="text-xs">{b.name}</SelectItem>
-                ))}
+                <SelectItem value="all" className="text-xs">All Membership</SelectItem>
+                <SelectItem value="Gold" className="text-xs">Gold</SelectItem>
+                <SelectItem value="Silver" className="text-xs">Silver</SelectItem>
+                <SelectItem value="Bronze" className="text-xs">Bronze</SelectItem>
               </SelectContent>
             </Select>
 
@@ -410,7 +410,7 @@ export function Reports() {
               onClick={handleApplyFilters}
               className="h-9 text-xs bg-blue-500 hover:bg-blue-600"
             >
-              🔍 Apply Filters
+              Apply Filters
             </Button>
           </div>
 
@@ -421,7 +421,7 @@ export function Reports() {
               onClick={handleRefresh}
               className="h-9 text-xs border border-gray-300"
             >
-              🔄 Refresh
+              Refresh
             </Button>
             <Button 
               variant="outline"
@@ -491,28 +491,28 @@ export function Reports() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-white border border-gray-200">
           <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-            📊 Overview
+            <BarChart3 className="h-4 w-4 mr-1" /> Overview
           </TabsTrigger>
           <TabsTrigger value="sales" className="text-xs data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-            📈 Sales Reports
+            <TrendingUp className="h-4 w-4 mr-1" /> Sales Reports
           </TabsTrigger>
           <TabsTrigger value="customers" className="text-xs data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-            👥 Customer Reports
+            <Users className="h-4 w-4 mr-1" /> Customer Reports
           </TabsTrigger>
           <TabsTrigger value="orders" className="text-xs data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-            📦 Order Reports
+            <Package className="h-4 w-4 mr-1" /> Order Reports
           </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Revenue by Branch */}
+            {/* Revenue */}
             <Card className="p-6">
-              <h3 className="font-medium mb-4">Revenue by Branch</h3>
-              {revenueByBranch.length > 0 ? (
+              <h3 className="font-medium mb-4">Revenue</h3>
+              {revenueData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={revenueByBranch}>
+                  <BarChart data={revenueData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
@@ -581,12 +581,12 @@ export function Reports() {
                     dataKey="date" 
                     tick={{ fontSize: 11, fill: '#666' }} 
                     tickLine={false}
-                    axisLine={{ stroke: '#10B981', strokeWidth: 2 }}
+                    axisLine={{ stroke: '#d8e2dfff', strokeWidth: 2 }}
                   />
                   <YAxis 
                     tick={{ fontSize: 11, fill: '#666' }} 
                     tickLine={false}
-                    axisLine={{ stroke: '#eee8e8ff' }}
+                    axisLine={{ stroke: '#d8e2dfff' }}
                     domain={[0, 'auto']}
                     ticks={[0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800]}
                     tickFormatter={(value) => value}
@@ -601,7 +601,7 @@ export function Reports() {
                     }}
                     labelStyle={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}
                     itemStyle={{ fontSize: '11px', padding: '2px 0' }}
-                    formatter={(value, name) => {
+                    formatter={(value, name) => { // Removed type annotations
                       if (name === 'sales') {
                         return [`₹${Number(value).toLocaleString()}`, 'Sales'];
                       }
@@ -624,9 +624,9 @@ export function Reports() {
                   <Line 
                     type="monotone" 
                     dataKey="sales" 
-                    stroke="#18b3daff" 
+                    stroke="#0bd9f5ff" 
                     strokeWidth={2.5} 
-                    dot={{ r: 5, fill: '#18b3daff', strokeWidth: 2, stroke: '#fff' }}
+                    dot={{ r: 5, fill: '#0bd9f5ff', strokeWidth: 2, stroke: '#fff' }}
                     activeDot={{ r: 7 }}
                     name="Sales"
                   />
@@ -697,7 +697,9 @@ export function Reports() {
                 <h2 className="text-4xl font-bold text-blue-600 mb-2">
                   ₹{stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders).toFixed(2) : '0.00'}
                 </h2>
-                <p className="text-xs text-green-600 mb-6">📈 Based on filtered data</p>
+                <p className="text-xs text-green-600 mb-6 flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" /> Based on filtered data
+                </p>
                 <div className="space-y-2 text-left mt-8">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Total Orders:</span>

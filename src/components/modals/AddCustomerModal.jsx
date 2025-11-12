@@ -11,22 +11,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
+// import { Customer } from '../../types'; // Type import removed
 
-export function AddCustomerModal({ open, onOpenChange, onSave, branches }) {
+// interface AddCustomerModalProps { ... } // Interface removed
+
+// Prop types are removed from the function definition
+export function AddCustomerModal({ open, onOpenChange, onSave }) {
+  // Generic type <Partial<Customer>> removed from useState
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    branch: '',
+    membershipTier: 3,
     status: 'active',
     customerType: 'new',
     totalOrders: 0,
     totalSpent: 0,
   });
 
+  // Type annotation : React.FormEvent removed
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Type annotation : Partial<Customer> removed
     const newCustomer = {
       ...formData,
       id: `CUST-${Date.now()}`,
@@ -42,7 +49,7 @@ export function AddCustomerModal({ open, onOpenChange, onSave, branches }) {
       name: '',
       email: '',
       phone: '',
-      branch: '',
+      membershipTier: 3,
       status: 'active',
       customerType: 'new',
       totalOrders: 0,
@@ -50,6 +57,7 @@ export function AddCustomerModal({ open, onOpenChange, onSave, branches }) {
     });
   };
 
+  // Type annotations : keyof Customer and : any removed
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -112,17 +120,18 @@ export function AddCustomerModal({ open, onOpenChange, onSave, branches }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="branch" className="text-xs">Branch</Label>
-                <Select value={formData.branch || ''} onValueChange={(value) => handleChange('branch', value)}>
+                <Label htmlFor="membershipTier" className="text-xs">Membership Tier</Label>
+                <Select 
+                  value={formData.membershipTier?.toString() || '3'} 
+                  onValueChange={(value) => handleChange('membershipTier', parseInt(value))}
+                >
                   <SelectTrigger className="text-xs h-9">
-                    <SelectValue placeholder="Select branch" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {branches.map(branch => (
-                      <SelectItem key={branch} value={branch} className="text-xs">
-                        {branch}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="1" className="text-xs">Gold</SelectItem>
+                    <SelectItem value="2" className="text-xs">Silver</SelectItem>
+                    <SelectItem value="3" className="text-xs">Bronze</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -138,6 +147,7 @@ export function AddCustomerModal({ open, onOpenChange, onSave, branches }) {
                 <Label htmlFor="customerType" className="text-xs">Customer Type</Label>
                 <Select 
                   value={formData.customerType || 'new'} 
+                  // Type cast as 'new' | ... removed
                   onValueChange={(value) => handleChange('customerType', value)}
                 >
                   <SelectTrigger className="text-xs h-9">
@@ -155,6 +165,7 @@ export function AddCustomerModal({ open, onOpenChange, onSave, branches }) {
                 <Label htmlFor="status" className="text-xs">Status</Label>
                 <Select 
                   value={formData.status || 'active'} 
+                  // Type cast as 'active' | ... removed
                   onValueChange={(value) => handleChange('status', value)}
                 >
                   <SelectTrigger className="text-xs h-9">

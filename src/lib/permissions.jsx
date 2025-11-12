@@ -1,15 +1,13 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-// Removed UserPermissions, ReactNode type imports
-import { getCurrentUser } from './auth'; // Removed AuthUser type import
+// import { UserPermissions } from '../types'; // Removed type import
+import { getCurrentUser } from './auth'; // Removed 'AuthUser' type import
 
-// Removed PermissionContextType interface
+// 'PermissionContextType' interface removed
 
-// Removed <PermissionContextType | undefined> generic
-const PermissionContext = createContext(undefined);
+const PermissionContext = createContext(undefined); // Removed type annotation
 
 // Default admin permissions (all access)
-// Removed : UserPermissions type
-const ADMIN_PERMISSIONS = {
+const ADMIN_PERMISSIONS = { // Removed 'UserPermissions' type
   // Core
   dashboard: true,
   settings: true,
@@ -20,7 +18,7 @@ const ADMIN_PERMISSIONS = {
   orders: true,
   customers: true,
   deliveryStaff: true,
-  branches: true,
+  subscriptions: true,
   profile: true,
   
   // Analytics & Reports
@@ -36,15 +34,10 @@ const ADMIN_PERMISSIONS = {
   integrations: true,
   apiAccess: true,
   security: true,
-  
-  // Legacy
-  supply: true,
-  smsList: true,
 };
 
 // Default new user permissions (limited access)
-// Removed : UserPermissions type
-const DEFAULT_USER_PERMISSIONS = {
+const DEFAULT_USER_PERMISSIONS = { // Removed 'UserPermissions' type
   // Core
   dashboard: true,
   settings: false,
@@ -55,7 +48,7 @@ const DEFAULT_USER_PERMISSIONS = {
   orders: true,
   customers: true,
   deliveryStaff: false,
-  branches: false,
+  subscriptions: false,
   profile: true,
   
   // Analytics & Reports
@@ -71,16 +64,10 @@ const DEFAULT_USER_PERMISSIONS = {
   integrations: false,
   apiAccess: false,
   security: false,
-  
-  // Legacy
-  supply: false,
-  smsList: false,
 };
 
-// Removed : { children: ReactNode } type
-export function PermissionProvider({ children }) {
-  // Removed <AuthUser | null> generic
-  const [user, setUser] = useState(getCurrentUser());
+export function PermissionProvider({ children }) { // Removed prop types
+  const [user, setUser] = useState(getCurrentUser()); // Removed 'AuthUser | null' type
 
   useEffect(() => {
     // Update user state when it changes
@@ -90,21 +77,24 @@ export function PermissionProvider({ children }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Removed : UserPermissions return type
-  const getPermissions = () => {
+  const getPermissions = () => { // Removed 'UserPermissions' return type
     if (!user) return DEFAULT_USER_PERMISSIONS;
     
-    // Admin has all permissions
-    if (user.email === 'admin@123' || user.role === 'Admin' || user.role === 'Super Admin') {
+    // Default admin always gets full permissions
+    if (user.email === 'admin@123') {
       return ADMIN_PERMISSIONS;
     }
     
-    // Return user's specific permissions or default
+    // Super Admins always get full permissions
+    if (user.role === 'Super Admin') {
+      return ADMIN_PERMISSIONS;
+    }
+    
+    // Return user's specific permissions if they exist, otherwise return default
     return user.permissions || DEFAULT_USER_PERMISSIONS;
   };
 
-  // Removed parameter and return types
-  const hasPermission = (permission) => {
+  const hasPermission = (permission) => { // Removed 'keyof UserPermissions' and 'boolean' types
     const permissions = getPermissions();
     return permissions[permission] === true;
   };

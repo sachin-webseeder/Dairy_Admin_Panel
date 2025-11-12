@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { getAllUsers, deleteUserFromSystem, updateUserInSystem } from '../lib/auth';
+import { getAllUsers, deleteUserFromSystem } from '../lib/auth'; // Removed AuthUser type import
 import { AddUserModal } from '../components/modals/AddUserModal';
 import { EditUserModal } from '../components/modals/EditUserModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
@@ -20,17 +20,17 @@ import { showSuccessToast } from '../lib/toast';
 
 export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [userList, setUserList] = useState([]);
+  const [userList, setUserList] = useState([]); // Removed <AuthUser[]>
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [roleFilter, setRoleFilter] = useState('all');
+  const [selectedUser, setSelectedUser] = useState(null); // Removed <AuthUser | null>
+  const [roleFilter, setRoleFilter] = useState('all'); // Removed <string>
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [moduleFilter, setModuleFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState('asc');
+  const [sortOrder, setSortOrder] = useState('asc'); // Removed <'asc' | 'desc'>
   const [moduleDropdownOpen, setModuleDropdownOpen] = useState(false);
   const [sortByDropdownOpen, setSortByDropdownOpen] = useState(false);
 
@@ -71,19 +71,15 @@ export function UserManagement() {
     return sortOrder === 'asc' ? compareValue : -compareValue;
   });
 
-  const handleAddUser = (user) => {
+  const handleAddUser = (user) => { // Removed : Partial<AuthUser>
     // Refresh user list from auth system
     setUserList(getAllUsers());
     showSuccessToast('User created successfully!');
   };
 
-  const handleEditUser = (updatedData) => {
-    // Update user in auth system
-    updateUserInSystem(updatedData.id, updatedData);
+  const handleEditUser = (user) => { // Removed : Partial<AuthUser>
     // Refresh user list from auth system
     setUserList(getAllUsers());
-    setEditModalOpen(false);
-    setSelectedUser(null);
     showSuccessToast('User updated successfully!');
   };
 
@@ -442,22 +438,10 @@ export function UserManagement() {
         <>
           <EditUserModal
             open={editModalOpen}
-            onClose={() => {
-              setEditModalOpen(false);
-              setSelectedUser(null);
-            }}
+            onOpenChange={setEditModalOpen}
             onSave={handleEditUser}
-            user={{
-              id: selectedUser.id,
-              name: selectedUser.name,
-              email: selectedUser.email,
-              role: selectedUser.role,
-              status: 'active',
-              joinDate: new Date().toISOString().split('T')[0],
-              permissions: selectedUser.permissions
-            }}
+            user={selectedUser}
           />
-
           <DeleteConfirmationModal
             open={deleteModalOpen}
             onOpenChange={setDeleteModalOpen}

@@ -4,6 +4,7 @@ import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { notifications } from '../lib/mockData';
+// import { Notification } from '../types'; // This type import is removed
 import { useState, useEffect } from 'react';
 import { cn } from './ui/utils';
 import { AlertTriangle, CheckCircle, Info, AlertCircle } from 'lucide-react';
@@ -24,6 +25,8 @@ const notificationColors = {
   warning: 'text-yellow-600',
 };
 
+// The 'HeaderProps' interface is removed as it's TypeScript-specific.
+
 export function UpdatedHeader({ 
   onNavigate,
   onLogout, 
@@ -33,12 +36,12 @@ export function UpdatedHeader({
   currentPage = 'Dashboard',
   pageTitle,
   pageSubtitle
-}) {
-  const [notifs, setNotifs] = useState(notifications);
+}) { // The ': HeaderProps' type annotation is removed
+  const [notifs, setNotifs] = useState(notifications); // The '<Notification[]>' generic is removed
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [searchPopupOpen, setSearchPopupOpen] = useState(false);
   const unreadCount = notifs.filter(n => !n.isRead).length;
 
   useEffect(() => {
@@ -106,9 +109,9 @@ export function UpdatedHeader({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Search orders, customers, menu items..."
-            className="pl-10 bg-muted/50 border border-gray-300 cursor-pointer transition-all duration-200"
+            className="pl-10 bg-muted/50 border border-gray-300 transition-all duration-200"
             readOnly
-            onClick={() => setSearchOpen(true)}
+            onClick={() => setSearchPopupOpen(true)}
           />
         </div>
       </div>
@@ -295,11 +298,13 @@ export function UpdatedHeader({
       </div>
 
       {/* Search Popup */}
-      <SearchPopup 
-        open={searchOpen} 
-        onOpenChange={setSearchOpen}
-        onNavigate={onNavigate}
-      />
+      {searchPopupOpen && (
+        <SearchPopup
+          isOpen={searchPopupOpen}
+          onClose={() => setSearchPopupOpen(false)}
+          onNavigate={onNavigate}
+        />
+      )}
     </header>
   );
 }

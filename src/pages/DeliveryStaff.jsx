@@ -21,41 +21,39 @@ import {
   TableRow,
 } from '../components/ui/table';
 import { usePersistentDeliveryBoys } from '../lib/usePersistentData';
-// Removed 'DeliveryBoy' type import
+// import { DeliveryBoy } from '../types'; // Type import removed
 import { AddDeliveryStaffModal } from '../components/modals/AddDeliveryStaffModal';
-import { EditModal } from '../components/modals/EditModal';
+import { EditDeliveryStaffModal } from '../components/modals/EditDeliveryStaffModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
+import { DeliveryStaffDetailsModal } from '../components/modals/DeliveryStaffDetailsModal';
 import { showSuccessToast } from '../lib/toast';
 
 export function DeliveryStaff() {
   const [deliveryStaffList, setDeliveryStaffList] = usePersistentDeliveryBoys();
   const [searchQuery, setSearchQuery] = useState('');
-  const [branchFilter, setBranchFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedStaff, setSelectedStaff] = useState([]); // Removed <string[]>
+  const [selectedStaff, setSelectedStaff] = useState([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedStaffMember, setSelectedStaffMember] = useState(null); // Removed <DeliveryBoy | null>
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedStaffMember, setSelectedStaffMember] = useState(null);
   const [bulkAction, setBulkAction] = useState('');
 
   const filteredStaff = deliveryStaffList.filter(staff => {
     const matchesSearch = staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       staff.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       staff.phone?.includes(searchQuery);
-    const matchesBranch = branchFilter === 'all' || staff.branch === branchFilter;
     const matchesStatus = statusFilter === 'all' || staff.status === statusFilter;
-    
-    return matchesSearch && matchesBranch && matchesStatus;
+
+    return matchesSearch && matchesStatus;
   });
 
-  // Removed ': Partial<DeliveryBoy>'
   const handleAddStaff = (staff) => {
-    setDeliveryStaffList([...deliveryStaffList, staff]); // Removed 'as DeliveryBoy'
+    setDeliveryStaffList([...deliveryStaffList, staff]);
     showSuccessToast('Delivery staff added successfully!');
   };
 
-  // Removed ': DeliveryBoy'
   const handleEditStaff = (updatedData) => {
     setDeliveryStaffList(deliveryStaffList.map(s => s.id === updatedData.id ? updatedData : s));
     showSuccessToast('Delivery staff updated successfully!');
@@ -69,7 +67,6 @@ export function DeliveryStaff() {
     }
   };
 
-  // Removed ': boolean'
   const handleSelectAll = (checked) => {
     if (checked) {
       setSelectedStaff(filteredStaff.map(s => s.id));
@@ -78,7 +75,6 @@ export function DeliveryStaff() {
     }
   };
 
-  // Removed ': string, : boolean'
   const handleSelectStaff = (staffId, checked) => {
     if (checked) {
       setSelectedStaff([...selectedStaff, staffId]);
@@ -89,13 +85,13 @@ export function DeliveryStaff() {
 
   const handleBulkAction = () => {
     if (bulkAction === 'activate') {
-      setDeliveryStaffList(deliveryStaffList.map(s => 
-        selectedStaff.includes(s.id) ? { ...s, status: 'active' } : s // Removed 'as 'active''
+      setDeliveryStaffList(deliveryStaffList.map(s =>
+        selectedStaff.includes(s.id) ? { ...s, status: 'active' } : s
       ));
       showSuccessToast(`${selectedStaff.length} staff member(s) activated successfully!`);
     } else if (bulkAction === 'deactivate') {
-      setDeliveryStaffList(deliveryStaffList.map(s => 
-        selectedStaff.includes(s.id) ? { ...s, status: 'inactive' } : s // Removed 'as 'inactive''
+      setDeliveryStaffList(deliveryStaffList.map(s =>
+        selectedStaff.includes(s.id) ? { ...s, status: 'inactive' } : s
       ));
       showSuccessToast(`${selectedStaff.length} staff member(s) deactivated successfully!`);
     } else if (bulkAction === 'delete') {
@@ -110,21 +106,19 @@ export function DeliveryStaff() {
   const totalOrders = deliveryStaffList.reduce((acc, s) => acc + (s.completedOrders || 0), 0);
   const avgDeliveryTime = '30m';
 
-  const branches = [...new Set(deliveryStaffList.map(s => s.branch).filter(Boolean))];
-
   return (
     <div className="p-4">
       {/* Top Buttons */}
       <div className="mb-4 flex items-center justify-end">
         <div className="flex gap-2">
-          <Button 
+          <Button
             variant="outline"
             size="sm"
             className="transition-all duration-200 h-9 text-xs border border-gray-300"
           >
-            📤 Export
+            Export
           </Button>
-          <Button 
+          <Button
             size="sm"
             className="bg-red-500 hover:bg-red-600 transition-all duration-200 h-9 text-xs border border-red-500"
             onClick={() => setAddModalOpen(true)}
@@ -185,18 +179,6 @@ export function DeliveryStaff() {
               />
             </div>
 
-            <Select value={branchFilter} onValueChange={setBranchFilter}>
-              <SelectTrigger className="h-9 text-xs w-[140px] border border-gray-300">
-                <SelectValue placeholder="All Branches" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">All Branches</SelectItem>
-                {branches.map(branch => (
-                  <SelectItem key={branch} value={branch} className="text-xs">{branch}</SelectItem> // Removed '!'
-                ))}
-              </SelectContent>
-            </Select>
-
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-9 text-xs w-[120px] border border-gray-300">
                 <SelectValue placeholder="All Status" />
@@ -221,7 +203,7 @@ export function DeliveryStaff() {
                   </SelectContent>
                 </Select>
 
-                <Button 
+                <Button
                   size="sm"
                   className="bg-red-500 hover:bg-red-600 h-9 text-xs border border-red-500"
                   onClick={handleBulkAction}
@@ -238,14 +220,13 @@ export function DeliveryStaff() {
           <TableHeader>
             <TableRow className="text-xs">
               <TableHead className="w-12">
-                <Checkbox 
+                <Checkbox
                   checked={selectedStaff.length === filteredStaff.length && filteredStaff.length > 0}
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
               <TableHead>STAFF</TableHead>
               <TableHead>CONTACT</TableHead>
-              <TableHead>BRANCH</TableHead>
               <TableHead>STATUS</TableHead>
               <TableHead>PERFORMANCE</TableHead>
               <TableHead>CURRENT ORDERS</TableHead>
@@ -258,9 +239,9 @@ export function DeliveryStaff() {
               return (
                 <TableRow key={staff.id} className="hover:bg-gray-50 transition-colors duration-200 text-xs">
                   <TableCell>
-                    <Checkbox 
+                    <Checkbox
                       checked={selectedStaff.includes(staff.id)}
-                      onCheckedChange={(checked) => handleSelectStaff(staff.id, checked)} // Removed 'as boolean'
+                      onCheckedChange={(checked) => handleSelectStaff(staff.id, checked)}
                     />
                   </TableCell>
                   <TableCell>
@@ -280,13 +261,12 @@ export function DeliveryStaff() {
                       <p className="text-xs text-muted-foreground">{staff.email || 'N/A'}</p>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{staff.branch || 'N/A'}</TableCell>
                   <TableCell>
-                    <Badge 
+                    <Badge
                       variant={staff.status === 'active' ? 'default' : 'secondary'}
                       className={`text-[10px] h-5 ${
-                        staff.status === 'active' 
-                          ? 'bg-[#e8f5e9] text-[#2e7d32] border-[#2e7d32]/20 hover:bg-[#e8f5e9]' 
+                        staff.status === 'active'
+                          ? 'bg-[#e8f5e9] text-[#2e7d32] border-[#2e7d32]/20 hover:bg-[#e8f5e9]'
                           : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-50'
                       }`}
                     >
@@ -332,6 +312,10 @@ export function DeliveryStaff() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 hover:bg-green-50 hover:text-green-600"
+                        onClick={() => {
+                          setSelectedStaffMember(staff);
+                          setDetailsModalOpen(true);
+                        }}
                       >
                         <Eye className="h-3 w-3" />
                       </Button>
@@ -382,18 +366,11 @@ export function DeliveryStaff() {
 
       {/* Edit Modal */}
       {selectedStaffMember && (
-        <EditModal
+        <EditDeliveryStaffModal
           open={editModalOpen}
           onOpenChange={setEditModalOpen}
           onSave={handleEditStaff}
-          data={selectedStaffMember}
-          title="Edit Delivery Staff"
-          fields={[
-            { key: 'name', label: 'Staff Name', type: 'text' },
-            { key: 'email', label: 'Email', type: 'email' },
-            { key: 'phone', label: 'Phone', type: 'text' },
-            { key: 'branch', label: 'Branch', type: 'text' },
-          ]}
+          staff={selectedStaffMember}
         />
       )}
 
@@ -405,6 +382,15 @@ export function DeliveryStaff() {
         title="Delete Delivery Staff"
         description={`Are you sure you want to delete ${selectedStaffMember?.name}? This action cannot be undone.`}
       />
+
+      {/* Details Modal */}
+      {selectedStaffMember && (
+        <DeliveryStaffDetailsModal
+          open={detailsModalOpen}
+          onOpenChange={setDetailsModalOpen}
+          staff={selectedStaffMember}
+        />
+      )}
     </div>
   );
 }

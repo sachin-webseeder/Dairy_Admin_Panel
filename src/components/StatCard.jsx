@@ -1,14 +1,8 @@
 import { Card } from './ui/card';
+// We remove the 'LucideIcon' import as it was only used as a TypeScript type.
 
-// Removed TypeScript interface:
-// interface StatCardProps {
-//   title: string;
-//   value: string;
-//   icon: LucideIcon;
-//   trend?: string;
-// }
-
-export function StatCard({ title, value, icon: Icon }) { // Removed type annotation
+// We also remove the 'StatCardProps' interface and the type annotation from the function.
+export function StatCard({ title, value, icon: Icon }) {
   return (
     <Card className="p-6 transition-all duration-200 hover:shadow-md">
       <div className="flex items-start justify-between">

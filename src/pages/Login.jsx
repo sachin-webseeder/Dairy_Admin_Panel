@@ -1,19 +1,17 @@
 import { useState, useEffect } from "react";
-import PropTypes from 'prop-types';
 import webseederLogo from "figma:asset/dbec6477395e40f9a594682daf5e89e877d326cc.png";
 import { slideshowImages } from "../assets/images";
-import { supabase } from "../lib/auth.js";
-import { toast } from "sonner";
-import {
-  projectId,
-  publicAnonKey,
-} from "../utils/supabase/info.jsx"; 
 import {
   loginUser,
   isEmailRegistered,
   resetUserPassword,
-} from "../lib/auth.js";
-  
+} from "../lib/auth";
+import { toast } from "sonner@2.0.3";
+import {
+  projectId,
+  publicAnonKey,
+} from "../utils/supabase/info";
+import { Shield, BarChart3, Palette, Rocket, Link2, Cloud, Mail, Hash, Clock, Lightbulb, Lock } from "lucide-react";
 
 // Import your CSS file
 import "../styles/login.css";
@@ -25,13 +23,13 @@ const slidesData = [
     subtitle: "Sign in to access your dashboard",
     features: [
       {
-        icon: "🛡️",
+        icon: Shield,
         heading: "Secure Access",
         description:
           "Your data is protected with enterprise-grade security",
       },
       {
-        icon: "📊",
+        icon: BarChart3,
         heading: "Real-time Analytics",
         description:
           "Monitor your performance with live data insights",
@@ -44,13 +42,13 @@ const slidesData = [
     subtitle: "Experience our redesigned, intuitive platform",
     features: [
       {
-        icon: "🎨",
+        icon: Palette,
         heading: "Intuitive Design",
         description:
           "Navigate effortlessly with a user-friendly layout",
       },
       {
-        icon: "🚀",
+        icon: Rocket,
         heading: "Boost Productivity",
         description:
           "Streamline your workflows and achieve more",
@@ -63,13 +61,13 @@ const slidesData = [
     subtitle: "Connect with your favorite tools effortlessly",
     features: [
       {
-        icon: "🔗",
+        icon: Link2,
         heading: "Easy Connectivity",
         description:
           "Integrate with third-party services seamlessly",
       },
       {
-        icon: "☁️",
+        icon: Cloud,
         heading: "Cloud-Powered",
         description:
           "Access your data anytime, anywhere with cloud support",
@@ -100,12 +98,12 @@ export function Login({ onLogin, onNavigate }) {
   const [otpVerifying, setOtpVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  console.log("Current forgotEmail state:", forgotEmail);
+  const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f461`;
 
-const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f461`;
-
-  // 👇 ADD THIS LINE BACK
-  const TEST_MODE = false;
+  // Test mode - set to true to bypass API and use local OTP storage
+  // Enable this if you're having issues with the Supabase edge function
+  // NOTE: When TEST_MODE is true, edge function 403 errors can be safely ignored
+  const TEST_MODE = false; // TODO: Set to false when email service is working
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -126,7 +124,9 @@ const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f
     }
   }, [resendCooldown]);
 
-  const handleChange = (e) => {
+  const handleChange = (
+    e
+  ) => {
     const value =
       e.target.type === "checkbox"
         ? e.target.checked
@@ -166,26 +166,96 @@ const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f
   const handleSendOTP = async (e) => {
     if (e) e.preventDefault();
 
+    console.log("handleSendOTP called, email:", forgotEmail);
+
     if (!forgotEmail || forgotEmail.trim() === "") {
       toast.error("Please enter your email address");
       return;
     }
 
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(forgotEmail.trim())) {
       toast.error("Please enter a valid email address");
       return;
     }
 
+    // Check if email is registered
     const trimmedEmail = forgotEmail.trim();
+    console.log(
+      "Checking if email is registered:",
+      trimmedEmail,
+    );
     if (!isEmailRegistered(trimmedEmail)) {
-      toast.error("This email is not registered.");
+      toast.error(
+        "This email is not registered. Please use a registered email address.",
+        {
+          description:
+            "You can only reset password for registered accounts.",
+          duration: 5000,
+        },
+      );
       return;
     }
 
     setOtpSending(true);
 
+    // Test mode fallback
+    if (TEST_MODE) {
+      const trimmedEmail = forgotEmail.trim();
+      const testOTP = Math.floor(
+        100000 + Math.random() * 900000,
+      ).toString();
+      localStorage.setItem(
+        `otp:${trimmedEmail}`,
+        JSON.stringify({
+          otp: testOTP,
+          expiryTime: Date.now() + 5 * 60 * 1000,
+        }),
+      );
+
+      console.log(
+        "TEST MODE: Generated OTP:",
+        testOTP,
+        "for",
+        trimmedEmail,
+      );
+
+      setTimeout(() => {
+        toast.success(
+          "OTP Generated Successfully! (Test Mode)",
+          {
+            description: `To: ${trimmedEmail}\nYour OTP Code: ${testOTP}\nValid for 5 minutes\n\nCopy this code to verify your email`,
+            duration: 15000,
+            important: true,
+          },
+        );
+        console.log("═══════════════════════════════════");
+        console.log("YOUR OTP CODE");
+        console.log("═══════════════════════════════════");
+        console.log("");
+        console.log(`   ${testOTP}`);
+        console.log("");
+        console.log("═══════════════════════════════════");
+        console.log("Select and copy the code above");
+        console.log("Valid for 5 minutes");
+        console.log("═══════════════════════════════════");
+        setForgotPasswordStep("otp");
+        setResendCooldown(60);
+        setOtpSending(false);
+      }, 1000);
+      return;
+    }
+
     try {
+      const trimmedEmail = forgotEmail.trim();
+      console.log(
+        "Sending OTP request to:",
+        `${API_URL}/send-otp`,
+      );
+      console.log("Email:", trimmedEmail);
+
+      // Send OTP via API
       const response = await fetch(`${API_URL}/send-otp`, {
         method: "POST",
         headers: {
@@ -195,62 +265,149 @@ const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f
         body: JSON.stringify({ email: trimmedEmail }),
       });
 
-      const data = await response.json();
+      console.log("📡 Response status:", response.status);
+      console.log("📡 Response ok:", response.ok);
 
       if (!response.ok) {
-        throw new Error(data.error || "An unknown error occurred.");
+        console.error(
+          "❌ HTTP Error:",
+          response.status,
+          response.statusText,
+        );
+        throw new Error(
+          `Server returned ${response.status}: ${response.statusText}`,
+        );
       }
-      
-      toast.success("OTP sent successfully!", {
-        description: `Please check your email (${trimmedEmail}) for the OTP code.`,
-      });
-      setForgotPasswordStep("otp");
-      setResendCooldown(60);
 
+      const data = await response.json();
+      console.log("Response data:", data);
+
+      if (data.success) {
+        console.log("OTP sent successfully!");
+        if (data.testMode) {
+          // In test mode, show the OTP directly
+          toast.success(
+            `OTP sent to ${trimmedEmail}! (Test Mode)`,
+            {
+              description: `Your OTP is: ${data.otp}\n\nNote: Email will be sent when Resend API is properly configured.`,
+              duration: 10000,
+            },
+          );
+        } else {
+          toast.success(`OTP sent successfully!`, {
+            description: `Please check your email inbox (${trimmedEmail}) including spam folder for the OTP code.`,
+            duration: 8000,
+          });
+        }
+        console.log("Moving to OTP verification step...");
+        setForgotPasswordStep("otp");
+        setResendCooldown(60); // 60 seconds cooldown before resend
+      } else {
+        console.error("❌ OTP sending failed:", data.error);
+        toast.error(
+          data.error || "Failed to send OTP. Please try again.",
+          {
+            duration: 6000,
+          },
+        );
+      }
     } catch (error) {
-      console.error("Error sending OTP:", error);
-      toast.error("Failed to send OTP", { description: error.message });
+      console.error("❌ Exception sending OTP:", error);
+      console.error("❌ Error message:", error.message);
+      toast.error(
+        "Network error: Could not connect to server. Please check your connection.",
+        {
+          description: error.message,
+          duration: 8000,
+        },
+      );
     } finally {
       setOtpSending(false);
     }
-};
+  };
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
 
-    if (!otp || otp.length !== 6) {
-      toast.error("Please enter the 6-digit OTP.");
+    if (!otp) {
+      toast.error("Please enter the OTP");
+      return;
+    }
+
+    if (otp.length !== 6) {
+      toast.error("OTP must be 6 digits");
       return;
     }
 
     setOtpVerifying(true);
 
+    // Test mode fallback
+    if (TEST_MODE) {
+      const trimmedEmail = forgotEmail.trim();
+      const storedData = localStorage.getItem(
+        `otp:${trimmedEmail}`,
+      );
+
+      if (!storedData) {
+        toast.error("OTP not found or expired");
+        setOtpVerifying(false);
+        return;
+      }
+
+      const { otp: storedOTP, expiryTime } =
+        JSON.parse(storedData);
+
+      if (Date.now() > expiryTime) {
+        localStorage.removeItem(`otp:${trimmedEmail}`);
+        toast.error("OTP has expired");
+        setOtpVerifying(false);
+        return;
+      }
+
+      if (otp !== storedOTP) {
+        toast.error("Invalid OTP. Please try again.");
+        setOtpVerifying(false);
+        return;
+      }
+
+      localStorage.removeItem(`otp:${trimmedEmail}`);
+      toast.success("OTP verified successfully!");
+      setForgotPasswordStep("reset");
+      setOtpVerifying(false);
+      return;
+    }
+
     try {
+      // Verify OTP via API
       const response = await fetch(`${API_URL}/verify-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${publicAnonKey}`,
         },
-        body: JSON.stringify({ email: forgotEmail, otp }),
+        body: JSON.stringify({
+          email: forgotEmail,
+          otp: otp,
+        }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Verification failed.");
+      if (data.success) {
+        toast.success("OTP verified successfully!");
+        setForgotPasswordStep("reset");
+      } else {
+        toast.error(
+          data.error || "Invalid OTP. Please try again.",
+        );
       }
-      
-      toast.success("OTP verified successfully!");
-      setForgotPasswordStep("reset");
-
     } catch (error) {
       console.error("Error verifying OTP:", error);
-      toast.error("OTP Verification Failed", { description: error.message });
+      toast.error("Failed to verify OTP. Please try again.");
     } finally {
       setOtpVerifying(false);
     }
-};
+  };
 
   const handleResendOTP = () => {
     if (resendCooldown > 0) {
@@ -264,8 +421,10 @@ const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f
     handleSendOTP();
   };
 
-  const handleResetPassword = async (e) => {
+  const handleResetPassword = (e) => {
     e.preventDefault();
+
+    console.log("Reset password attempt for:", forgotEmail);
 
     if (!newPassword || !confirmPassword) {
       toast.error("Please fill in all fields");
@@ -273,7 +432,9 @@ const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f
     }
 
     if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters long");
+      toast.error(
+        "Password must be at least 6 characters long",
+      );
       return;
     }
 
@@ -282,25 +443,39 @@ const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f
       return;
     }
 
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
+    // Reset password in the system
+    const trimmedEmail = forgotEmail.trim();
+    console.log(
+      "Calling resetUserPassword for:",
+      trimmedEmail,
+    );
+    const success = resetUserPassword(
+      trimmedEmail,
+      newPassword,
+    );
 
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success("Password reset successfully!");
-        setShowForgotPassword(false);
-        setForgotPasswordStep("email");
-        setForgotEmail("");
-        setOtp("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setResendCooldown(0);
-      }
-    } catch (error) {
-      toast.error("An unexpected error occurred.");
+    console.log("Password reset result:", success);
+
+    if (success) {
+      toast.success(
+        "Password reset successfully! You can now login with your new password.",
+        {
+          description: `Your password has been updated for ${trimmedEmail}`,
+          duration: 5000,
+        },
+      );
+      // Reset all states
+      setShowForgotPassword(false);
+      setForgotPasswordStep("email");
+      setForgotEmail("");
+      setOtp("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setResendCooldown(0);
+    } else {
+      toast.error(
+        "Failed to reset password. Please try again.",
+      );
     }
   };
 
@@ -340,17 +515,20 @@ const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f
               </p>
             </div>
             <div className="features">
-              {currentSlide.features.map((feature, index) => (
-                <div className="feature" key={index}>
-                  <div className="featureIcon">
-                    {feature.icon}
+              {currentSlide.features.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <div className="feature" key={index}>
+                    <div className="featureIcon">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="featureContent">
+                      <h4>{feature.heading}</h4>
+                      <p>{feature.description}</p>
+                    </div>
                   </div>
-                  <div className="featureContent">
-                    <h4>{feature.heading}</h4>
-                    <p>{feature.description}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -493,19 +671,19 @@ const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f
                         color: "#663C00",
                       }}
                     >
-                      <strong>🧪 Test Mode Active</strong>
+                      <strong>Test Mode Active</strong>
                       <p
                         style={{
                           margin: "4px 0 0 0",
                           fontSize: "0.8rem",
                         }}
                       >
-                        ✅ Feature is fully working!
+                        Feature is fully working!
                         <br />
-                        📱 OTP will be shown in a notification
+                        OTP will be shown in a notification
                         (no server needed)
                         <br />
-                        📧 Real emails: Optional - See
+                        Real emails: Optional - See
                         README_FORGOT_PASSWORD.md
                       </p>
                     </div>
@@ -708,9 +886,3 @@ const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f
     </div>
   );
 }
-
-// PropTypes for runtime type checking in JavaScript
-Login.propTypes = {
-  onLogin: PropTypes.func.isRequired,
-  onNavigate: PropTypes.func.isRequired,
-};

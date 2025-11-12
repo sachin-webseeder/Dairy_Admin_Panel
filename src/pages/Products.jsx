@@ -6,7 +6,7 @@ import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { branches } from '../lib/mockData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-// import { Product } from '../types'; // Removed type import
+import { products } from '../lib/mockData';
 import { AddProductModal } from '../components/modals/AddProductModal';
 import { EditModal } from '../components/modals/EditModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
@@ -203,7 +203,7 @@ export function Products() {
               onClick={() => setAddModalOpen(true)}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Dish
+              Add Product
             </Button>
           </div>
 

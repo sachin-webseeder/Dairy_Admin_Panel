@@ -67,13 +67,13 @@ export function ProfileSettings({ onProfileUpdate, currentUser }) {
     }
 
     updateCurrentUser(updates);
-    
+
     if (onProfileUpdate) {
       onProfileUpdate({ ...currentUser, ...updates });
     }
 
     toast.success('Profile updated successfully!');
-    
+
     // Clear password fields
     setCurrentPassword('');
     setNewPassword('');
@@ -172,7 +172,7 @@ export function ProfileSettings({ onProfileUpdate, currentUser }) {
               <Lock className="h-4 w-4 text-muted-foreground" />
               <h3 className="text-xs">Change Password</h3>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="current-password" className="text-xs">Current Password</Label>
@@ -210,7 +210,7 @@ export function ProfileSettings({ onProfileUpdate, currentUser }) {
                 />
               </div>
             </div>
-            
+
             <p className="text-xs text-muted-foreground mt-2">
               Leave password fields empty if you don't want to change your password
             </p>

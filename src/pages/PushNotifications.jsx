@@ -17,16 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { Search, Eye, Edit2, Copy, Trash2 } from 'lucide-react';
+import { Search, Eye, Edit2, Copy, Trash2, Mail, Clock, CheckCircle, BarChart3 } from 'lucide-react';
 import { CreateNotificationModal } from '../components/modals/CreateNotificationModal';
 import { EditNotificationModal } from '../components/modals/EditNotificationModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { usePersistentPushNotifications } from '../lib/usePersistentData';
 import { showSuccessToast } from '../lib/toast';
 
-// Removed 'Notification' interface
+// Removed interface Notification
 
-// Removed ': Notification[]'
 const defaultNotifications = [
     {
       id: '1',
@@ -92,7 +91,7 @@ export function PushNotifications() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState(null); // Removed <Notification | null>
+  const [selectedNotification, setSelectedNotification] = useState(null);
 
   const filteredNotifications = notifications.filter(notif => {
     const matchesSearch = notif.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -115,12 +114,10 @@ export function PushNotifications() {
     console.log('Refreshing notifications...');
   };
 
-  // Removed ': string'
   const handleView = (id) => {
     console.log('Viewing notification:', id);
   };
 
-  // Removed ': string'
   const handleEdit = (id) => {
     const notification = notifications.find(n => n.id === id);
     if (notification) {
@@ -129,7 +126,6 @@ export function PushNotifications() {
     }
   };
 
-  // Removed ': any'
   const handleSaveEdit = (updatedData) => {
     if (selectedNotification) {
       setNotifications(notifications.map(n => 
@@ -143,11 +139,9 @@ export function PushNotifications() {
     }
   };
 
-  // Removed ': string'
   const handleDuplicate = (id) => {
     const notification = notifications.find(n => n.id === id);
     if (notification) {
-      // Removed ': Notification'
       const duplicated = {
         ...notification,
         id: Date.now().toString(),
@@ -164,7 +158,6 @@ export function PushNotifications() {
     }
   };
 
-  // Removed ': string'
   const handleDelete = (id) => {
     const notification = notifications.find(n => n.id === id);
     if (notification) {
@@ -211,7 +204,9 @@ export function PushNotifications() {
               <p className="text-sm text-muted-foreground mb-1 font-bold">Total Sent</p>
               <h3 className="text-lg">{stats.totalSent}</h3>
             </div>
-            <div className="text-red-500 text-xl">📧</div>
+            <div className="text-red-500 text-xl">
+              <Mail className="h-5 w-5" />
+            </div>
           </div>
         </Card>
 
@@ -221,7 +216,9 @@ export function PushNotifications() {
               <p className="text-sm text-muted-foreground mb-1 font-bold">Scheduled</p>
               <h3 className="text-lg">{stats.scheduled}</h3>
             </div>
-            <div className="text-orange-500 text-xl">⏰</div>
+            <div className="text-orange-500 text-xl">
+              <Clock className="h-5 w-5" />
+            </div>
           </div>
         </Card>
 
@@ -231,7 +228,9 @@ export function PushNotifications() {
               <p className="text-sm text-muted-foreground mb-1 font-bold">Drafts</p>
               <h3 className="text-lg">{stats.drafts}</h3>
             </div>
-            <div className="text-gray-500 text-xl">📝</div>
+            <div className="text-gray-500 text-xl">
+              <Edit2 className="h-5 w-5" />
+            </div>
           </div>
         </Card>
 
@@ -241,7 +240,9 @@ export function PushNotifications() {
               <p className="text-sm text-muted-foreground mb-1 font-bold">Avg Click Rate</p>
               <h3 className="text-lg">{stats.avgClickRate}</h3>
             </div>
-            <div className="text-purple-500 text-xl">📊</div>
+            <div className="text-purple-500 text-xl">
+              <BarChart3 className="h-5 w-5" />
+            </div>
           </div>
         </Card>
       </div>
@@ -365,9 +366,9 @@ export function PushNotifications() {
                     notification.status === 'scheduled' ? 'bg-blue-50 text-blue-700' :
                     'bg-gray-100 text-gray-600'
                   }`}>
-                    {notification.status === 'sent' && '✓'}
-                    {notification.status === 'scheduled' && '⏰'}
-                    {notification.status === 'draft' && '📝'}
+                    {notification.status === 'sent' && <CheckCircle className="h-3 w-3" />}
+                    {notification.status === 'scheduled' && <Clock className="h-3 w-3" />}
+                    {notification.status === 'draft' && <Edit2 className="h-3 w-3" />}
                     {notification.status.charAt(0).toUpperCase() + notification.status.slice(1)}
                   </span>
                 </TableCell>

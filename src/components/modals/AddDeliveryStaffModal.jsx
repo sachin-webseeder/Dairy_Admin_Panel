@@ -11,26 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-// Removed 'DeliveryBoy' type import
 import { User } from 'lucide-react';
 
-// Removed 'AddDeliveryStaffModalProps' interface
-
 export function AddDeliveryStaffModal({ open, onOpenChange, onSave }) {
-  // Removed <Partial<DeliveryBoy>> generic from useState
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    branch: '',
     status: 'active',
   });
 
-  // Removed ': React.FormEvent' type
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Removed ': Partial<DeliveryBoy>' type
     const newStaff = {
       ...formData,
       id: `DS-${Date.now()}`,
@@ -51,13 +44,11 @@ export function AddDeliveryStaffModal({ open, onOpenChange, onSave }) {
       name: '',
       email: '',
       phone: '',
-      branch: '',
       status: 'active',
       rating: 4.5,
     });
   };
 
-  // Removed ': keyof DeliveryBoy' and ': any' types
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -79,7 +70,7 @@ export function AddDeliveryStaffModal({ open, onOpenChange, onSave }) {
               <User className="h-10 w-10 text-gray-400" />
             </div>
             <Button type="button" variant="outline" className="text-xs h-8">
-              📤 Upload Photo
+              Upload Photo
             </Button>
           </div>
 
@@ -121,25 +112,9 @@ export function AddDeliveryStaffModal({ open, onOpenChange, onSave }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="branch" className="text-xs">Assigned Branch</Label>
-            <Select value={formData.branch || ''} onValueChange={(value) => handleChange('branch', value)}>
-              <SelectTrigger className="text-xs h-9">
-                <SelectValue placeholder="Select branch" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Downtown Branch" className="text-xs">Downtown Branch</SelectItem>
-                <SelectItem value="Mall Branch" className="text-xs">Mall Branch</SelectItem>
-                <SelectItem value="Airport Branch" className="text-xs">Airport Branch</SelectItem>
-                <SelectItem value="Marina Branch" className="text-xs">Marina Branch</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="status" className="text-xs">Status</Label>
             <Select 
               value={formData.status || 'active'} 
-              // Removed 'as 'active' | 'inactive'' cast
               onValueChange={(value) => handleChange('status', value)}
             >
               <SelectTrigger className="text-xs h-9">
