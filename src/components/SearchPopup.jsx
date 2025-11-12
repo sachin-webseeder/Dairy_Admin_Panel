@@ -60,7 +60,7 @@ export function SearchPopup({ isOpen, onClose, onNavigate }) {
       />
 
       {/* Search Modal - Smaller and Centered */}
-      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-lg shadow-xl z-50 overflow-hidden">
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-sm bg-white rounded-lg shadow-xl z-50 overflow-y-auto max-h-[90vh]">
         {/* Header */}
         <div className="p-3 border-b border-gray-200 flex items-center gap-2">
           <Input

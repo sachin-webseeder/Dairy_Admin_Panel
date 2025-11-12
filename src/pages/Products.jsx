@@ -307,7 +307,7 @@ export function Products() {
                   <span className="text-xs text-muted-foreground">{product.unit}</span>
                 </div>
                 <div className="text-xs text-muted-foreground mb-3">
-                  Stock: {product.stock} • {product.branch}
+                  Stock: {product.stock} 
                 </div>
                 <div className="flex gap-2">
                   <Button
