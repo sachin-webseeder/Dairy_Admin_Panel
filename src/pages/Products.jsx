@@ -1,83 +1,80 @@
+// admin_11/src/pages/Products.jsx
 import { useState } from 'react';
 import { Search, Plus, Filter, Edit2, Trash2, Package, CheckCircle, TrendingUp, Star, X, ChevronDown } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { branches } from '../lib/mockData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { products } from '../lib/mockData';
 import { AddProductModal } from '../components/modals/AddProductModal';
 import { EditModal } from '../components/modals/EditModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import { usePersistentProducts } from '../lib/usePersistentData';
+import { useApiProducts } from '../lib/hooks/useApiProducts'; // ✨ API Hook for list
+import { useDashboardStats } from '../lib/hooks/useDashboardStats'; // ✨ API Hook for stats
 import { showSuccessToast } from '../lib/toast';
+import { toast } from 'sonner@2.0.3';
 
 export function Products() {
-  const [productList, setProductList] = usePersistentProducts();
-  const [selectedBranch, setSelectedBranch] = useState('all'); // Removed <string>
-  const [selectedCategory, setSelectedCategory] = useState('all'); // Removed <string>
-  const [selectedStatus, setSelectedStatus] = useState('all'); // Removed <string>
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null); // Removed <Product | null>
+  // Filter states
+  const [selectedBranch, setSelectedBranch] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
-  
-  // Filter states
   const [priceFilter, setPriceFilter] = useState('all');
   const [popularityFilter, setPopularityFilter] = useState('all');
   const [dietFilter, setDietFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
 
-  const filteredProducts = productList.filter(p => {
-    const matchesBranch = selectedBranch === 'all' || p.branch === selectedBranch;
-    const matchesCategory = selectedCategory === 'all' || p.category.toLowerCase() === selectedCategory.toLowerCase();
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Status filter
-    let matchesStatus = true;
-    if (selectedStatus === 'instock') matchesStatus = p.stock > 0;
-    else if (selectedStatus === 'outofstock') matchesStatus = p.stock === 0;
-    
-    // Price filter
-    let matchesPrice = true;
-    if (priceFilter === 'low') matchesPrice = p.price >= 0 && p.price < 100;
-    else if (priceFilter === 'medium') matchesPrice = p.price >= 100 && p.price < 300;
-    else if (priceFilter === 'high') matchesPrice = p.price >= 300;
-    
-    return matchesBranch && matchesCategory && matchesSearch && matchesStatus && matchesPrice;
-  }).sort((a, b) => {
-    // Apply sorting
-    let compareValue = 0;
-    if (sortBy === 'name') compareValue = a.name.localeCompare(b.name);
-    else if (sortBy === 'price') compareValue = a.price - b.price;
-    else if (sortBy === 'stock') compareValue = a.stock - b.stock;
-    
-    return sortOrder === 'asc' ? compareValue : -compareValue;
+  // Modal states
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // --- API Hook for Product List ---
+  const {
+    products: filteredProducts,
+    loading: productsLoading,
+    error: productsError,
+    total: totalProductsApi, // Total from API
+    createProduct,
+    updateProduct,
+    deleteProduct
+  } = useApiProducts({
+    search: searchQuery,
+    category: selectedCategory,
+    status: selectedStatus,
+    // price: priceFilter, // Note: The hook/service needs to be updated to pass this
+    sortBy: sortBy,
+    sortOrder: sortOrder,
+    page: 1,
+    limit: 50
   });
 
-  const handleAddProduct = (product) => { // Removed : Partial<Product>
-    setProductList([...productList, product]); // Removed as Product
-    showSuccessToast('Product added successfully!');
-  };
+  // --- API Hook for Stat Cards ---
+  const { 
+    stats, 
+    loading: statsLoading, 
+    // error: statsError // You can display this error if you want
+  } = useDashboardStats();
 
-  const handleEditProduct = (updatedData) => { // Removed : Product
-    setProductList(productList.map(p => p.id === updatedData.id ? updatedData : p));
-    showSuccessToast('Product updated successfully!');
-  };
-
-  const handleDeleteProduct = () => {
+  // Handle Delete
+  const handleDeleteProduct = async () => {
     if (selectedProduct) {
-      setProductList(productList.filter(p => p.id !== selectedProduct.id));
+      try {
+        await deleteProduct(selectedProduct.id);
+        showSuccessToast('Product deleted successfully!');
+      } catch (err) {
+        toast.error(err.message || "Failed to delete product");
+      }
       setSelectedProduct(null);
-      showSuccessToast('Product deleted successfully!');
     }
   };
 
+  // Handle Filter Reset
   const handleClearAllFilters = () => {
     setPriceFilter('all');
     setPopularityFilter('all');
@@ -90,10 +87,11 @@ export function Products() {
     setSearchQuery('');
   };
 
-  const totalProducts = productList.length;
-  const availableProducts = productList.filter(p => p.stock > 0).length;
-  const todaysRevenue = 45000; // Mock data
-  const avgRating = 4.5; // Mock data
+  // Stat card values, now from the stats hook
+  const totalProducts = statsLoading ? '...' : (stats?.totalProducts ?? totalProductsApi ?? 0);
+  const availableProducts = statsLoading ? '...' : (stats?.availableProducts ?? 'N/A');
+  const todaysRevenue = statsLoading ? '...' : (stats?.todaysRevenue?.toLocaleString() ?? 'N/A');
+  const avgRating = statsLoading ? '...' : (stats?.avgRating ?? 'N/A');
 
   return (
     <div className="p-4">
@@ -125,7 +123,7 @@ export function Products() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-muted-foreground mb-1 font-bold">Today's Revenue</p>
-              <h3 className="text-lg">₹{todaysRevenue.toLocaleString()}</h3>
+              <h3 className="text-lg">₹{todaysRevenue}</h3>
             </div>
             <div className="h-9 w-9 bg-purple-50 rounded-full flex items-center justify-center">
               <TrendingUp className="h-4 w-4 text-purple-500" />
@@ -278,72 +276,79 @@ export function Products() {
             </div>
           )}
         </div>
+        
+        {/* --- LOADING & ERROR HANDLING for List --- */}
+        {productsLoading && <div className="text-center py-12 text-muted-foreground">Loading products...</div>}
+        {productsError && <div className="text-center py-12 text-red-500">Error: {productsError}</div>}
+        {!productsLoading && !productsError && (
+          <>
+            {/* Products Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-6">
+              {filteredProducts.map((product) => (
+                <Card key={product.id} className="overflow-hidden transition-all duration-200 hover:shadow-lg">
+                  <div className="relative h-48 bg-gray-100">
+                    <ImageWithFallback 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <Badge 
+                      className="absolute top-2 right-2 text-xs"
+                      style={{ 
+                        backgroundColor: product.stock > 0 ? '#e8f5e9' : '#f5f5f5',
+                        color: product.stock > 0 ? '#2e7d32' : '#757575'
+                      }}
+                    >
+                      {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
+                    </Badge>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-medium mb-1">{product.name}</h3>
+                    <p className="text-xs text-muted-foreground mb-2">{product.category}</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-semibold">₹{product.price}</span>
+                      <span className="text-xs text-muted-foreground">{product.unit}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-3">
+                      Stock: {product.stock} 
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          setSelectedProduct(product);
+                          setEditModalOpen(true);
+                        }}
+                      >
+                        <Edit2 className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          setSelectedProduct(product);
+                          setDeleteModalOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-6">
-          {filteredProducts.map((product) => (
-            <Card key={product.id} className="overflow-hidden transition-all duration-200 hover:shadow-lg">
-              <div className="relative h-48 bg-gray-100">
-                <ImageWithFallback 
-                  src={product.image} 
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-                <Badge 
-                  className="absolute top-2 right-2 text-xs"
-                  style={{ 
-                    backgroundColor: product.stock > 0 ? '#e8f5e9' : '#f5f5f5',
-                    color: product.stock > 0 ? '#2e7d32' : '#757575'
-                  }}
-                >
-                  {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-                </Badge>
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                No products found
               </div>
-              <div className="p-4">
-                <h3 className="font-medium mb-1">{product.name}</h3>
-                <p className="text-xs text-muted-foreground mb-2">{product.category}</p>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-semibold">₹{product.price}</span>
-                  <span className="text-xs text-muted-foreground">{product.unit}</span>
-                </div>
-                <div className="text-xs text-muted-foreground mb-3">
-                  Stock: {product.stock} 
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => {
-                      setSelectedProduct(product);
-                      setEditModalOpen(true);
-                    }}
-                  >
-                    <Edit2 className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => {
-                      setSelectedProduct(product);
-                      setDeleteModalOpen(true);
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            No products found
-          </div>
+            )}
+          </>
         )}
       </Card>
 
@@ -351,7 +356,7 @@ export function Products() {
       <AddProductModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
-        onAdd={handleAddProduct}
+        onAdd={createProduct} // Wired to API hook
       />
 
       {selectedProduct && (
@@ -362,7 +367,7 @@ export function Products() {
               setEditModalOpen(open);
               if (!open) setSelectedProduct(null);
             }}
-            onSave={handleEditProduct}
+            onSave={updateProduct} // Wired to API hook
             title="Edit Product"
             data={selectedProduct}
             fields={[
@@ -381,7 +386,7 @@ export function Products() {
               setDeleteModalOpen(open);
               if (!open) setSelectedProduct(null);
             }}
-            onConfirm={handleDeleteProduct}
+            onConfirm={handleDeleteProduct} // Wired to API hook
             title="Delete Product"
             description={`Are you sure you want to delete ${selectedProduct.name}? This action cannot be undone.`}
           />

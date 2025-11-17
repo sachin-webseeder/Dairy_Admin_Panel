@@ -1,3 +1,4 @@
+// admin_11/src/pages/PushNotifications.jsx
 import React, { useState } from "react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -37,152 +38,144 @@ import {
 import { CreateNotificationModal } from "../components/modals/CreateNotificationModal";
 import { EditNotificationModal } from "../components/modals/EditNotificationModal";
 import { DeleteConfirmationModal } from "../components/modals/DeleteConfirmationModal";
-import { usePersistentPushNotifications } from "../lib/usePersistentData";
 import { showSuccessToast } from "../lib/toast";
+import { toast } from "sonner@2.0.3"; // ✨ ADDED
+import { useApiNotificationStats } from "../lib/hooks/useApiNotificationStats"; // ✨ ADDED
+import { useApiNotifications } from "../lib/hooks/useApiNotifications"; // ✨ ADDED
+// import { usePersistentPushNotifications } from "../lib/usePersistentData"; // ✨ REMOVED
 
-const defaultNotifications = [
-  {
-    id: "1",
-    title: "Weekend Special Offer!",
-    description:
-      "Get 50% off on all pizzas this weekend. Limited time offer!",
-    audience: "All Users",
-    type: "Promo",
-    status: "sent",
-    delivered: 12450,
-    opened: 8725,
-    clickRate: "37.0%",
-    date: "4 Oct 2025",
-    time: "03:30 PM",
-  },
-  {
-    id: "2",
-    title: "System Maintenance Notice",
-    description:
-      "Our app will be under maintenance from 2 AM to 4 AM tomorrow.",
-    audience: "All Users",
-    type: "System",
-    status: "scheduled",
-    delivered: 0,
-    opened: 0,
-    clickRate: "0.0%",
-    date: "4 Oct 2025",
-    time: "02:00 AM",
-  },
-  {
-    id: "3",
-    title: "New Menu Items Available!",
-    description:
-      "Check out our delicious new pasta collection. Order now!",
-    audience: "Downtown Branch",
-    type: "Promo",
-    status: "draft",
-    delivered: 0,
-    opened: 0,
-    clickRate: "0.0%",
-    date: "N/A",
-    time: "",
-  },
-  {
-    id: "4",
-    title: "Order Ready for Pickup",
-    description:
-      "Your order #ORD-1234 is ready for pickup at Downtown Branch.",
-    audience: "Specific Customers",
-    type: "Order",
-    status: "sent",
-    delivered: 1,
-    opened: 1,
-    clickRate: "100%",
-    date: "3 Oct 2025",
-    time: "12:45 PM",
-  },
-];
+// const defaultNotifications = [ ... ]; // ✨ REMOVED
 
 export function PushNotifications() {
-  const [notifications, setNotifications] =
-    usePersistentPushNotifications(defaultNotifications);
+  // const [notifications, setNotifications] = usePersistentPushNotifications(defaultNotifications); // ✨ REMOVED
+  
+  // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [audienceFilter, setAudienceFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [timeFilter, setTimeFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("all"); // Note: API hook doesn't use this filter yet
+  
+  // Modal states
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedNotification, setSelectedNotification] =
     useState(null);
 
-  const filteredNotifications = notifications.filter(
-    (notif) => {
-      const matchesSearch =
-        notif.title
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        notif.description
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
-      const matchesAudience =
-        audienceFilter === "all" ||
-        notif.audience === audienceFilter;
-      const matchesType =
-        typeFilter === "all" || notif.type === typeFilter;
-      const matchesStatus =
-        statusFilter === "all" || notif.status === statusFilter;
+  // ✨ --- API Hook for List --- ✨
+  const {
+    notifications: filteredNotifications, // API hook does filtering
+    loading: listLoading,
+    error: listError,
+    total,
+    refetch,
+    createNotification,
+    updateNotification,
+    deleteNotification,
+  } = useApiNotifications({
+    search: searchQuery,
+    audience: audienceFilter,
+    type: typeFilter,
+    status: statusFilter,
+    time: timeFilter,
+  });
 
-      return (
-        matchesSearch &&
-        matchesAudience &&
-        matchesType &&
-        matchesStatus
-      );
-    },
-  );
+  // ✨ --- API Hook for Stats --- ✨
+  const { 
+    stats, 
+    loading: statsLoading 
+  } = useApiNotificationStats();
 
-  const stats = {
-    totalSent: notifications.filter((n) => n.status === "sent")
-      .length,
-    scheduled: notifications.filter(
-      (n) => n.status === "scheduled",
-    ).length,
-    drafts: notifications.filter((n) => n.status === "draft")
-      .length,
-    avgClickRate: "9.3%",
-  };
+  // const filteredNotifications = notifications.filter(...) // ✨ REMOVED (API hook handles this)
+
+  // const stats = { ... } // ✨ REMOVED (comes from hook)
 
   const handleRefresh = () => {
-    console.log("Refreshing notifications...");
+    refetch(); // ✨ CHANGED
   };
 
   const handleView = (id) => {
     console.log("Viewing notification:", id);
+    // You can build a "View" modal and open it here
+    toast.info("View functionality to be implemented.");
   };
 
   const handleEdit = (id) => {
-    const notification = notifications.find((n) => n.id === id);
+    const notification = filteredNotifications.find((n) => n.id === id); // ✨ Use filteredNotifications
     if (notification) {
       setSelectedNotification(notification);
       setEditModalOpen(true);
     }
   };
 
-  const handleSaveEdit = (updatedData) => {
+  const handleSaveEdit = async (updatedData) => { // ✨ CHANGED to async
     if (selectedNotification) {
-      setNotifications(
-        notifications.map((n) =>
-          n.id === selectedNotification.id
-            ? { ...n, ...updatedData }
-            : n,
-        ),
+      try {
+        await updateNotification(selectedNotification.id, updatedData); // ✨ Call API
+        setEditModalOpen(false);
+        setSelectedNotification(null);
+        showSuccessToast("Notification updated successfully!");
+      } catch (err) {
+        toast.error(err.message || "Failed to update notification");
+      }
+    }
+  };
+  
+  const handleCreate = async (notification) => { // ✨ ADDED for create modal
+    try {
+      // Format data from modal to match our list structure (or API structure)
+      const formattedData = {
+        id: notification.id,
+        title: notification.title,
+        description: notification.message,
+        audience:
+          notification.targetAudience === "all"
+            ? "All Users"
+            : notification.targetAudience === "branches"
+              ? "Specific Branches"
+              : notification.targetAudience === "role"
+                ? "By Role"
+                : "Specific Customers",
+        type:
+          notification.type === "promotional"
+            ? "Promo"
+            : notification.type === "system"
+              ? "System"
+              : notification.type === "order"
+                ? "Order"
+                : "Alert",
+        status: notification.status,
+        delivered: notification.status === "sent" ? (notification.recipients || 0) : 0,
+        opened: 0,
+        clickRate: "0.0%",
+        date:
+          notification.status === "sent"
+            ? new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+            : notification.status === "scheduled"
+              ? new Date(notification.scheduledDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+              : "N/A",
+        time:
+          notification.status === "sent"
+            ? new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
+            : notification.status === "scheduled"
+              ? notification.scheduledDate.split(" ")[1]
+              : "",
+      };
+    
+      await createNotification(formattedData); // ✨ Call API
+      setCreateModalOpen(false);
+      showSuccessToast(
+        `Notification ${notification.status === "sent" ? "sent" : notification.status === "scheduled" ? "scheduled" : "saved as draft"} successfully!`,
       );
-      setEditModalOpen(false);
-      setSelectedNotification(null);
-      showSuccessToast("Notification updated successfully!");
+    } catch (err) {
+      toast.error(err.message || "Failed to create notification");
     }
   };
 
   const handleDuplicate = (id) => {
-    const notification = notifications.find((n) => n.id === id);
+    // This can remain a local-only action or become a new API call
+    const notification = filteredNotifications.find((n) => n.id === id);
     if (notification) {
       const duplicated = {
         ...notification,
@@ -195,29 +188,30 @@ export function PushNotifications() {
         date: "N/A",
         time: "",
       };
-      setNotifications([...notifications, duplicated]);
+      // We can call createNotification with the draft
+      handleCreate(duplicated); // This will save the new draft
       showSuccessToast("Notification duplicated successfully!");
     }
   };
 
   const handleDelete = (id) => {
-    const notification = notifications.find((n) => n.id === id);
+    const notification = filteredNotifications.find((n) => n.id === id);
     if (notification) {
       setSelectedNotification(notification);
       setDeleteModalOpen(true);
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => { // ✨ CHANGED to async
     if (selectedNotification) {
-      setNotifications(
-        notifications.filter(
-          (n) => n.id !== selectedNotification.id,
-        ),
-      );
-      setDeleteModalOpen(false);
-      setSelectedNotification(null);
-      showSuccessToast("Notification deleted successfully!");
+      try {
+        await deleteNotification(selectedNotification.id); // ✨ Call API
+        setDeleteModalOpen(false);
+        setSelectedNotification(null);
+        showSuccessToast("Notification deleted successfully!");
+      } catch (err) {
+        toast.error(err.message || "Failed to delete notification");
+      }
     }
   };
 
@@ -250,7 +244,7 @@ export function PushNotifications() {
               <p className="text-sm text-muted-foreground mb-1 font-bold">
                 Total Sent
               </p>
-              <h3 className="text-lg">{stats.totalSent}</h3>
+              <h3 className="text-lg">{statsLoading ? '...' : stats.totalSent}</h3>
             </div>
             <div className="text-red-500 text-xl">
               <Mail className="h-5 w-5" />
@@ -264,7 +258,7 @@ export function PushNotifications() {
               <p className="text-sm text-muted-foreground mb-1 font-bold">
                 Scheduled
               </p>
-              <h3 className="text-lg">{stats.scheduled}</h3>
+              <h3 className="text-lg">{statsLoading ? '...' : stats.scheduled}</h3>
             </div>
             <div className="text-orange-500 text-xl">
               <Clock className="h-5 w-5" />
@@ -278,7 +272,7 @@ export function PushNotifications() {
               <p className="text-sm text-muted-foreground mb-1 font-bold">
                 Drafts
               </p>
-              <h3 className="text-lg">{stats.drafts}</h3>
+              <h3 className="text-lg">{statsLoading ? '...' : stats.drafts}</h3>
             </div>
             <div className="text-gray-500 text-xl">
               <Edit2 className="h-5 w-5" />
@@ -292,7 +286,7 @@ export function PushNotifications() {
               <p className="text-sm text-muted-foreground mb-1 font-bold">
                 Avg Click Rate
               </p>
-              <h3 className="text-lg">{stats.avgClickRate}</h3>
+              <h3 className="text-lg">{statsLoading ? '...' : stats.avgClickRate}</h3>
             </div>
             <div className="text-purple-500 text-xl">
               <BarChart3 className="h-5 w-5" />
@@ -420,294 +414,240 @@ export function PushNotifications() {
             </Select>
           </div>
         </div>
-
-        <Table>
-          <TableHeader>
-            <TableRow className="text-xs">
-              <TableHead className="w-12">
-                <input type="checkbox" className="rounded" />
-              </TableHead>
-              <TableHead>TITLE</TableHead>
-              <TableHead>AUDIENCE</TableHead>
-              <TableHead>TYPE</TableHead>
-              <TableHead>STATUS</TableHead>
-              <TableHead>ANALYTICS</TableHead>
-              <TableHead>DATE</TableHead>
-              <TableHead className="text-right">
-                ACTIONS
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredNotifications.map((notification) => (
-              <TableRow
-                key={notification.id}
-                className="hover:bg-gray-50 transition-colors duration-200 text-xs"
-              >
-                <TableCell>
-                  <input type="checkbox" className="rounded" />
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <p className="font-medium flex items-center gap-2">
-                      {notification.status === "sent" && (
-                        <span className="h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse mr-1"></span>
-                      )}
-                      {notification.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground line-clamp-1">
-                      {notification.description}
-                    </p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-xs text-gray-600 flex items-center gap-1">
-                    <Users2 className="h-4 w-4" />{" "}
-                    {notification.audience}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
-                      notification.type === "Promo"
-                        ? "bg-blue-50 text-blue-700"
-                        : notification.type === "System"
-                          ? "bg-orange-50 text-orange-700"
-                          : "bg-green-50 text-green-700"
-                    }`}
+        
+        {/* ✨ --- LOADING & ERROR HANDLING --- ✨ */}
+        {listLoading && <div className="p-4 text-center">Loading notifications...</div>}
+        {listError && <div className="p-4 text-center text-red-500">Error: {listError}</div>}
+        {!listLoading && !listError && (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow className="text-xs">
+                  <TableHead className="w-12">
+                    <input type="checkbox" className="rounded" />
+                  </TableHead>
+                  <TableHead>TITLE</TableHead>
+                  <TableHead>AUDIENCE</TableHead>
+                  <TableHead>TYPE</TableHead>
+                  <TableHead>STATUS</TableHead>
+                  <TableHead>ANALYTICS</TableHead>
+                  <TableHead>DATE</TableHead>
+                  <TableHead className="text-right">
+                    ACTIONS
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredNotifications.map((notification) => (
+                  <TableRow
+                    key={notification.id}
+                    className="hover:bg-gray-50 transition-colors duration-200 text-xs"
                   >
-                    {notification.type === "Promo" && (
-                      <Gift className="h-3 w-3" />
-                    )}
-                    {notification.type === "System" && (
-                      <Settings className="h-3 w-3" />
-                    )}
-                    {notification.type === "Order" && (
-                      <Package className="h-3 w-3" />
-                    )}
-                    {notification.type}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
-                      notification.status === "sent"
-                        ? "bg-[#e8f5e9] text-[#2e7d32]"
-                        : notification.status === "scheduled"
-                          ? "bg-blue-50 text-blue-700"
-                          : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {notification.status === "sent" && (
-                      <CheckCircle className="h-3 w-3" />
-                    )}
-                    {notification.status === "scheduled" && (
-                      <Clock className="h-3 w-3" />
-                    )}
-                    {notification.status === "draft" && (
-                      <Edit2 className="h-3 w-3" />
-                    )}
-                    {notification.status
-                      .charAt(0)
-                      .toUpperCase() +
-                      notification.status.slice(1)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground">
-                        Delivered:
-                      </span>
-                      <span className="font-medium">
-                        {notification.delivered.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground">
-                        Opened:
-                      </span>
-                      <span className="font-medium">
-                        {notification.opened.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground">
-                        Click Rate:
-                      </span>
-                      <span className="font-medium">
-                        {notification.clickRate}
-                      </span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-muted-foreground">
-                    {notification.date !== "N/A" && (
-                      <>
-                        <p>{notification.date}</p>
-                        <p className="text-xs">
-                          {notification.time}
+                    <TableCell>
+                      <input type="checkbox" className="rounded" />
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium flex items-center gap-2">
+                          {notification.status === "sent" && (
+                            <span className="h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse mr-1"></span>
+                          )}
+                          {notification.title}
                         </p>
-                      </>
-                    )}
-                    {notification.date === "N/A" && <p>N/A</p>}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 hover:bg-green-50 hover:text-green-600"
-                      onClick={() =>
-                        handleView(notification.id)
-                      }
-                    >
-                      <Eye className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 hover:bg-blue-50 hover:text-blue-600"
-                      onClick={() =>
-                        handleEdit(notification.id)
-                      }
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 hover:bg-purple-50 hover:text-purple-600"
-                      onClick={() =>
-                        handleDuplicate(notification.id)
-                      }
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600"
-                      onClick={() =>
-                        handleDelete(notification.id)
-                      }
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {/* Pagination */}
-        <div className="p-4 border-t flex items-center justify-between">
-          <div className="text-xs text-muted-foreground">
-            Showing {filteredNotifications.length} of{" "}
-            {notifications.length} notifications
-          </div>
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs border border-gray-300"
-              disabled
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs bg-red-500 text-white border border-red-500"
-            >
-              1
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs border border-gray-300"
-            >
-              2
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs border border-gray-300"
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {notification.description}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs text-gray-600 flex items-center gap-1">
+                        <Users2 className="h-4 w-4" />{" "}
+                        {notification.audience}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                          notification.type === "Promo"
+                            ? "bg-blue-50 text-blue-700"
+                            : notification.type === "System"
+                              ? "bg-orange-50 text-orange-700"
+                              : "bg-green-50 text-green-700"
+                        }`}
+                      >
+                        {notification.type === "Promo" && (
+                          <Gift className="h-3 w-3" />
+                        )}
+                        {notification.type === "System" && (
+                          <Settings className="h-3 w-3" />
+                        )}
+                        {notification.type === "Order" && (
+                          <Package className="h-3 w-3" />
+                        )}
+                        {notification.type}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                          notification.status === "sent"
+                            ? "bg-[#e8f5e9] text-[#2e7d32]"
+                            : notification.status === "scheduled"
+                              ? "bg-blue-50 text-blue-700"
+                              : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {notification.status === "sent" && (
+                          <CheckCircle className="h-3 w-3" />
+                        )}
+                        {notification.status === "scheduled" && (
+                          <Clock className="h-3 w-3" />
+                        )}
+                        {notification.status === "draft" && (
+                          <Edit2 className="h-3 w-3" />
+                        )}
+                        {notification.status
+                          .charAt(0)
+                          .toUpperCase() +
+                          notification.status.slice(1)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-muted-foreground">
+                            Delivered:
+                          </span>
+                          <span className="font-medium">
+                            {notification.delivered.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-muted-foreground">
+                            Opened:
+                          </span>
+                          <span className="font-medium">
+                            {notification.opened.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-muted-foreground">
+                            Click Rate:
+                          </span>
+                          <span className="font-medium">
+                            {notification.clickRate}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-muted-foreground">
+                        {notification.date !== "N/A" && (
+                          <>
+                            <p>{notification.date}</p>
+                            <p className="text-xs">
+                              {notification.time}
+                            </p>
+                          </>
+                        )}
+                        {notification.date === "N/A" && <p>N/A</p>}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 hover:bg-green-50 hover:text-green-600"
+                          onClick={() =>
+                            handleView(notification.id)
+                          }
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 hover:bg-blue-50 hover:text-blue-600"
+                          onClick={() =>
+                            handleEdit(notification.id)
+                          }
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 hover:bg-purple-50 hover:text-purple-600"
+                          onClick={() =>
+                            handleDuplicate(notification.id)
+                          }
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600"
+                          onClick={() =>
+                            handleDelete(notification.id)
+                          }
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            
+            {/* Pagination */}
+            <div className="p-4 border-t flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                Showing {filteredNotifications.length} of{" "}
+                {total} notifications
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs border border-gray-300"
+                  disabled
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs bg-red-500 text-white border border-red-500"
+                >
+                  1
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs border border-gray-300"
+                >
+                  2
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs border border-gray-300"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <CreateNotificationModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
-        onSave={(notification) => {
-          setNotifications([
-            ...notifications,
-            {
-              id: notification.id,
-              title: notification.title,
-              description: notification.message,
-              audience:
-                notification.targetAudience === "all"
-                  ? "All Users"
-                  : notification.targetAudience === "branches"
-                    ? "Specific Branches"
-                    : notification.targetAudience === "role"
-                      ? "By Role"
-                      : "Specific Customers",
-              type:
-                notification.type === "promotional"
-                  ? "Promo"
-                  : notification.type === "system"
-                    ? "System"
-                    : notification.type === "order"
-                      ? "Order"
-                      : "Alert",
-              status: notification.status,
-              delivered:
-                notification.status === "sent"
-                  ? notification.recipients || 0
-                  : 0,
-              opened: 0,
-              clickRate: "0.0%",
-              date:
-                notification.status === "sent"
-                  ? new Date().toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })
-                  : notification.status === "scheduled"
-                    ? new Date(
-                      notification.scheduledDate,
-                    ).toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })
-                    : "N/A",
-              time:
-                notification.status === "sent"
-                  ? new Date().toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })
-                  : notification.status === "scheduled"
-                    ? notification.scheduledDate.split(" ")[1]
-                    : "",
-            },
-          ]);
-          showSuccessToast(
-            `Notification ${notification.status === "sent" ? "sent" : notification.status === "scheduled" ? "scheduled" : "saved as draft"} successfully!`,
-          );
-        }}
+        onSave={handleCreate} // ✨ WIRED
       />
 
       {selectedNotification && (
@@ -715,14 +655,14 @@ export function PushNotifications() {
           <EditNotificationModal
             open={editModalOpen}
             onOpenChange={setEditModalOpen}
-            onSave={handleSaveEdit}
+            onSave={handleSaveEdit} // ✨ WIRED
             notification={selectedNotification}
           />
 
           <DeleteConfirmationModal
             open={deleteModalOpen}
             onOpenChange={setDeleteModalOpen}
-            onConfirm={handleConfirmDelete}
+            onConfirm={handleConfirmDelete} // ✨ WIRED
             title="Delete Notification"
             description={`Are you sure you want to delete "${selectedNotification.title}"? This action cannot be undone.`}
           />

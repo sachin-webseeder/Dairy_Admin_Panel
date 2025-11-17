@@ -6,7 +6,9 @@ import {
   branches as defaultBranches,
   deliveryBoys as defaultDeliveryBoys,
   users as defaultUsers,
-  notifications as defaultNotifications
+  notifications as defaultNotifications,
+  walletData as defaultWallet,
+  mockMemberships as defaultMemberships // ✨ ADDED THIS
 } from './mockData';
 
 const STORAGE_KEYS = {
@@ -17,11 +19,13 @@ const STORAGE_KEYS = {
   DELIVERY_BOYS: 'dynasty_delivery_boys',
   USERS: 'dynasty_users',
   NOTIFICATIONS: 'dynasty_notifications',
+  WALLET: 'dynasty_wallet',
+  MEMBERSHIP: 'dynasty_membership', // ✨ ADDED THIS
   HOMEPAGE_SETTINGS: 'dynasty_homepage_settings',
 };
 
 // Helper to load from localStorage
-function loadFromStorage(key, defaultValue) { // Removed <T>, : string, : T, : T
+function loadFromStorage(key, defaultValue) {
   if (typeof window === 'undefined') return defaultValue;
   
   try {
@@ -36,7 +40,7 @@ function loadFromStorage(key, defaultValue) { // Removed <T>, : string, : T, : T
 }
 
 // Helper to save to localStorage
-function saveToStorage(key, value) { // Removed <T>, : string, : T, : void
+function saveToStorage(key, value) {
   if (typeof window === 'undefined') return;
   
   try {
@@ -47,14 +51,14 @@ function saveToStorage(key, value) { // Removed <T>, : string, : T, : void
 }
 
 // Custom hook for persistent data
-export function usePersistentData(key, defaultValue) { // Removed <T>, : string, : T
-  const [data, setData] = useState(() => loadFromStorage(key, defaultValue)); // Removed <T>
+export function usePersistentData(key, defaultValue) {
+  const [data, setData] = useState(() => loadFromStorage(key, defaultValue));
 
   useEffect(() => {
     saveToStorage(key, data);
   }, [key, data]);
 
-  return [data, setData]; // Removed 'as const'
+  return [data, setData];
 }
 
 // Specific hooks for each data type
@@ -95,12 +99,21 @@ export function usePersistentNotifications() {
   return usePersistentData(STORAGE_KEYS.NOTIFICATIONS, defaultNotifications);
 }
 
-export function usePersistentHomepageSettings(defaultValue) { // Removed : any
+export function usePersistentWallet() {
+  return usePersistentData(STORAGE_KEYS.WALLET, defaultWallet);
+}
+
+// ✨ ADDED THIS FUNCTION ✨
+export function usePersistentMembership() {
+  return usePersistentData(STORAGE_KEYS.MEMBERSHIP, defaultMemberships);
+}
+
+export function usePersistentHomepageSettings(defaultValue) {
   return usePersistentData(STORAGE_KEYS.HOMEPAGE_SETTINGS, defaultValue);
 }
 
 // Push notifications (different from notification bell)
-export function usePersistentPushNotifications(defaultValue) { // Removed : any
+export function usePersistentPushNotifications(defaultValue) {
   return usePersistentData('dynasty_push_notifications', defaultValue);
 }
 

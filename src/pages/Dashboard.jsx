@@ -1,3 +1,4 @@
+// admin_11/src/pages/Dashboard.jsx
 import { ShoppingCart, DollarSign, Users, TrendingUp, Download, Calendar, ChevronDown } from 'lucide-react';
 import { StatCard } from '../components/StatCard';
 import { Card } from '../components/ui/card';
@@ -11,96 +12,57 @@ import {
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { revenueDataMonthly, revenueDataWeekly, revenueDataToday, orderSummaryDataWeekly, orderSummaryDataMonthly, products } from '../lib/mockData';
-import { usePersistentOrders, usePersistentCustomers } from '../lib/usePersistentData';
 import { DeliveryBoysCard } from '../components/DeliveryBoysCard';
 import { useState } from 'react';
 import { motion } from 'motion/react';
 
+// ✨ --- IMPORT ALL OUR NEW API HOOKS --- ✨
+import { useDashboardStats } from '../lib/hooks/useDashboardStats';
+import { useApiOrders } from '../lib/hooks/useApiOrders';
+import { useDashboardCharts } from '../lib/hooks/useDashboardCharts';
+import { useTopProducts } from '../lib/hooks/useTopProducts';
+import { useApiReport } from '../lib/hooks/useApiReport';
+import { Skeleton } from '../components/ui/skeleton';
+
+// 🚨 --- All mock data imports are correctly removed --- 🚨
+
 export function Dashboard() {
-  const [orders] = usePersistentOrders();
-  const [customers] = usePersistentCustomers();
-  const [revenueView, setRevenueView] = useState('monthly'); // Removed <'monthly' | 'weekly' | 'today'>
-  const [orderView, setOrderView] = useState('weekly'); // Removed <'weekly' | 'monthly'>
+  const [revenueView, setRevenueView] = useState('monthly');
+  const [orderView, setOrderView] = useState('weekly');
   const [dateFilter, setDateFilter] = useState('last30');
-
-  // Filter orders based on date filter
-  const getFilteredOrders = () => {
-    const now = new Date('2025-11-01');
-    let startDate = new Date();
-
-    switch (dateFilter) {
-      case 'today':
-        startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'last7':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case 'last30':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 30);
-        break;
-      case 'last90':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 90);
-        break;
-      case 'thisYear':
-        startDate = new Date(now);
-        startDate.setMonth(0, 1);
-        break;
-      default:
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 30);
-    }
-
-    return orders.filter(order => {
-      const orderDate = new Date(order.date);
-      return orderDate >= startDate && orderDate <= now;
-    });
-  };
-
-  const filteredOrders = getFilteredOrders();
   
-  // Calculate stats based on filtered orders
-  const getTotalOrdersCount = () => filteredOrders.length;
+  // ✨ --- HOOK UP ALL API DATA --- ✨
   
-  const getTotalRevenue = () => {
-    return filteredOrders
-      .filter(o => o.status === 'completed')
-      .reduce((sum, o) => sum + o.total, 0);
-  };
+  // 1. For Stat Cards
+  const { stats, loading: statsLoading } = useDashboardStats();
 
-  const getTotalCustomersCount = () => {
-    const uniqueCustomers = new Set(filteredOrders.map(o => o.customerName));
-    return uniqueCustomers.size;
-  };
+  // 2. For Recent Orders Table
+  const { 
+    orders: recentOrders, 
+    loading: ordersLoading 
+  } = useApiOrders({
+    page: 1,
+    limit: 5,
+    sortBy: 'date',
+    sortOrder: 'desc'
+  });
 
-  const getAverageOrderValue = () => {
-    const completedOrders = filteredOrders.filter(o => o.status === 'completed');
-    if (completedOrders.length === 0) return 0;
-    const total = completedOrders.reduce((sum, o) => sum + o.total, 0);
-    return Math.round(total / completedOrders.length);
-  };
+  // 3. For Revenue Chart
+  const { 
+    revenueData, 
+    loading: revenueChartLoading 
+  } = useDashboardCharts(revenueView);
 
-  const getRevenueData = () => {
-    switch (revenueView) {
-      case 'monthly':
-        return revenueDataMonthly;
-      case 'weekly':
-        return revenueDataWeekly;
-      case 'today':
-        return revenueDataToday;
-      default:
-        return revenueDataMonthly;
-    }
-  };
+  // 4. For Order Summary Chart (using the Sales Report API)
+  const { 
+    data: salesReportData, 
+    loading: orderChartLoading 
+  } = useApiReport('sales', { dateRange: orderView });
 
-  const getOrderData = () => {
-    return orderView === 'weekly' ? orderSummaryDataWeekly : orderSummaryDataMonthly;
-  };
-
+  // 5. For Top Products Table
+  const { products: topProducts, loading: topProductsLoading } = useTopProducts();
+  
+  // Helper for the date filter button
   const getDateFilterLabel = () => {
     switch (dateFilter) {
       case 'today': return 'Today';
@@ -112,9 +74,23 @@ export function Dashboard() {
     }
   };
 
+  // Helper to get the correct data for the order summary chart
+  const getOrderData = () => {
+    if (!salesReportData || !salesReportData.chartData) {
+      // ✨ --- THIS IS THE FIX --- ✨
+      // Was: return orderSummaryDataWeekly;
+      return []; // Return an empty array as a safe fallback
+    }
+    // We assume the sales report chartData has 'completed' and 'pending'
+    // If not, you may need to adjust this (e.g., return salesReportData.chartData)
+    return salesReportData.chartData; 
+  };
+
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
+        {/* ... (Date Filter Dropdown remains the same) ... */}
         <div className="flex items-center gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -149,30 +125,32 @@ export function Dashboard() {
         </div>
       </div>
 
+      {/* ✨ --- STAT CARDS (Wired to useDashboardStats) --- ✨ */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Orders"
-          value={getTotalOrdersCount().toString()}
+          value={statsLoading ? '...' : (stats?.totalOrders ?? '0')}
           icon={ShoppingCart}
         />
         <StatCard
           title="Revenue"
-          value={`₹${getTotalRevenue().toLocaleString('en-IN')}`}
+          value={statsLoading ? '...' : `₹${(stats?.totalRevenue ?? 0).toLocaleString('en-IN')}`}
           icon={DollarSign}
         />
         <StatCard
           title="Customers"
-          value={getTotalCustomersCount().toString()}
+          value={statsLoading ? '...' : (stats?.totalCustomers ?? '0')}
           icon={Users}
         />
         <StatCard
           title="Avg Order Value"
-          value={`₹${getAverageOrderValue()}`}
+          value={statsLoading ? '...' : `₹${(stats?.averageOrderValue ?? 0).toLocaleString('en-IN')}`}
           icon={TrendingUp}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* ✨ --- REVENUE CHART (Wired to useDashboardCharts) --- ✨ */}
         <Card className="p-6 transition-all duration-200 hover:shadow-md">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -207,46 +185,49 @@ export function Dashboard() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={getRevenueData()} key={revenueView}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" fontSize={10} />
-              <YAxis fontSize={10} />
-              <Tooltip 
-                contentStyle={{ fontSize: '11px' }}
-                labelStyle={{ fontSize: '11px' }}
-              />
-              <Legend 
-                iconType="circle"
-                wrapperStyle={{ fontSize: '11px' }}
-                iconSize={8}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="expenses" 
-                stroke="#9ca3af" 
-                strokeWidth={2} 
-                name="Expenses"
-                animationDuration={800}
-                animationBegin={0}
-                dot={{ r: 3, animationBegin: 800, animationDuration: 400 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="income" 
-                stroke="#ef4444" 
-                strokeWidth={2} 
-                name="Income"
-                animationDuration={800}
-                animationBegin={0}
-                dot={{ r: 3, animationBegin: 800, animationDuration: 400 }}
-              />
-            </LineChart>
+            {revenueChartLoading ? <Skeleton className="h-full w-full" /> : (
+              <LineChart data={revenueData} key={revenueView}> 
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" fontSize={10} />
+                <YAxis fontSize={10} />
+                <Tooltip 
+                  contentStyle={{ fontSize: '11px' }}
+                  labelStyle={{ fontSize: '11px' }}
+                />
+                <Legend 
+                  iconType="circle"
+                  wrapperStyle={{ fontSize: '11px' }}
+                  iconSize={8}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="expenses" 
+                  stroke="#9ca3af" 
+                  strokeWidth={2} 
+                  name="Expenses"
+                  animationDuration={800}
+                  animationBegin={0}
+                  dot={{ r: 3, animationBegin: 800, animationDuration: 400 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="income" 
+                  stroke="#ef4444" 
+                  strokeWidth={2} 
+                  name="Income"
+                  animationDuration={800}
+                  animationBegin={0}
+                  dot={{ r: 3, animationBegin: 800, animationDuration: 400 }}
+                />
+              </LineChart>
+            )}
           </ResponsiveContainer>
         </Card>
 
+        {/* ✨ --- ORDER SUMMARY CHART (Wired to useApiReport) --- ✨ */}
         <Card className="p-6 transition-all duration-200 hover:shadow-md">
           <div className="flex items-center justify-between mb-4">
-            <div>
+             <div>
               <h3>Order Summary</h3>
               <p className="text-sm text-muted-foreground">Completed vs Pending orders</p>
             </div>
@@ -270,43 +251,46 @@ export function Dashboard() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={getOrderData()} key={orderView}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" fontSize={10} />
-              <YAxis fontSize={10} />
-              <Tooltip 
-                contentStyle={{ fontSize: '11px' }}
-                labelStyle={{ fontSize: '11px' }}
-              />
-              <Legend 
-                iconType="circle"
-                wrapperStyle={{ fontSize: '11px' }}
-                iconSize={8}
-              />
-              <Bar 
-                dataKey="completed" 
-                fill="#ef4444" 
-                name="Completed"
-                animationBegin={0}
-                animationDuration={1000}
-                animationEasing="ease-out"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar 
-                dataKey="pending" 
-                fill="#9ca3af" 
-                name="Pending"
-                animationBegin={0}
-                animationDuration={1000}
-                animationEasing="ease-out"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
+            {orderChartLoading ? <Skeleton className="h-full w-full" /> : (
+              <BarChart data={getOrderData()} key={orderView}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="date" fontSize={10} />
+                <YAxis fontSize={10} />
+                <Tooltip 
+                  contentStyle={{ fontSize: '11px' }}
+                  labelStyle={{ fontSize: '11px' }}
+                />
+                <Legend 
+                  iconType="circle"
+                  wrapperStyle={{ fontSize: '11px' }}
+                  iconSize={8}
+                />
+                <Bar 
+                  dataKey="completed" 
+                  fill="#ef4444" 
+                  name="Completed"
+                  animationBegin={0}
+                  animationDuration={1000}
+                  animationEasing="ease-out"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar 
+                  dataKey="pending" 
+                  fill="#9ca3af" 
+                  name="Pending"
+                  animationBegin={0}
+                  animationDuration={1000}
+                  animationEasing="ease-out"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            )}
           </ResponsiveContainer>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* ✨ --- RECENT ORDERS TABLE (Wired to useApiOrders) --- ✨ */}
         <Card className="p-6 transition-all duration-200 hover:shadow-md">
           <h3 className="mb-4">Recent Orders</h3>
           <div className="overflow-x-auto">
@@ -322,13 +306,15 @@ export function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.slice(0, 4).map((order) => {
+                {ordersLoading && (
+                  <tr><td colSpan="6" className="text-center p-4"><Skeleton className="h-8 w-full" /></td></tr>
+                )}
+                {!ordersLoading && recentOrders.slice(0, 4).map((order) => {
                   const initials = order.customerName.split(' ').map(n => n[0]).join('');
                   return (
                     <tr key={order.id} className="border-b last:border-b-0 hover:bg-gray-50 transition-colors duration-200">
                       <td className="py-3 px-4">
-                        <span className="text-red-500">#</span>
-                        <span className="text-red-500">{order.id.split('-')[1]}</span>
+                        <span className="text-red-500">#{order.id.slice(-6)}</span>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
@@ -340,13 +326,13 @@ export function Dashboard() {
                           <span>{order.customerName}</span>
                         </div>
                       </td>
-                      <td className="py-3 px-4">{order.items}</td>
+                      <td className="py-3 px-4">{order.items?.length || 0}</td>
                       <td className="py-3 px-4">₹{order.total}</td>
-                      <td className="py-3 px-4 text-muted-foreground">{order.date}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{new Date(order.deliveryDate || order.createdAt).toLocaleDateString('en-IN')}</td>
                       <td className="py-3 px-4">
                         <Badge
                           variant="secondary"
-                          className={order.status === 'completed' 
+                          className={order.status === 'delivered' 
                             ? 'bg-green-50 text-green-700 hover:bg-green-50' 
                             : order.status === 'pending'
                             ? 'bg-orange-50 text-orange-700 hover:bg-orange-50'
@@ -363,11 +349,20 @@ export function Dashboard() {
           </div>
         </Card>
 
+        {/* ✨ --- TOP PRODUCTS TABLE (Wired to useTopProducts) --- ✨ */}
         <Card className="p-6">
           <h3 className="mb-4">Top Products</h3>
           <div className="space-y-4">
-            {products.slice(0, 4).map((product, index) => (
-              <div key={index} className="flex items-center justify-between">
+            {topProductsLoading && (
+              <>
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </>
+            )}
+            {topProducts.slice(0, 4).map((product, index) => (
+              <div key={product.id || index} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-8 w-8 rounded bg-red-50 text-red-600">
                     {index + 1}
@@ -377,7 +372,7 @@ export function Dashboard() {
                     <p className="text-xs text-muted-foreground">₹{product.price} / {product.unit}</p>
                   </div>
                 </div>
-                <span className="text-sm text-green-600">+{Math.floor(Math.random() * 20) + 5}%</span>
+                <span className="text-sm text-green-600">{product.totalSales ?? 'N/A'}</span>
               </div>
             ))}
           </div>
@@ -387,14 +382,23 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DeliveryBoysCard />
         
+        {/* ✨ --- TOP SELLING PRODUCTS (Also uses useTopProducts) --- ✨ */}
         <Card className="p-6">
           <h3 className="mb-4">Top Selling Products</h3>
           <div className="space-y-4">
-            {products.slice(0, 5).map((item, index) => {
-              const mockOrders = Math.floor(Math.random() * 300) + 100;
-              const mockRevenue = mockOrders * item.price;
+            {topProductsLoading && (
+              <>
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </>
+            )}
+            {topProducts.slice(0, 5).map((item, index) => {
+              const mockOrders = item.totalOrders ?? 0;
+              const mockRevenue = item.totalRevenue ?? (mockOrders * item.price);
               return (
-                <div key={index} className="flex items-center justify-between">
+                <div key={item.id || index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center h-8 w-8 rounded bg-red-50 text-red-600">
                       {index + 1}

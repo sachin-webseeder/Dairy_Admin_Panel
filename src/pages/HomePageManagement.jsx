@@ -1,3 +1,4 @@
+// admin_11/src/pages/HomePageManagement.jsx
 import { useState, useEffect } from "react";
 import {
   Eye,
@@ -29,235 +30,104 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { toast } from "sonner";
-import { usePersistentProducts, usePersistentHomepageSettings } from "../lib/usePersistentData";
-import {
-  projectId,
-  publicAnonKey,
-} from "../utils/supabase/info";
+import { usePersistentProducts } from "../lib/usePersistentData"; // Keep this for Top Products mock
+import { useApiHomepageSettings } from "../lib/hooks/useApiHomepageSettings"; // ✨ CHANGED
+import { Skeleton } from "../components/ui/skeleton"; // ✨ ADDED
 
-const defaultHomepageSettings = {
-  bannerTitle: "Welcome to Our Restaurant",
-  bannerSubtitle: "Delicious food delivered fresh to your door",
-  ctaButtonText: "Order Now",
-  ctaLink: "/menu",
-  bannerImage: null,
-  publishedBanner: {
-    title: "Welcome to Our Restaurant",
-    subtitle: "Delicious food delivered fresh to your door",
-    ctaText: "Order Now",
-    ctaLink: "/menu",
-    image: null,
-  },
-  specialOffer: {
-    title: "20% Off Dairy",
-    code: "DAIRY20",
-    description: "Get 20% off on all dairy products",
-    visible: true,
-  },
-  categoryVisibility: "always",
-  offerVisibility: "date",
-  offerStartDate: "",
-  offerEndDate: "",
-  topProductsVisibility: "time",
-  topProductsStartTime: "09:00",
-  topProductsEndTime: "21:00",
-  bannerVisibility: "always",
-  topProductRules: [
-    {
-      id: 1,
-      startTime: "11:00",
-      endTime: "23:00",
-      days: {
-        mon: true,
-        tue: true,
-        wed: true,
-        thu: true,
-        fri: true,
-        sat: true,
-        sun: true,
-      },
-    },
-  ],
-  specialOfferRules: [
-    {
-      id: 1,
-      startDate: "2025-01-09",
-      endDate: "2025-12-31",
-    },
-  ],
-  sections: [
-    {
-      id: 1,
-      name: "Featured Categories",
-      type: "categories",
-      visible: true,
-      scheduled: false,
-    },
-    {
-      id: 2,
-      name: "Special Offers",
-      type: "offers",
-      visible: true,
-      scheduled: true,
-    },
-    {
-      id: 3,
-      name: "Top Products",
-      type: "products",
-      visible: true,
-      scheduled: true,
-    },
-  ],
-};
+// ✨ REMOVED defaultHomepageSettings (now in hook)
+// ✨ REMOVED usePersistentHomepageSettings
 
 export function HomePageManagement() {
-  const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7c75f461`;
-  const [products] = usePersistentProducts();
-  const [homepageSettings, setHomepageSettings] = usePersistentHomepageSettings(defaultHomepageSettings);
+  // ✨ --- API Hook Integration --- ✨
+  const {
+    settings,
+    loading,
+    error,
+    updateSettings
+  } = useApiHomepageSettings();
+  
+  const [products] = usePersistentProducts(); // This is fine for now
 
   // Top Banner state
-  const [bannerTitle, setBannerTitle] = useState(homepageSettings.bannerTitle);
-  const [bannerSubtitle, setBannerSubtitle] = useState(homepageSettings.bannerSubtitle);
-  const [ctaButtonText, setCtaButtonText] = useState(homepageSettings.ctaButtonText);
-  const [ctaLink, setCtaLink] = useState(homepageSettings.ctaLink);
-  const [bannerImage, setBannerImage] = useState(homepageSettings.bannerImage);
+  const [bannerTitle, setBannerTitle] = useState("");
+  const [bannerSubtitle, setBannerSubtitle] = useState("");
+  const [ctaButtonText, setCtaButtonText] = useState("");
+  const [ctaLink, setCtaLink] = useState("");
+  const [bannerImage, setBannerImage] = useState(null);
   const [previewMode, setPreviewMode] = useState(false);
 
   // Published state
-  const [publishedBanner, setPublishedBanner] = useState(homepageSettings.publishedBanner);
+  const [publishedBanner, setPublishedBanner] = useState({ title: "", subtitle: "", ctaText: "", ctaLink: "", image: null });
 
   // Special Offers state
-  const [specialOffer, setSpecialOffer] = useState(homepageSettings.specialOffer);
+  const [specialOffer, setSpecialOffer] = useState({ title: "", code: "", description: "", visible: true });
 
-  // Featured Categories state
-  const [showCategorySettings, setShowCategorySettings] =
-    useState(false);
+  // Visibility states
+  const [categoryVisibility, setCategoryVisibility] = useState("always");
+  const [offerVisibility, setOfferVisibility] = useState("date");
+  const [offerStartDate, setOfferStartDate] = useState("");
+  const [offerEndDate, setOfferEndDate] = useState("");
+  const [topProductsVisibility, setTopProductsVisibility] = useState("time");
+  const [topProductsStartTime, setTopProductsStartTime] = useState("09:00");
+  const [topProductsEndTime, setTopProductsEndTime] = useState("21:00");
+  const [bannerVisibility, setBannerVisibility] = useState("always");
+  
+  // Rules states
+  const [topProductRules, setTopProductRules] = useState([]);
+  const [specialOfferRules, setSpecialOfferRules] = useState([]);
+  
+  // Section management
+  const [sections, setSections] = useState([]);
+
+  // Modal states
+  const [showCategorySettings, setShowCategorySettings] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [
-    showSpecialOfferSettings,
-    setShowSpecialOfferSettings,
-  ] = useState(false);
-  const [showTopProductsSettings, setShowTopProductsSettings] =
-    useState(false);
+  const [showSpecialOfferSettings, setShowSpecialOfferSettings] = useState(false);
+  const [showTopProductsSettings, setShowTopProductsSettings] = useState(false);
   const [editSectionId, setEditSectionId] = useState(null);
   const [editSectionTitle, setEditSectionTitle] = useState("");
   const [deleteSectionId, setDeleteSectionId] = useState(null);
-  const [categoryVisibility, setCategoryVisibility] = useState(homepageSettings.categoryVisibility);
-  const [offerVisibility, setOfferVisibility] = useState(homepageSettings.offerVisibility);
-  const [offerStartDate, setOfferStartDate] = useState(homepageSettings.offerStartDate);
-  const [offerEndDate, setOfferEndDate] = useState(homepageSettings.offerEndDate);
-  const [topProductsVisibility, setTopProductsVisibility] = useState(homepageSettings.topProductsVisibility);
-  const [topProductsStartTime, setTopProductsStartTime] = useState(homepageSettings.topProductsStartTime);
-  const [topProductsEndTime, setTopProductsEndTime] = useState(homepageSettings.topProductsEndTime);
-  
-  // Schedule Publication modal
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
-  
-  // Banner Visibility Rules modal
   const [showBannerRulesModal, setShowBannerRulesModal] = useState(false);
-  const [bannerVisibility, setBannerVisibility] = useState(homepageSettings.bannerVisibility);
-  
-  // Top Products rules
-  const [topProductRules, setTopProductRules] = useState(homepageSettings.topProductRules);
-  
-  // Special Offers rules
-  const [specialOfferRules, setSpecialOfferRules] = useState(homepageSettings.specialOfferRules);
   
   const [featuredCategories] = useState([
     { id: 1, name: "Milk", icon: "🥛" },
     { id: 2, name: "Dairy", icon: "🧈" },
     { id: 3, name: "Beverages", icon: "🥤" },
   ]);
-
-  // Top Products state
   const [topProducts] = useState(products.slice(0, 4));
 
-  // Section management
-  const [sections, setSections] = useState(homepageSettings.sections);
-  
-  // Sync changes back to persistent storage
+  // ✨ --- LOAD DATA FROM HOOK --- ✨
+  // When hook finishes loading, populate all local states
   useEffect(() => {
-    setHomepageSettings({
-      bannerTitle,
-      bannerSubtitle,
-      ctaButtonText,
-      ctaLink,
-      bannerImage,
-      publishedBanner,
-      specialOffer,
-      categoryVisibility,
-      offerVisibility,
-      offerStartDate,
-      offerEndDate,
-      topProductsVisibility,
-      topProductsStartTime,
-      topProductsEndTime,
-      bannerVisibility,
-      topProductRules,
-      specialOfferRules,
-      sections,
-    });
-  }, [bannerTitle, bannerSubtitle, ctaButtonText, ctaLink, bannerImage, publishedBanner, specialOffer, 
-      categoryVisibility, offerVisibility, offerStartDate, offerEndDate, topProductsVisibility, 
-      topProductsStartTime, topProductsEndTime, bannerVisibility, topProductRules, specialOfferRules, sections]);
-
-  // Load saved content on mount
-  useEffect(() => {
-    loadHomepageContent();
-  }, []);
-
-  const loadHomepageContent = async () => {
-    try {
-      const response = await fetch(
-        `${API_URL}/homepage-content`,
-        {
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        },
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.banner) {
-          setPublishedBanner(data.banner);
-          setBannerTitle(data.banner.title);
-          setBannerSubtitle(data.banner.subtitle);
-          setCtaButtonText(data.banner.ctaText);
-          setCtaLink(data.banner.ctaLink);
-          setBannerImage(data.banner.image);
-        }
-        if (data.specialOffer) {
-          setSpecialOffer(data.specialOffer);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading homepage content:", error);
+    if (settings) {
+      setBannerTitle(settings.bannerTitle);
+      setBannerSubtitle(settings.bannerSubtitle);
+      setCtaButtonText(settings.ctaButtonText);
+      setCtaLink(settings.ctaLink);
+      setBannerImage(settings.bannerImage);
+      setPublishedBanner(settings.publishedBanner);
+      setSpecialOffer(settings.specialOffer);
+      setCategoryVisibility(settings.categoryVisibility);
+      setOfferVisibility(settings.offerVisibility);
+      setOfferStartDate(settings.offerStartDate);
+      setOfferEndDate(settings.offerEndDate);
+      setTopProductsVisibility(settings.topProductsVisibility);
+      setTopProductsStartTime(settings.topProductsStartTime);
+      setTopProductsEndTime(settings.topProductsEndTime);
+      setBannerVisibility(settings.bannerVisibility);
+      setTopProductRules(settings.topProductRules || []);
+      setSpecialOfferRules(settings.specialOfferRules || []);
+      setSections(settings.sections || []);
     }
-  };
+  }, [settings]);
 
-  const saveHomepageContent = async () => {
-    try {
-      const content = {
-        banner: publishedBanner,
-        specialOffer,
-      };
-
-      await fetch(`${API_URL}/homepage-content`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${publicAnonKey}`,
-        },
-        body: JSON.stringify(content),
-      });
-    } catch (error) {
-      console.error("Error saving homepage content:", error);
-    }
-  };
+  // ✨ --- REMOVED old useEffect to save to persistent storage --- ✨
+  // ✨ --- REMOVED loadHomepageContent --- ✨
+  // ✨ --- REMOVED saveHomepageContent --- ✨
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
@@ -269,9 +139,37 @@ export function HomePageManagement() {
       reader.readAsDataURL(file);
     }
   };
+  
+  // ✨ --- GATHER ALL STATE into one object --- ✨
+  const getAllSettings = () => ({
+    bannerTitle,
+    bannerSubtitle,
+    ctaButtonText,
+    ctaLink,
+    bannerImage,
+    publishedBanner,
+    specialOffer,
+    categoryVisibility,
+    offerVisibility,
+    offerStartDate,
+    offerEndDate,
+    topProductsVisibility,
+    topProductsStartTime,
+    topProductsEndTime,
+    bannerVisibility,
+    topProductRules,
+    specialOfferRules,
+    sections,
+  });
 
-  const handleSaveDraft = () => {
-    toast.success("Draft saved successfully!");
+  const handleSaveDraft = async () => {
+    const currentSettings = getAllSettings();
+    try {
+      await updateSettings(currentSettings); // Call API
+      toast.success("Draft saved successfully!");
+    } catch (err) {
+      toast.error(err.message || "Failed to save draft");
+    }
   };
 
   const handlePublish = async () => {
@@ -282,9 +180,23 @@ export function HomePageManagement() {
       ctaLink,
       image: bannerImage,
     };
+    
+    // Create the full settings object to save
+    const currentSettings = {
+      ...getAllSettings(),
+      publishedBanner: newBanner, // Update the published banner
+    };
+    
+    // Optimistically update local state
     setPublishedBanner(newBanner);
-    await saveHomepageContent();
-    toast.success("Banner published successfully!");
+    
+    try {
+      await updateSettings(currentSettings); // Call API
+      toast.success("Banner published successfully!");
+    } catch (err) {
+      toast.error(err.message || "Failed to publish");
+      // Note: hook will revert state on failure
+    }
   };
 
   const handleSchedule = () => {
@@ -296,6 +208,7 @@ export function HomePageManagement() {
       toast.error("Please select both date and time");
       return;
     }
+    // TODO: This needs a real API call to a scheduler
     toast.success(`Homepage scheduled for ${scheduleDate} at ${scheduleTime}`);
     setShowScheduleModal(false);
   };
@@ -303,6 +216,7 @@ export function HomePageManagement() {
   const handleBannerRulesSave = () => {
     toast.success("Banner visibility rules updated!");
     setShowBannerRulesModal(false);
+    // Note: These rules should be saved with the main "Save Draft" or "Publish"
   };
 
   const handleCategorySettingsSave = () => {
@@ -325,15 +239,7 @@ export function HomePageManagement() {
       id: topProductRules.length + 1,
       startTime: "09:00",
       endTime: "21:00",
-      days: {
-        mon: true,
-        tue: true,
-        wed: true,
-        thu: true,
-        fri: true,
-        sat: true,
-        sun: true,
-      },
+      days: { mon: true, tue: true, wed: true, thu: true, fri: true, sat: true, sun: true },
     };
     setTopProductRules([...topProductRules, newRule]);
   };
@@ -427,9 +333,35 @@ export function HomePageManagement() {
   };
 
   const handleCopySection = (sectionId) => {
-    toast.success("Section duplicated!");
+    // This logic can remain local
+    const section = sections.find((s) => s.id === sectionId);
+    if (section) {
+      const newSection = { ...section, id: Date.now() };
+      setSections([...sections, newSection]);
+      toast.success("Section duplicated!");
+    }
   };
 
+  // ✨ --- LOADING & ERROR HANDLING --- ✨
+  if (loading) {
+    return (
+      <div className="p-6">
+        <Skeleton className="h-10 w-1/3 mb-6" />
+        <Skeleton className="h-64 w-full mb-6" />
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-red-500">Error: {error}</div>;
+  }
+  
+  if (!settings) {
+    return <div className="p-6 text-center">No settings loaded.</div>;
+  }
+  // --- End Loading & Error ---
+  
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -451,7 +383,7 @@ export function HomePageManagement() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleSaveDraft}
+              onClick={handleSaveDraft} // ✨ WIRED
               className="text-xs"
             >
               💾 Save Draft
@@ -467,7 +399,7 @@ export function HomePageManagement() {
             </Button>
             <Button
               size="sm"
-              onClick={handlePublish}
+              onClick={handlePublish} // ✨ WIRED
               className="text-xs bg-red-500 hover:bg-red-600"
             >
               Publish
@@ -930,6 +862,7 @@ export function HomePageManagement() {
         </Card>
       </div>
 
+      {/* --- ALL MODALS --- */}
       {/* Category Settings Modal */}
       <Dialog
         open={showCategorySettings}

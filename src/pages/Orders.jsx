@@ -1,3 +1,4 @@
+// admin_11/src/pages/Orders.jsx
 import { useState } from 'react';
 import { Search, Edit2, Trash2, Download, Filter, ChevronDown, X, Eye, Calendar, Plus, Package, CheckCircle, Clock, XCircle, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -14,106 +15,81 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { usePersistentOrders } from '../lib/usePersistentData';
-import { EditModal } from '../components/modals/EditModal';
+import { useApiOrders } from '../lib/hooks/useApiOrders'; // ✨ API Hook for list
+import { useDashboardStats } from '../lib/hooks/useDashboardStats'; // ✨ API Hook for stats
 import { EditOrderModal } from '../components/modals/EditOrderModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { AddOrderModal } from '../components/modals/AddOrderModal';
 import { OrderDetailsModal } from '../components/modals/OrderDetailsModal';
 import { showSuccessToast } from '../lib/toast';
-import { customers } from '../lib/mockData';
+import { toast } from 'sonner@2.0.3';
 
 export function Orders() {
-  const [orderList, setOrderList] = usePersistentOrders();
+  // Filter states
   const [searchQuery, setSearchQuery] = useState('');
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [membershipFilter, setMembershipFilter] = useState('all');
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [membershipDropdownOpen, setMembershipDropdownOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
-  
-  // More filter states
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [timeFilter, setTimeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
 
-  const filteredOrders = orderList.filter(order => {
-    const matchesSearch = order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    
-    // Membership filter
-    const customer = customers.find(c => c.name === order.customerName);
-    const customerMembership = customer?.membership || 'Bronze';
-    const matchesMembership = membershipFilter === 'all' || customerMembership === membershipFilter;
-    
-    // Payment filter
-    const matchesPayment = paymentFilter === 'all' || order.payment?.toLowerCase() === paymentFilter.toLowerCase();
-    
-    // Time filter
-    let matchesTime = true;
-    if (timeFilter !== 'all') {
-      const orderDate = new Date(order.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      if (timeFilter === 'today') {
-        const todayStr = today.toISOString().split('T')[0];
-        matchesTime = order.date === todayStr;
-      } else if (timeFilter === 'yesterday') {
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        matchesTime = order.date === yesterday.toISOString().split('T')[0];
-      } else if (timeFilter === 'week') {
-        const weekAgo = new Date(today);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        matchesTime = orderDate >= weekAgo;
-      } else if (timeFilter === 'month') {
-        const monthAgo = new Date(today);
-        monthAgo.setDate(monthAgo.getDate() - 30);
-        matchesTime = orderDate >= monthAgo;
-      }
-    }
-    
-    return matchesSearch && matchesStatus && matchesMembership && matchesPayment && matchesTime;
-  }).sort((a, b) => {
-    // Apply sorting
-    let compareValue = 0;
-    if (sortBy === 'date') compareValue = new Date(b.date).getTime() - new Date(a.date).getTime();
-    else if (sortBy === 'amount') compareValue = a.total - b.total;
-    else if (sortBy === 'customer') compareValue = a.customerName.localeCompare(b.customerName);
-    
-    return sortOrder === 'asc' ? compareValue : -compareValue;
+  // Modal states
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // --- API Hook for Order List ---
+  const {
+    orders: filteredOrders,
+    loading: ordersLoading,
+    error: ordersError,
+    total: totalOrdersApi,
+    createOrder,
+    updateOrder,
+    deleteOrder,
+    // refetch
+  } = useApiOrders({
+    search: searchQuery,
+    status: statusFilter,
+    membership: membershipFilter,
+    payment: paymentFilter,
+    time: timeFilter,
+    sortBy: sortBy,
+    sortOrder: sortOrder,
+    page: 1, // Add pagination state later
+    limit: entriesPerPage
   });
 
-  const handleAddOrder = (order) => {
-    setOrderList([order, ...orderList]);
-    showSuccessToast('Order created successfully!');
-  };
+  // --- API Hook for Stat Cards ---
+  const { 
+    stats, 
+    loading: statsLoading, 
+    // error: statsError 
+  } = useDashboardStats();
 
-  const handleEditOrder = (updatedData) => {
-    setOrderList(orderList.map(o => o.id === updatedData.id ? updatedData : o));
-    showSuccessToast('Order updated successfully!');
-  };
-
-  const handleDeleteOrder = () => {
+  // Handle Delete
+  const handleDeleteOrder = async () => {
     if (selectedOrder) {
-      setOrderList(orderList.filter(o => o.id !== selectedOrder.id));
+      try {
+        await deleteOrder(selectedOrder.id);
+        showSuccessToast('Order deleted successfully!');
+      } catch (err) {
+        toast.error(err.message || "Failed to delete order");
+      }
       setSelectedOrder(null);
-      showSuccessToast('Order deleted successfully!');
     }
   };
 
   const handleExport = () => {
     console.log('Exporting orders data...');
+    // This could be another API call to a '/orders/export' endpoint
   };
 
   const handleClearFilters = () => {
@@ -126,10 +102,11 @@ export function Orders() {
     setSortOrder('desc');
   };
 
-  const totalOrders = orderList.length;
-  const completedOrders = orderList.filter(o => o.status === 'completed').length;
-  const pendingOrders = orderList.filter(o => o.status === 'pending').length;
-  const cancelledOrders = orderList.filter(o => o.status === 'cancelled').length;
+  // Stat card values, now from the stats hook
+  const totalOrders = statsLoading ? '...' : (stats?.totalOrders ?? totalOrdersApi ?? 0);
+  const completedOrders = statsLoading ? '...' : (stats?.deliveredOrders ?? 'N/A'); // Note: 'deliveredOrders' from stats
+  const pendingOrders = statsLoading ? '...' : (stats?.pendingOrders ?? 'N/A');
+  const cancelledOrders = statsLoading ? '...' : (stats?.cancelledOrders ?? 'N/A'); // Note: API spec didn't have this, but hook mock does
 
   return (
     <div className="p-4">
@@ -209,7 +186,10 @@ export function Orders() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setStatusDropdownOpen(false)} />
                   <div className="absolute top-full mt-2 left-0 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
-                    {['all', 'completed', 'pending', 'cancelled'].map((status) => (
+                    {[
+                      'all', 'pending', 'confirmed', 'preparing', 
+                      'out-for-delivery', 'delivered', 'cancelled'
+                    ].map((status) => (
                       <button
                         key={status}
                         onClick={() => {
@@ -378,159 +358,167 @@ export function Orders() {
             <span>entries</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Showing {Math.min(filteredOrders.length, entriesPerPage)} of {filteredOrders.length} orders
+            Showing {filteredOrders.length} of {totalOrders} orders
           </p>
         </div>
 
-        <Table>
-          <TableHeader>
-            <TableRow className="text-xs">
-              <TableHead className="w-12">
-                <input type="checkbox" className="rounded" />
-              </TableHead>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Membership</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Payment</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredOrders.slice(0, entriesPerPage).map((order) => {
-              const initials = order.customerName.split(' ').map(n => n[0]).join('');
-              // Find customer's membership tier
-              const customer = customers.find(c => c.name === order.customerName);
-              const membership = customer?.membership || 'Bronze';
-              
-              return (
-                <TableRow key={order.id} className="hover:bg-gray-50 transition-colors duration-200 text-xs">
-                  <TableCell>
+        {/* --- LOADING & ERROR HANDLING for List --- */}
+        {ordersLoading && <div className="p-4 text-center">Loading orders...</div>}
+        {ordersError && <div className="p-4 text-center text-red-500">Error: {ordersError}</div>}
+        {!ordersLoading && !ordersError && (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow className="text-xs">
+                  <TableHead className="w-12">
                     <input type="checkbox" className="rounded" />
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-blue-600 font-medium">#{order.id.split('-')[1]}</span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-7 w-7">
-                        <AvatarFallback className="bg-gray-900 text-white text-xs">
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{order.customerName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant="secondary"
-                      className={
-                        membership === 'Gold'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50 text-[10px] h-5'
-                          : membership === 'Silver'
-                          ? 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-100 text-[10px] h-5'
-                          : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-50 text-[10px] h-5'
-                      }
-                    >
-                      {membership}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{order.items}</TableCell>
-                  <TableCell className="font-medium">₹{order.total}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-xs">
-                      {order.payment || 'N/A'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(order.date).toLocaleDateString('en-IN')}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={
-                        order.status === 'completed' 
-                          ? 'bg-[#e8f5e9] text-[#2e7d32] border-[#2e7d32]/20 hover:bg-[#e8f5e9] text-[10px] h-5' 
-                          : order.status === 'pending'
-                          ? 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-50 text-[10px] h-5'
-                          : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-100 text-[10px] h-5'
-                      }
-                    >
-                      {order.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex gap-1 justify-end">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setDetailsModalOpen(true);
-                        }}
-                      >
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setEditModalOpen(true);
-                        }}
-                      >
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className="h-7 w-7 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setDeleteModalOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Membership</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredOrders.slice(0, entriesPerPage).map((order) => {
+                  const initials = order.customerName.split(' ').map(n => n[0]).join('');
+                  const membership = order.membership || 'Bronze'; // Data should come from API
+                  
+                  return (
+                    <TableRow key={order.id} className="hover:bg-gray-50 transition-colors duration-200 text-xs">
+                      <TableCell>
+                        <input type="checkbox" className="rounded" />
+                      </TableCell>
+                      <TableCell>
+                        {/* The backend spec returns a full ID, so let's display it. 
+                            You can slice it if you prefer: order.id.slice(-6) */}
+                        <span className="text-blue-600 font-medium">#{order.id}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-7 w-7">
+                            <AvatarFallback className="bg-gray-900 text-white text-xs">
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{order.customerName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="secondary"
+                          className={
+                            membership === 'Gold'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50 text-[10px] h-5'
+                              : membership === 'Silver'
+                              ? 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-100 text-[10px] h-5'
+                              : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-50 text-[10px] h-5'
+                          }
+                        >
+                          {membership}
+                        </Badge>
+                      </TableCell>
+                      {/* API spec says 'items' is an array. Let's count them. */}
+                      <TableCell className="text-muted-foreground">{order.items?.length || 0}</TableCell>
+                      <TableCell className="font-medium">₹{order.total}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {order.paymentMethod || 'N/A'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(order.deliveryDate || order.createdAt).toLocaleDateString('en-IN')}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className={
+                            order.status === 'delivered' // Use 'delivered' as per API spec
+                              ? 'bg-[#e8f5e9] text-[#2e7d32] border-[#2e7d32]/20 hover:bg-[#e8f5e9] text-[10px] h-5' 
+                              : order.status === 'pending'
+                              ? 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-50 text-[10px] h-5'
+                              : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-100 text-[10px] h-5'
+                          }
+                        >
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-1 justify-end">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setDetailsModalOpen(true);
+                            }}
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setEditModalOpen(true);
+                            }}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-7 w-7 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setDeleteModalOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
 
-        {/* Pagination info */}
-        <div className="p-4 border-t flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
-            Last updated: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8 text-xs">
-              Previous
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 text-xs bg-red-500 text-white border-red-500">
-              1
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 text-xs">
-              2
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 text-xs">
-              Next
-            </Button>
-          </div>
-        </div>
+            {/* Pagination info */}
+            <div className="p-4 border-t flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Last updated: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-8 text-xs">
+                  Previous
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 text-xs bg-red-500 text-white border-red-500">
+                  1
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 text-xs">
+                  2
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 text-xs">
+                  Next
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <AddOrderModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
-        onAdd={handleAddOrder}
+        onAdd={createOrder} // Wired to API hook
       />
 
       {selectedOrder && (
@@ -538,14 +526,14 @@ export function Orders() {
           <EditOrderModal
             open={editModalOpen}
             onClose={() => setEditModalOpen(false)}
-            onSave={handleEditOrder}
+            onSave={updateOrder} // Wired to API hook
             order={selectedOrder}
           />
 
           <DeleteConfirmationModal
             open={deleteModalOpen}
             onOpenChange={setDeleteModalOpen}
-            onConfirm={handleDeleteOrder}
+            onConfirm={handleDeleteOrder} // Wired to API hook
             title="Are you sure you want to delete?"
             description="This order will be permanently removed from the system."
           />

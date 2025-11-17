@@ -1,5 +1,3 @@
-// import { Product, Order, Customer, Notification, DeliveryBoy, User, Branch } from '../types'; // Removed type imports
-
 // ==================== BRANCHES ====================
 export const branches = [
   { id: '1', name: 'Koramangala Branch', location: 'Bengaluru, Karnataka', manager: 'Karthik Menon', orders: 430, revenue: 120000, status: 'active', city: 'Bengaluru', state: 'Karnataka', pincode: '560034', address: '80 Feet Road, Koramangala', contactNumber: '+91 98765 43210', adminEmail: 'koramangala@dairydynasty.com', openingHours: '06:00 - 22:00', seatingCapacity: 50 },
@@ -137,10 +135,10 @@ export const orders = [
 
 // ==================== DELIVERY BOYS ====================
 export const deliveryBoys = [
-  { id: '1', name: 'Mohammed Hassan', area: 'Koramangala', orders: 48, rating: 4.8, status: 'active', email: 'mohammed.hassan@dairydynasty.com', phone: '+91 98765 11111', branch: 'Koramangala Branch', joinedDate: '1/15/2024', completedOrders: 152, avgDeliveryTime: '28m', currentOrders: 2, weekOrders: 45 },
-  { id: '2', name: 'Ahmed Al Mansouri', area: 'Andheri West', orders: 42, rating: 4.6, status: 'active', email: 'ahmed.almansouri@dairydynasty.com', phone: '+91 98765 22222', branch: 'Andheri West Branch', joinedDate: '2/20/2024', completedOrders: 181, avgDeliveryTime: '32m', currentOrders: 1, weekOrders: 28 },
-  { id: '3', name: 'Omar Sheikh', area: 'Sector 29', orders: 38, rating: 4.4, status: 'inactive', email: 'omar.sheikh@dairydynasty.com', phone: '+91 98765 33333', branch: 'Sector 29 Branch', joinedDate: '3/10/2024', completedOrders: 76, avgDeliveryTime: '35m', currentOrders: 0, weekOrders: 0 },
-  { id: '4', name: 'Khalid Ibrahim', area: 'T. Nagar', orders: 35, rating: 4.9, status: 'active', email: 'khalid.ibrahim@dairydynasty.com', phone: '+91 98765 44444', branch: 'T. Nagar Branch', joinedDate: '1/5/2023', completedOrders: 189, avgDeliveryTime: '25m', currentOrders: 3, weekOrders: 52 },
+  { id: '1', name: 'Mohammed Hassan', area: 'Koramangala', orders: 48, rating: 4.8, status: 'active', email: 'mohammed.hassan@dairydynasty.com', phone: '+91 98765 11111', branch: 'Koramangala Branch', joinedDate: '1/15/2024', completedOrders: 152, avgDeliveryTime: '28m', currentOrders: 2, weekOrders: 45, totalEarned: 15000 },
+  { id: '2', name: 'Ahmed Al Mansouri', area: 'Andheri West', orders: 42, rating: 4.6, status: 'active', email: 'ahmed.almansouri@dairydynasty.com', phone: '+91 98765 22222', branch: 'Andheri West Branch', joinedDate: '2/20/2024', completedOrders: 181, avgDeliveryTime: '32m', currentOrders: 1, weekOrders: 28, totalEarned: 13500 },
+  { id: '3', name: 'Omar Sheikh', area: 'Sector 29', orders: 38, rating: 4.4, status: 'inactive', email: 'omar.sheikh@dairydynasty.com', phone: '+91 98765 33333', branch: 'Sector 29 Branch', joinedDate: '3/10/2024', completedOrders: 76, avgDeliveryTime: '35m', currentOrders: 0, weekOrders: 0, totalEarned: 7000 },
+  { id: '4', name: 'Khalid Ibrahim', area: 'T. Nagar', orders: 35, rating: 4.9, status: 'active', email: 'khalid.ibrahim@dairydynasty.com', phone: '+91 98765 44444', branch: 'T. Nagar Branch', joinedDate: '1/5/2023', completedOrders: 189, avgDeliveryTime: '25m', currentOrders: 3, weekOrders: 52, totalEarned: 18000 },
 ];
 
 // ==================== NOTIFICATIONS ====================
@@ -152,6 +150,7 @@ export const notifications = [
     message: 'Butter stock running low at Sector 29 Branch',
     time: '2 minutes ago',
     isRead: false,
+    createdAt: '2025-10-29T10:28:00Z'
   },
   {
     id: '2',
@@ -160,6 +159,7 @@ export const notifications = [
     message: 'Koramangala Branch reached 430 orders this month',
     time: '15 minutes ago',
     isRead: false,
+    createdAt: '2025-10-29T10:15:00Z'
   },
   {
     id: '3',
@@ -168,6 +168,7 @@ export const notifications = [
     message: 'New feature: Advanced analytics dashboard is now available',
     time: '1 hour ago',
     isRead: true,
+    createdAt: '2025-10-29T09:30:00Z'
   },
   {
     id: '4',
@@ -176,6 +177,7 @@ export const notifications = [
     message: 'Scheduled maintenance on Sunday 2:00 AM - 4:00 AM',
     time: '3 hours ago',
     isRead: true,
+    createdAt: '2025-10-29T07:30:00Z'
   },
 ];
 
@@ -186,6 +188,106 @@ export const users = [
   { id: '3', name: 'Vijay Reddy', email: 'vijay.r@dairydynasty.com', role: 'Manager', status: 'active', joinDate: '2024-03-10' },
   { id: '4', name: 'Divya Nair', email: 'divya.n@dairydynasty.com', role: 'Manager', status: 'active', joinDate: '2024-04-05' },
 ];
+
+// ==================== WALLET & DISCOUNTS ====================
+export const walletData = {
+  discounts: [
+    { id: '1', code: 'DAIRY20', title: '20% off Dairy', type: 'Percentage', value: 20, status: 'active', redeemedCount: 45, usageLimit: 100, validFrom: '2025-10-01', validUntil: '2025-10-31' },
+    { id: '2', code: 'FREEMILK', title: 'Free Milk Jug', type: 'Bonus', value: 65, status: 'active', redeemedCount: 120, usageLimit: 500, validFrom: '2025-10-01', validUntil: '2025-11-30' },
+    { id: '3', code: 'FLAT50', title: 'Flat ₹50 Off', type: 'Fixed', value: 50, status: 'expired', redeemedCount: 200, usageLimit: 200, validFrom: '2025-09-15', validUntil: '2025-09-30' },
+    { id: '4', code: 'WEEKEND100', title: 'Weekend Bonanza', type: 'Fixed', value: 100, status: 'scheduled', redeemedCount: 0, usageLimit: 1000, validFrom: '2025-11-01', validUntil: '2025-11-02' },
+  ],
+  transactions: [
+    { id: 'TRX-1001', userId: '1', type: 'credit', amount: 500, status: 'completed', date: '2025-10-25' },
+    { id: 'TRX-1002', userId: '2', type: 'debit', amount: 150, status: 'completed', date: '2025-10-24' },
+    { id: 'TRX-1003', userId: '1', type: 'debit', amount: 425, status: 'completed', date: '2025-10-28' },
+    { id: 'TRX-1004', userId: '3', type: 'credit', amount: 1000, status: 'pending', date: '2025-10-29' },
+  ]
+};
+
+// ==================== MEMBERSHIP ====================
+export const mockMemberships = [
+  { id: '1', name: 'Bronze', price: 0, minOrders: 0, minSpend: 0, discount: 0, benefits: ['Basic Support'] },
+  { id: '2', name: 'Silver', price: 500, minOrders: 10, minSpend: 5000, discount: 5, benefits: ['Priority Support', 'Early access to sales'] },
+  { id: '3', name: 'Gold', price: 1000, minOrders: 25, minSpend: 10000, discount: 10, benefits: ['24/7 Support', 'Free Delivery', 'Early access to sales'] },
+];
+
+// ==================== HOMEPAGE SETTINGS ====================
+export const defaultHomepageSettings = {
+  bannerTitle: "Welcome to Our Restaurant",
+  bannerSubtitle: "Delicious food delivered fresh to your door",
+  ctaButtonText: "Order Now",
+  ctaLink: "/menu",
+  bannerImage: null,
+  publishedBanner: {
+    title: "Welcome to Our Restaurant",
+    subtitle: "Delicious food delivered fresh to your door",
+    ctaText: "Order Now",
+    ctaLink: "/menu",
+    image: null,
+  },
+  specialOffer: {
+    title: "20% Off Dairy",
+    code: "DAIRY20",
+    description: "Get 20% off on all dairy products",
+    visible: true,
+  },
+  categoryVisibility: "always",
+  offerVisibility: "date",
+  offerStartDate: "",
+  offerEndDate: "",
+  topProductsVisibility: "time",
+  topProductsStartTime: "09:00",
+  topProductsEndTime: "21:00",
+  bannerVisibility: "always",
+  topProductRules: [
+    {
+      id: 1,
+      startTime: "11:00",
+      endTime: "23:00",
+      days: {
+        mon: true,
+        tue: true,
+        wed: true,
+        thu: true,
+        fri: true,
+        sat: true,
+        sun: true,
+      },
+    },
+  ],
+  specialOfferRules: [
+    {
+      id: 1,
+      startDate: "2025-01-09",
+      endDate: "2025-12-31",
+    },
+  ],
+  sections: [
+    {
+      id: 1,
+      name: "Featured Categories",
+      type: "categories",
+      visible: true,
+      scheduled: false,
+    },
+    {
+      id: 2,
+      name: "Special Offers",
+      type: "offers",
+      visible: true,
+      scheduled: true,
+    },
+    {
+      id: 3,
+      name: "Top Products",
+      type: "products",
+      visible: true,
+      scheduled: true,
+    },
+  ],
+};
+
 
 // ==================== CHART DATA ====================
 export const revenueDataMonthly = [
@@ -237,6 +339,28 @@ export const orderSummaryDataMonthly = [
   { date: 'Week 4', completed: 1142, pending: 156 },
 ];
 
+// ==================== REPORT DATA (Simple versions) ====================
+export const salesReportData = {
+  summary: { totalRevenue: 403000, totalSales: 7, avgOrderValue: 57571 },
+  chartData: revenueDataMonthly.map(d => ({ date: d.month, sales: d.income })),
+  branchPerformance: [ { name: 'Koramangala Branch', orders: 2, revenue: 615 }, { name: 'T. Nagar Branch', orders: 2, revenue: 895 } ],
+};
+
+export const customerReportData = {
+  summary: { totalCustomers: 8, newCustomers: 1, returningCustomers: 7 },
+  topCustomers: customers.slice(0, 3).map(c => ({...c, totalOrders: c.totalOrders, totalSpend: c.totalSpent})),
+  newVsReturningData: [ { name: "New", value: 1, color: "#3B82F6" }, { name: "Returning", value: 7, color: "#F59E0B" }]
+};
+
+export const productReportData = {
+  topProducts: products.slice(0, 5).map(p => ({...p, unitsSold: 20, totalRevenue: p.price * 20})),
+};
+
+export const revenueReportData = {
+  summary: { totalRevenue: 403000, totalProfit: 120900, profitMargin: 30 },
+  chartData: revenueDataMonthly.map(d => ({date: d.month, revenue: d.income, profit: d.income * 0.3}))
+};
+
 // ==================== HELPER FUNCTIONS ====================
 
 // Get all branches
@@ -282,3 +406,5 @@ export const getAverageOrderValue = () => {
   const total = completedOrders.reduce((sum, o) => sum + o.total, 0);
   return Math.round(total / completedOrders.length);
 };
+
+// ==================== REMOVED DUPLICATE EXPORT BLOCK ====================

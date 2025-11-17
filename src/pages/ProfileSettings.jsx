@@ -1,232 +1,239 @@
+// admin_11/src/pages/ProfileSettings.jsx
 import { useState, useEffect } from 'react';
-import { Camera, Save, Lock } from 'lucide-react';
+import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Card } from '../components/ui/card';
-import { updateCurrentUser } from '../lib/auth';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../components/ui/tabs';
+import { User, Lock, Upload, Mail, Phone } from 'lucide-react';
+import { useApiProfile } from '../lib/hooks/useApiProfile'; // ✨ ADDED
+// import { authService } from '../lib/api/services/authService'; // ✨ REMOVED (using hook)
 import { toast } from 'sonner@2.0.3';
+import { Skeleton } from '../components/ui/skeleton'; // ✨ ADDED
 
-export function ProfileSettings({ onProfileUpdate, currentUser }) {
+export function ProfileSettings() {
+  // ✨ --- API Hook Integration --- ✨
+  const { 
+    profile, 
+    loading, 
+    error, 
+    updateProfile 
+  } = useApiProfile();
+
+  // State for profile form
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [profilePhoto, setProfilePhoto] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  // State for password form
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
+  // Load profile data into form when hook finishes loading
   useEffect(() => {
-    if (currentUser) {
-      setName(currentUser.name);
-      setEmail(currentUser.email);
-      setPhone(currentUser.phone || '');
-      setProfilePhoto(currentUser.profilePhoto || '');
+    if (profile) {
+      setName(profile.name || '');
+      setEmail(profile.email || '');
+      setPhone(profile.phone || '');
     }
-  }, [currentUser]);
+  }, [profile]);
 
-  const handlePhotoUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePhoto(reader.result);
-      };
-      reader.readAsDataURL(file);
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    setProfileLoading(true);
+    try {
+      const response = await updateProfile({ name, email, phone });
+      if (response.success) {
+        toast.success('Profile updated successfully!');
+      } else {
+        throw new Error(response.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setProfileLoading(false);
     }
   };
 
-  const handleSave = () => {
-    if (!currentUser) return;
-
-    // Validate password change if attempted
-    if (newPassword) {
-      if (currentPassword !== currentUser.password) {
-        toast.error('Current password is incorrect');
-        return;
-      }
-      if (newPassword !== confirmPassword) {
-        toast.error('New passwords do not match');
-        return;
-      }
-      if (newPassword.length < 6) {
-        toast.error('Password must be at least 6 characters');
-        return;
-      }
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match.');
+      return;
     }
-
-    const updates = {
-      name,
-      phone,
-      profilePhoto,
-    };
-
-    if (newPassword) {
-      updates.password = newPassword;
+    setPasswordLoading(true);
+    try {
+      const response = await updateProfile({ currentPassword, newPassword });
+      if (response.success) {
+        toast.success('Password changed successfully!');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        throw new Error(response.message || 'Failed to change password');
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setPasswordLoading(false);
     }
-
-    updateCurrentUser(updates);
-
-    if (onProfileUpdate) {
-      onProfileUpdate({ ...currentUser, ...updates });
-    }
-
-    toast.success('Profile updated successfully!');
-
-    // Clear password fields
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
   };
+
+  if (loading) {
+    return (
+      <div className="p-4">
+        <Card className="w-full max-w-3xl mx-auto p-6">
+          <Skeleton className="h-8 w-48 mb-6" />
+          <Skeleton className="h-10 w-full mb-4" />
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="p-4 text-center text-red-500">Error: {error}</div>;
+  }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-xs">My Profile</h2>
-        <p className="text-xs text-muted-foreground">Update your profile information</p>
-      </div>
+    <div className="p-4">
+      <Card className="w-full max-w-3xl mx-auto">
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="profile">
+              <User className="h-4 w-4 mr-2" />
+              My Profile
+            </TabsTrigger>
+            <TabsTrigger value="password">
+              <Lock className="h-4 w-4 mr-2" />
+              Change Password
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* --- Profile Tab --- */}
+          <TabsContent value="profile" className="p-6">
+            <form onSubmit={handleProfileUpdate} className="space-y-6">
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <img
+                    src={profile?.avatarUrl || `https://ui-avatars.com/api/?name=${name || 'A'}&background=random`}
+                    alt="Profile"
+                    className="h-24 w-24 rounded-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="absolute bottom-0 right-0 h-8 w-8 p-0 rounded-full"
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold">{profile?.name}</h3>
+                  <p className="text-muted-foreground">{profile?.email}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your full name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Enter your phone number"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <Button type="submit" className="bg-red-500 hover:bg-red-600" disabled={profileLoading}>
+                  {profileLoading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
 
-      <Card className="p-6">
-        {/* Profile Photo Section */}
-        <div className="flex items-center gap-6 mb-8 pb-8 border-b">
-          <div className="relative">
-            <Avatar className="h-24 w-24">
-              {profilePhoto && <AvatarImage src={profilePhoto} alt={name} />}
-              <AvatarFallback className="bg-red-500 text-white">
-                {name.split(' ').map(n => n[0]).join('')}
-              </AvatarFallback>
-            </Avatar>
-            <label
-              htmlFor="photo-upload"
-              className="absolute bottom-0 right-0 h-8 w-8 bg-red-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-red-600 transition-colors"
-            >
-              <Camera className="h-4 w-4 text-white" />
-            </label>
-            <input
-              id="photo-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handlePhotoUpload}
-            />
-          </div>
-          <div>
-            <h3 className="text-xs">Profile Photo</h3>
-            <p className="text-xs text-muted-foreground">
-              Click the camera icon to upload a new photo
-            </p>
-          </div>
-        </div>
-
-        {/* Personal Information */}
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-xs">Full Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your full name"
-                className="text-xs h-9"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                disabled
-                className="text-xs h-9 bg-gray-50"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-xs">Phone Number</Label>
-              <Input
-                id="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+91 98765 43210"
-                className="text-xs h-9"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="role" className="text-xs">Role</Label>
-              <Input
-                id="role"
-                value={currentUser?.role || ''}
-                disabled
-                className="text-xs h-9 bg-gray-50"
-              />
-            </div>
-          </div>
-
-          {/* Change Password Section */}
-          <div className="pt-6 border-t">
-            <div className="flex items-center gap-2 mb-4">
-              <Lock className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-xs">Change Password</h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* --- Password Tab --- */}
+          <TabsContent value="password" className="p-6">
+            <form onSubmit={handlePasswordChange} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="current-password" className="text-xs">Current Password</Label>
+                <Label htmlFor="currentPassword">Current Password</Label>
                 <Input
-                  id="current-password"
+                  id="currentPassword"
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                  className="text-xs h-9"
+                  placeholder="Enter your current password"
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="new-password" className="text-xs">New Password</Label>
+                <Label htmlFor="newPassword">New Password</Label>
                 <Input
-                  id="new-password"
+                  id="newPassword"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  className="text-xs h-9"
+                  placeholder="Enter a new password"
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="confirm-password" className="text-xs">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
                 <Input
-                  id="confirm-password"
+                  id="confirmPassword"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  className="text-xs h-9"
+                  placeholder="Confirm your new password"
                 />
               </div>
-            </div>
-
-            <p className="text-xs text-muted-foreground mt-2">
-              Leave password fields empty if you don't want to change your password
-            </p>
-          </div>
-
-          {/* Save Button */}
-          <div className="flex justify-end pt-6 border-t">
-            <Button
-              onClick={handleSave}
-              className="bg-red-500 hover:bg-red-600 text-xs h-9"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
-            </Button>
-          </div>
-        </div>
+              <div className="text-right">
+                <Button type="submit" className="bg-red-500 hover:bg-red-600" disabled={passwordLoading}>
+                  {passwordLoading ? 'Changing...' : 'Change Password'}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );

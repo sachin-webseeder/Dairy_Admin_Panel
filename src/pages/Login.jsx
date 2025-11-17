@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import webseederLogo from "figma:asset/dbec6477395e40f9a594682daf5e89e877d326cc.png";
 import { slideshowImages } from "../assets/images";
 import {
-  loginUser,
   isEmailRegistered,
   resetUserPassword,
+  loginUser, // Keep this for now, or remove if auth.js provides all functions
 } from "../lib/auth";
+import { authService } from "../lib/api/services/authService";
 import { toast } from "sonner@2.0.3";
 import {
   projectId,
@@ -149,18 +150,25 @@ export function Login({ onLogin, onNavigate }) {
     }
 
     // Simulate API call delay
-    setTimeout(() => {
-      const user = loginUser(formData.email, formData.password);
+    try {
+      const response = await authService.login({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      if (user) {
-        onLogin(user);
+      // authService.login automatically stores the token.
+      // We just need to tell the app we are logged in.
+      if (response.success && response.data.user) {
+        onLogin(response.data.user);
       } else {
-        setError(
-          "Invalid email or password. Please try again.",
-        );
+        setError(response.message || "Invalid email or password.");
       }
+    } catch (error) {
+      // The apiClient will throw an error with a user-friendly message
+      setError(error.message || "An unknown error occurred.");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const handleSendOTP = async (e) => {

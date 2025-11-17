@@ -1,7 +1,16 @@
+// admin_11/src/pages/Wallet.jsx
 import { useState } from 'react';
-import { Wallet as WalletIcon, Plus, Download, TrendingUp, TrendingDown, CreditCard, DollarSign, Gift, Tag, Pencil, Trash2 } from 'lucide-react';
-import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import {
   Table,
   TableBody,
@@ -10,393 +19,496 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { Badge } from '../components/ui/badge';
-import { AddWalletTransactionModal } from '../components/modals/AddWalletTransactionModal';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../components/ui/tabs';
+import {
+  Search,
+  Eye,
+  Edit2,
+  Trash2,
+  CreditCard,
+  Percent,
+  CheckCircle,
+  Gift,
+  Clock,
+  CircleArrowUp,
+  CircleArrowDown,
+  Users,
+} from 'lucide-react';
 import { AddDiscountBonusModal } from '../components/modals/AddDiscountBonusModal';
 import { EditDiscountBonusModal } from '../components/modals/EditDiscountBonusModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
+import { AddWalletTransactionModal } from '../components/modals/AddWalletTransactionModal';
+import { usePersistentWallet, usePersistentCustomers } from '../lib/usePersistentData';
+import { showSuccessToast } from '../lib/toast';
 import { toast } from 'sonner@2.0.3';
-
-// TypeScript interface 'Transaction' removed
-
-// TypeScript interface 'DiscountBonus' removed
-
-const mockTransactions = [
-  {
-    id: '1',
-    type: 'credit',
-    amount: 500,
-    description: 'Wallet recharge',
-    date: '2025-11-10',
-    status: 'completed',
-    customer: 'Rajesh Kumar'
-  },
-  {
-    id: '2',
-    type: 'debit',
-    amount: 150,
-    description: 'Order payment',
-    date: '2025-11-09',
-    status: 'completed',
-    customer: 'Priya Sharma'
-  },
-  {
-    id: '3',
-    type: 'credit',
-    amount: 1000,
-    description: 'Refund credited',
-    date: '2025-11-08',
-    status: 'completed',
-    customer: 'Amit Patel'
-  },
-  {
-    id: '4',
-    type: 'debit',
-    amount: 200,
-    description: 'Subscription payment',
-    date: '2025-11-07',
-    status: 'completed',
-    customer: 'Sneha Reddy'
-  }
-];
-
-const mockDiscountsBonuses = [
-  {
-    id: '1',
-    title: 'Gold Member Discount',
-    type: 'discount',
-    value: 15,
-    valueType: 'percentage',
-    membershipTier: 'Gold',
-    validFrom: '2025-11-01',
-    validUntil: '2025-12-31',
-    status: 'active'
-  },
-  {
-    id: '2',
-    title: 'Welcome Bonus',
-    type: 'bonus',
-    value: 100,
-    valueType: 'fixed',
-    membershipTier: 'All',
-    validFrom: '2025-11-01',
-    validUntil: '2025-11-30',
-    status: 'active'
-  },
-  {
-    id: '3',
-    title: 'Silver Member Discount',
-    type: 'discount',
-    value: 10,
-    valueType: 'percentage',
-    membershipTier: 'Silver',
-    validFrom: '2025-11-01',
-    validUntil: '2025-12-31',
-    status: 'active'
-  },
-  {
-    id: '4',
-    title: 'Festive Bonus',
-    type: 'bonus',
-    value: 200,
-    valueType: 'fixed',
-    membershipTier: 'Gold',
-    validFrom: '2025-11-15',
-    validUntil: '2025-11-20',
-    status: 'inactive'
-  }
-];
+import { useApiDiscounts } from '../lib/hooks/useApiDiscounts'; // ✨ ADDED
+import { useApiWalletStats } from '../lib/hooks/useApiWalletStats'; // ✨ ADDED
 
 export function Wallet() {
-  // Removed type annotations from useState
-  const [transactions, setTransactions] = useState(mockTransactions);
-  const [discountsBonuses, setDiscountsBonuses] = useState(mockDiscountsBonuses);
-  const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
-  const [isAddDiscountBonusModalOpen, setIsAddDiscountBonusModalOpen] = useState(false);
-  const [isEditDiscountBonusModalOpen, setIsEditDiscountBonusModalOpen] = useState(false);
-  const [isDeleteConfirmationModalOpen, setIsDeleteConfirmationModalOpen] = useState(false);
-  const [selectedDiscountBonus, setSelectedDiscountBonus] = useState(null);
+  // ✨ We STILL need usePersistentWallet for the "Transactions" tab mock data
+  const [walletData, setWalletData] = usePersistentWallet();
+  const [customers] = usePersistentCustomers();
+  
+  // State for modals and selected items
+  const [addDiscountModalOpen, setAddDiscountModalOpen] = useState(false);
+  const [editDiscountModalOpen, setEditDiscountModalOpen] = useState(false);
+  const [deleteDiscountModalOpen, setDeleteDiscountModalOpen] = useState(false);
+  const [selectedDiscount, setSelectedDiscount] = useState(null);
+  
+  const [addTransactionModalOpen, setAddTransactionModalOpen] = useState(false);
+  const [deleteTransactionModalOpen, setDeleteTransactionModalOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
-  const totalBalance = transactions.reduce((acc, transaction) => {
-    if (transaction.status === 'completed') {
-      return transaction.type === 'credit' ? acc + transaction.amount : acc - transaction.amount;
+  // Filter states
+  const [discountSearch, setDiscountSearch] = useState('');
+  const [discountStatus, setDiscountStatus] = useState('all');
+  const [discountType, setDiscountType] = useState('all');
+  const [transactionSearch, setTransactionSearch] = useState('');
+  const [transactionStatus, setTransactionStatus] = useState('all');
+  const [transactionType, setTransactionType] = useState('all');
+
+  // ✨ --- API Hook for Stats --- ✨
+  const { 
+    stats, 
+    loading: statsLoading 
+  } = useApiWalletStats();
+
+  // ✨ --- API Hook for Discounts List --- ✨
+  const {
+    discounts,
+    loading: discountsLoading,
+    error: discountsError,
+    total: totalDiscountsApi,
+    createDiscount,
+    updateDiscount,
+    deleteDiscount,
+  } = useApiDiscounts({
+    search: discountSearch,
+    status: discountStatus,
+    type: discountType,
+  });
+
+  // const filteredDiscounts = walletData.discounts.filter(...) // ✨ REMOVED (API handles this)
+
+  // ✨ --- CRUD Functions for Discounts --- ✨
+  const handleAddDiscount = async (data) => {
+    try {
+      await createDiscount(data);
+      showSuccessToast('Discount added successfully!');
+      setAddDiscountModalOpen(false);
+    } catch (err) {
+      toast.error(err.message || 'Failed to add discount');
     }
-    return acc;
-  }, 5000);
+  };
 
-  const totalCredits = transactions
-    .filter(t => t.type === 'credit' && t.status === 'completed')
-    .reduce((acc, t) => acc + t.amount, 0);
+  const handleEditDiscount = (discount) => {
+    setSelectedDiscount(discount);
+    setEditDiscountModalOpen(true);
+  };
 
-  const totalDebits = transactions
-    .filter(t => t.type === 'debit' && t.status === 'completed')
-    .reduce((acc, t) => acc + t.amount, 0);
+  const handleSaveEditDiscount = async (updatedData) => {
+    if (selectedDiscount) {
+      try {
+        await updateDiscount(selectedDiscount.id, updatedData);
+        showSuccessToast('Discount updated successfully!');
+        setEditDiscountModalOpen(false);
+        setSelectedDiscount(null);
+      } catch (err) {
+        toast.error(err.message || 'Failed to update discount');
+      }
+    }
+  };
+
+  const handleDeleteDiscount = (discount) => {
+    setSelectedDiscount(discount);
+    setDeleteDiscountModalOpen(true);
+  };
+
+  const handleConfirmDeleteDiscount = async () => {
+    if (selectedDiscount) {
+      try {
+        await deleteDiscount(selectedDiscount.id);
+        showSuccessToast('Discount deleted successfully!');
+        setDeleteDiscountModalOpen(false);
+        setSelectedDiscount(null);
+      } catch (err) {
+        toast.error(err.message || 'Failed to delete discount');
+      }
+    }
+  };
+
+
+  // --- Transaction Functions (Untouched) ---
+  // These still use mock data from usePersistentWallet
+  const filteredTransactions = walletData.transactions.filter((t) => {
+    const customer = customers.find((c) => c.id === t.userId);
+    const matchesSearch =
+      t.id.toLowerCase().includes(transactionSearch.toLowerCase()) ||
+      customer?.name.toLowerCase().includes(transactionSearch.toLowerCase());
+    const matchesStatus =
+      transactionStatus === 'all' || t.status === transactionStatus;
+    const matchesType =
+      transactionType === 'all' || t.type === transactionType;
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
+  const handleAddTransaction = (transaction) => {
+    setWalletData((prev) => ({
+      ...prev,
+      transactions: [transaction, ...prev.transactions],
+    }));
+    showSuccessToast('Transaction added successfully!');
+  };
+
+  const handleDeleteTransaction = (transaction) => {
+    setSelectedTransaction(transaction);
+    setDeleteTransactionModalOpen(true);
+  };
+
+  const handleConfirmDeleteTransaction = () => {
+    if (selectedTransaction) {
+      setWalletData((prev) => ({
+        ...prev,
+        transactions: prev.transactions.filter(
+          (t) => t.id !== selectedTransaction.id,
+        ),
+      }));
+      setDeleteTransactionModalOpen(false);
+      setSelectedTransaction(null);
+      showSuccessToast('Transaction deleted successfully!');
+    }
+  };
+  // --- End of Transaction Functions ---
 
   return (
     <div className="p-4">
-      <div className="mb-4 flex items-center justify-end">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="transition-all duration-200 h-9 text-xs border border-gray-300"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button
-            size="sm"
-            className="bg-red-500 hover:bg-red-600 transition-all duration-200 h-9 text-xs border border-red-500"
-            onClick={() => setIsAddTransactionModalOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Transaction
-          </Button>
-        </div>
-      </div>
+      <Tabs defaultValue="discounts" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="discounts">Discounts / Bonus</TabsTrigger>
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
+        </TabsList>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <Card className="p-4 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1 font-bold">Total Balance</p>
-              <h3 className="text-lg">₹{totalBalance.toLocaleString()}</h3>
-            </div>
-            <div className="h-9 w-9 bg-blue-50 rounded-full flex items-center justify-center">
-              <WalletIcon className="h-4 w-4 text-blue-500" />
-            </div>
+        {/* ====================================================================== */}
+        {/* =================== DISCOUNTS / BONUS TAB (Integrated) ================= */}
+        {/* ====================================================================== */}
+        <TabsContent value="discounts">
+          {/* Stat Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <Card className="p-4">
+              <p className="text-sm text-muted-foreground mb-1 font-bold">Total Discounts</p>
+              <h3 className="text-lg">{statsLoading ? '...' : stats.totalDiscounts}</h3>
+            </Card>
+            <Card className="p-4">
+              <p className="text-sm text-muted-foreground mb-1 font-bold">Active Discounts</p>
+              <h3 className="text-lg">{statsLoading ? '...' : stats.activeDiscounts}</h3>
+            </Card>
+            <Card className="p-4">
+              <p className="text-sm text-muted-foreground mb-1 font-bold">Total Redeemed</p>
+              <h3 className="text-lg">{statsLoading ? '...' : stats.totalRedeemed}</h3>
+            </Card>
+            <Card className="p-4">
+              <p className="text-sm text-muted-foreground mb-1 font-bold">Total Value Redeemed</p>
+              <h3 className="text-lg">₹{statsLoading ? '...' : stats.totalValue.toLocaleString()}</h3>
+            </Card>
           </div>
-        </Card>
 
-        <Card className="p-4 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1 font-bold">Total Credits</p>
-              <h3 className="text-lg text-green-600">₹{totalCredits.toLocaleString()}</h3>
+          <div className="bg-white rounded-lg border border-gray-200">
+            <div className="p-4 border-b space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by code or title..."
+                    className="pl-9 text-xs h-9"
+                    value={discountSearch}
+                    onChange={(e) => setDiscountSearch(e.target.value)}
+                  />
+                </div>
+                <Select value={discountStatus} onValueChange={setDiscountStatus}>
+                  <SelectTrigger className="h-9 text-xs w-[140px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={discountType} onValueChange={setDiscountType}>
+                  <SelectTrigger className="h-9 text-xs w-[140px]">
+                    <SelectValue placeholder="All Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Type</SelectItem>
+                    <SelectItem value="Percentage">Percentage</SelectItem>
+                    <SelectItem value="Fixed">Fixed</SelectItem>
+                    <SelectItem value="Bonus">Bonus</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  className="h-9 text-xs bg-red-500 hover:bg-red-600"
+                  onClick={() => setAddDiscountModalOpen(true)}
+                >
+                  + Add New
+                </Button>
+              </div>
             </div>
-            <div className="h-9 w-9 bg-green-50 rounded-full flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            </div>
+
+            {/* ✨ --- LOADING & ERROR HANDLING --- ✨ */}
+            {discountsLoading && <div className="p-4 text-center">Loading discounts...</div>}
+            {discountsError && <div className="p-4 text-center text-red-500">Error: {discountsError}</div>}
+            {!discountsLoading && !discountsError && (
+              <Table>
+                <TableHeader>
+                  <TableRow className="text-xs">
+                    <TableHead>CODE</TableHead>
+                    <TableHead>TYPE</TableHead>
+                    <TableHead>VALUE</TableHead>
+                    <TableHead>STATUS</TableHead>
+                    <TableHead>REDEEMED</TableHead>
+                    <TableHead>VALID FROM</TableHead>
+                    <TableHead>VALID UNTIL</TableHead>
+                    <TableHead className="text-right">ACTIONS</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {discounts.map((discount) => (
+                    <TableRow key={discount.id} className="text-xs">
+                      <TableCell>
+                        <p className="font-medium">{discount.code}</p>
+                        <p className="text-[10px] text-muted-foreground line-clamp-1">{discount.title}</p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={discount.type === 'Bonus' ? 'secondary' : 'outline'}
+                          className={discount.type === 'Bonus' ? 'bg-green-100 text-green-800' : ''}
+                        >
+                          {discount.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {discount.type === 'Percentage' ? `${discount.value}%` : `₹${discount.value}`}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] ${
+                          discount.status === 'active' ? 'bg-green-100 text-green-800' :
+                          discount.status === 'expired' ? 'bg-gray-100 text-gray-700' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${
+                            discount.status === 'active' ? 'bg-green-600' :
+                            discount.status === 'expired' ? 'bg-gray-500' :
+                            'bg-blue-600'
+                          }`} />
+                          {discount.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>{discount.redeemedCount} / {discount.usageLimit}</TableCell>
+                      <TableCell>{discount.validFrom}</TableCell>
+                      <TableCell>{discount.validUntil}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => handleEditDiscount(discount)}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteDiscount(discount)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
-        </Card>
+        </TabsContent>
 
-        <Card className="p-4 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1 font-bold">Total Debits</p>
-              <h3 className="text-lg text-red-600">₹{totalDebits.toLocaleString()}</h3>
-            </div>
-            <div className="h-9 w-9 bg-red-50 rounded-full flex items-center justify-center">
-              <TrendingDown className="h-4 w-4 text-red-500" />
-            </div>
+        {/* ====================================================================== */}
+        {/* ================== TRANSACTIONS TAB (NOT Integrated) ================= */}
+        {/* ====================================================================== */}
+        <TabsContent value="transactions">
+          {/* Stat Cards (using mock stats for now) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <Card className="p-4">
+              <p className="text-sm text-muted-foreground mb-1 font-bold">Total Wallet Balance</p>
+              <h3 className="text-lg">₹{statsLoading ? '...' : stats.totalWalletBalance.toLocaleString()}</h3>
+            </Card>
+            <Card className="p-4">
+              <p className="text-sm text-muted-foreground mb-1 font-bold">Total Credit (Top-up)</p>
+              <h3 className="text-lg">₹{statsLoading ? '...' : stats.totalCredit.toLocaleString()}</h3>
+            </Card>
+            <Card className="p-4">
+              <p className="text-sm text-muted-foreground mb-1 font-bold">Total Debit (Spent)</p>
+              <h3 className="text-lg">₹{statsLoading ? '...' : stats.totalDebit.toLocaleString()}</h3>
+            </Card>
           </div>
-        </Card>
-      </div>
+          
+          <div className="bg-white rounded-lg border border-gray-200">
+            <div className="p-4 border-b space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by user or transaction ID..."
+                    className="pl-9 text-xs h-9"
+                    value={transactionSearch}
+                    onChange={(e) => setTransactionSearch(e.target.value)}
+                  />
+                </div>
+                <Select value={transactionStatus} onValueChange={setTransactionStatus}>
+                  <SelectTrigger className="h-9 text-xs w-[140px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={transactionType} onValueChange={setTransactionType}>
+                  <SelectTrigger className="h-9 text-xs w-[140px]">
+                    <SelectValue placeholder="All Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Type</SelectItem>
+                    <SelectItem value="credit">Credit (Top-up)</SelectItem>
+                    <SelectItem value="debit">Debit (Purchase)</SelectItem>
+                    <SelectItem value="refund">Refund</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  className="h-9 text-xs bg-red-500 hover:bg-red-600"
+                  onClick={() => setAddTransactionModalOpen(true)}
+                >
+                  + Add Transaction
+                </Button>
+              </div>
+            </div>
 
-      {/* Transactions Table */}
-      <Card className="overflow-hidden transition-all duration-200 hover:shadow-md mb-4">
-        <div className="p-4 border-b border-gray-200 bg-white">
-          <h3 className="text-sm font-semibold">Recent Transactions</h3>
-        </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-xs">Transaction ID</TableHead>
-              <TableHead className="text-xs">Type</TableHead>
-              <TableHead className="text-xs">Amount</TableHead>
-              <TableHead className="text-xs">Description</TableHead>
-              <TableHead className="text-xs">Date</TableHead>
-              <TableHead className="text-xs">Status</TableHead>
-              <TableHead className="text-xs">Customer</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell className="text-xs">#{transaction.id}</TableCell>
-                <TableCell className="text-xs">
-                  <div className="flex items-center gap-2">
-                    {transaction.type === 'credit' ? (
-                      <TrendingUp className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 text-red-500" />
-                    )}
-                    <span className={transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
-                      {transaction.type === 'credit' ? 'Credit' : 'Debit'}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-xs">
-                  <span className={transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
-                    {transaction.type === 'credit' ? '+' : '-'}₹{transaction.amount}
-                  </span>
-                </TableCell>
-                <TableCell className="text-xs">{transaction.description}</TableCell>
-                <TableCell className="text-xs">{new Date(transaction.date).toLocaleDateString()}</TableCell>
-                <TableCell className="text-xs">
-                  <Badge
-                    className={
-                      transaction.status === 'completed'
-                        ? 'bg-green-100 text-green-700 hover:bg-green-100'
-                        : transaction.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
-                        : 'bg-red-100 text-red-700 hover:bg-red-100'
-                    }
-                  >
-                    {transaction.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-xs">{transaction.customer}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+            {/* This table still uses mock data */}
+            <Table>
+              <TableHeader>
+                <TableRow className="text-xs">
+                  <TableHead>TRANSACTION ID</TableHead>
+                  <TableHead>USER</TableHead>
+                  <TableHead>TYPE</TableHead>
+                  <TableHead>AMOUNT</TableHead>
+                  <TableHead>STATUS</TableHead>
+                  <TableHead>DATE</TableHead>
+                  <TableHead className="text-right">ACTIONS</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions.map((t) => {
+                  const customer = customers.find(c => c.id === t.userId);
+                  return (
+                    <TableRow key={t.id} className="text-xs">
+                      <TableCell className="font-medium">#{t.id.split('-')[0]}</TableCell>
+                      <TableCell>{customer?.name || 'Unknown User'}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1.5 ${
+                          t.type === 'credit' ? 'text-green-700' : 
+                          t.type === 'debit' ? 'text-red-700' : 'text-gray-700'
+                        }`}>
+                          {t.type === 'credit' && <CircleArrowUp className="h-3 w-3" />}
+                          {t.type === 'debit' && <CircleArrowDown className="h-3 w-3" />}
+                          {t.type === 'refund' && <RefreshCw className="h-3 w-3" />}
+                          {t.type}
+                        </span>
+                      </TableCell>
+                      <TableCell className={`font-medium ${
+                        t.type === 'credit' ? 'text-green-700' : 
+                        t.type === 'debit' ? 'text-red-700' : 'text-gray-700'
+                      }`}>
+                        {t.type === 'debit' ? '-' : '+'}₹{t.amount.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={t.status === 'completed' ? 'default' : 'secondary'}>
+                          {t.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{t.date}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteTransaction(t)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+      </Tabs>
 
-      {/* Discount & Bonus Management Section */}
-      <Card className="overflow-hidden transition-all duration-200 hover:shadow-md">
-        <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Discount & Bonus Management</h3>
-          <Button
-            size="sm"
-            className="bg-red-500 hover:bg-red-600 transition-all duration-200 h-9 text-xs border border-red-500"
-            onClick={() => setIsAddDiscountBonusModalOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Discount/Bonus
-          </Button>
-        </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-xs">Title</TableHead>
-              <TableHead className="text-xs">Type</TableHead>
-              <TableHead className="text-xs">Value</TableHead>
-              <TableHead className="text-xs">Membership Tier</TableHead>
-              <TableHead className="text-xs">Valid From</TableHead>
-              <TableHead className="text-xs">Valid Until</TableHead>
-              <TableHead className="text-xs">Status</TableHead>
-              <TableHead className="text-xs">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {discountsBonuses.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="text-xs">{item.title}</TableCell>
-                <TableCell className="text-xs">
-                  <div className="flex items-center gap-2">
-                    {item.type === 'discount' ? (
-                      <Tag className="h-4 w-4 text-blue-500" />
-                    ) : (
-                      <Gift className="h-4 w-4 text-purple-500" />
-                    )}
-                    <span className={item.type === 'discount' ? 'text-blue-600' : 'text-purple-600'}>
-                      {item.type === 'discount' ? 'Discount' : 'Bonus'}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-xs font-medium">
-                  {item.valueType === 'percentage' ? `${item.value}%` : `₹${item.value}`}
-                </TableCell>
-                <TableCell className="text-xs">
-                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
-                    {item.membershipTier}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-xs">{new Date(item.validFrom).toLocaleDateString()}</TableCell>
-                <TableCell className="text-xs">{new Date(item.validUntil).toLocaleDateString()}</TableCell>
-                <TableCell className="text-xs">
-                  <Badge
-                    className={
-                      item.status === 'active'
-                        ? 'bg-green-100 text-green-700 hover:bg-green-100'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
-                    }
-                  >
-                    {item.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-xs">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      className="bg-blue-500 hover:bg-blue-600 transition-all duration-200 h-9 text-xs border border-blue-500"
-                      onClick={() => {
-                        setSelectedDiscountBonus(item);
-                        setIsEditDiscountBonusModalOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="bg-red-500 hover:bg-red-600 transition-all duration-200 h-9 text-xs border border-red-500"
-                      onClick={() => {
-                        setSelectedDiscountBonus(item);
-                        setIsDeleteConfirmationModalOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
-
-      {/* Add Transaction Modal */}
-      <AddWalletTransactionModal
-        isOpen={isAddTransactionModalOpen}
-        onClose={() => setIsAddTransactionModalOpen(false)}
-        onAddTransaction={(newTransaction) => {
-          setTransactions([...transactions, newTransaction]);
-          toast.success('Transaction added successfully!');
-        }}
-      />
-
-      {/* Add Discount/Bonus Modal */}
+      {/* Discount Modals */}
       <AddDiscountBonusModal
-        isOpen={isAddDiscountBonusModalOpen}
-        onClose={() => setIsAddDiscountBonusModalOpen(false)}
-        onAdd={(newDiscountBonus) => {
-          setDiscountsBonuses([...discountsBonuses, newDiscountBonus]);
-          toast.success('Discount/Bonus added successfully!');
-        }}
+        open={addDiscountModalOpen}
+        onOpenChange={setAddDiscountModalOpen}
+        onSave={handleAddDiscount}
       />
+      {selectedDiscount && (
+        <>
+          <EditDiscountBonusModal
+            open={editDiscountModalOpen}
+            onOpenChange={setEditDiscountModalOpen}
+            onSave={handleSaveEditDiscount}
+            discount={selectedDiscount}
+          />
+          <DeleteConfirmationModal
+            open={deleteDiscountModalOpen}
+            onOpenChange={setDeleteDiscountModalOpen}
+            onConfirm={handleConfirmDeleteDiscount}
+            title="Delete Discount"
+            description={`Are you sure you want to delete the discount "${selectedDiscount.code}"?`}
+          />
+        </>
+      )}
 
-      {/* Edit Discount/Bonus Modal */}
-      <EditDiscountBonusModal
-        isOpen={isEditDiscountBonusModalOpen}
-        onClose={() => setIsEditDiscountBonusModalOpen(false)}
-        item={selectedDiscountBonus}
-        onEdit={(updatedDiscountBonus) => {
-          const updatedList = discountsBonuses.map(item =>
-            item.id === updatedDiscountBonus.id ? updatedDiscountBonus : item
-          );
-          setDiscountsBonuses(updatedList);
-          toast.success('Discount/Bonus updated successfully!');
-        }}
+      {/* Transaction Modals (Still using mock data) */}
+      <AddWalletTransactionModal
+        open={addTransactionModalOpen}
+        onOpenChange={setAddTransactionModalOpen}
+        onSave={handleAddTransaction}
+        customers={customers}
       />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={isDeleteConfirmationModalOpen}
-        onClose={() => setIsDeleteConfirmationModalOpen(false)}
-        title="Delete Discount/Bonus"
-        description="Are you sure you want to delete this discount/bonus? This action cannot be undone."
-        onConfirm={() => {
-          if (selectedDiscountBonus) {
-            const updatedList = discountsBonuses.filter(item => item.id !== selectedDiscountBonus.id);
-            setDiscountsBonuses(updatedList);
-            toast.success('Discount/Bonus deleted successfully!');
-          }
-        }}
-      />
+      {selectedTransaction && (
+        <DeleteConfirmationModal
+          open={deleteTransactionModalOpen}
+          onOpenChange={setDeleteTransactionModalOpen}
+          onConfirm={handleConfirmDeleteTransaction}
+          title="Delete Transaction"
+          description={`Are you sure you want to delete transaction #${selectedTransaction.id.split('-')[0]}?`}
+        />
+      )}
     </div>
   );
 }
