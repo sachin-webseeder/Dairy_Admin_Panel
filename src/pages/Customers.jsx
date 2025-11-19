@@ -51,10 +51,10 @@ export function Customers() {
 
   // ✨ --- API Hook for List (called AFTER state declarations) --- ✨
   const {
-    customers: filteredCustomers,
+    customers: filteredCustomers = [],
     loading,
     error,
-    total: totalCustomersApi, // Total from API
+    total: totalCustomersApi = 0, // Total from API
     updateCustomer,
     deleteCustomer,
     toggleCustomerStatus,
@@ -206,7 +206,7 @@ export function Customers() {
                 {/* ... (Table Header remains) ... */}
               </TableHeader>
               <TableBody>
-                {filteredCustomers.slice(0, parseInt(entriesPerPage)).map((customer) => {
+                {(filteredCustomers || []).slice(0, parseInt(entriesPerPage)).map((customer) => {
                   const initials = customer.name.split(' ').map(n => n[0]).join('').substring(0, 2);
                   const getMembershipTier = () => {
                     if (customer.membership) return customer.membership;
