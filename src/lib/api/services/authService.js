@@ -2,22 +2,41 @@ import { apiClient } from '../client';
 import { API_ENDPOINTS } from '../config';
 
 export const authService = {
-  /**
-   * Login user
-   */
   async login(credentials) {
-    const response = await apiClient.post(
-      API_ENDPOINTS.AUTH.LOGIN,
-      credentials
-    );
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, credentials);
     
-    if (response.success && response.data.token) {
-      // Store token and user data
-      localStorage.setItem('auth_token', response.data.token);
-      localStorage.setItem('auth_user', JSON.stringify(response.data.user));
+    // DEBUG: Check exactly what the server sent
+    console.log("Login Response:", response); 
+
+    // Handle different response structures
+    const token = response.token || (response.data && response.data.token);
+    const user = response.user || (response.data && response.data.user);
+
+    if (token) {
+      // Store token
+      localStorage.setItem('auth_token', token);
+      
+      // Store user data
+      if (user) {
+        localStorage.setItem('auth_user', JSON.stringify(user));
+      } else {
+        // Fallback if no user object is returned
+        localStorage.setItem('auth_user', JSON.stringify({ email: credentials.email, role: 'Admin' }));
+      }
+      
+      // Return a success structure the UI expects
+      return { success: true, data: { token, user } };
     }
     
     return response;
+  },
+
+  /**
+   * Register new user
+   */
+  async register(userData) {
+    // userData matches the form: { firstName, lastName, email, password, ... }
+    return apiClient.post(API_ENDPOINTS.AUTH.REGISTER, userData);
   },
 
   /**

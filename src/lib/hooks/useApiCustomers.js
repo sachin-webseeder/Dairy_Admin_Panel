@@ -1,25 +1,33 @@
+// admin_11/src/lib/hooks/useApiCustomers.js
 import { useState, useEffect } from 'react';
 import { customerService } from '../api/services/customerService';
 import { API_CONFIG } from '../api/config';
-import { usePersistentCustomers } from '../usePersistentData';
+import { customers as defaultCustomers } from '../mockData';
 
-/**
- * Hook for managing customers with API integration
- * Falls back to localStorage when API is disabled
- */
 export function useApiCustomers(filters) {
-  const [localCustomers, setLocalCustomers] = usePersistentCustomers();
+  // Initialize with empty array to prevent "length of undefined" errors
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [total, setTotal] = useState(0);
 
-  // Fetch customers from API
+  // Helper to clean filters (Remove 'all' and empty strings)
+  const cleanFilters = (dirtyFilters) => {
+    const cleaned = {};
+    Object.keys(dirtyFilters).forEach((key) => {
+      const value = dirtyFilters[key];
+      // Only include the filter if it's NOT 'all' and NOT empty
+      if (value !== 'all' && value !== '' && value !== null && value !== undefined) {
+        cleaned[key] = value;
+      }
+    });
+    return cleaned;
+  };
+
   const fetchCustomers = async () => {
     if (!API_CONFIG.ENABLE_API) {
-      // Use local data when API is disabled
-      setCustomers(localCustomers);
-      setTotal(localCustomers.length);
+      setCustomers(defaultCustomers);
+      setTotal(defaultCustomers.length);
       return;
     }
 
@@ -27,34 +35,33 @@ export function useApiCustomers(filters) {
     setError(null);
 
     try {
-      const response = await customerService.getCustomers(filters);
-      setCustomers(response.data.customers);
-      setTotal(response.data.total);
+      // ✨ FIX 1: Clean filters before sending
+      const activeFilters = cleanFilters(filters);
+      
+      const response = await customerService.getCustomers(activeFilters);
+      
+      // ✨ DEBUG: Check what the API actually sends
+      console.log("Customers API Response:", response);
+
+      // ✨ FIX 2: Handle both 'flat' and 'nested' response structures
+      // It checks response.customers OR response.data.customers
+      const customersList = response.customers || (response.data && response.data.customers) || [];
+      const totalCount = response.total || (response.data && response.data.total) || customersList.length || 0;
+
+      setCustomers(customersList);
+      setTotal(totalCount);
+
     } catch (err) {
       setError(err.message || 'Failed to fetch customers');
       console.error('Error fetching customers:', err);
-      
-      // Fallback to local data on error
-      setCustomers(localCustomers);
-      setTotal(localCustomers.length);
+      setCustomers([]); 
     } finally {
       setLoading(false);
     }
   };
 
-  // Create customer
+  // CRUD Operations
   const createCustomer = async (customer) => {
-    if (!API_CONFIG.ENABLE_API) {
-      // Use local storage
-      const newCustomer = { ...customer, id: Date.now().toString() };
-      setLocalCustomers([...localCustomers, newCustomer]);
-      setCustomers([...customers, newCustomer]);
-      return { success: true, data: newCustomer };
-    }
-
-    setLoading(true);
-    setError(null);
-
     try {
       const response = await customerService.createCustomer(customer);
       await fetchCustomers(); // Refresh list
@@ -62,24 +69,10 @@ export function useApiCustomers(filters) {
     } catch (err) {
       setError(err.message || 'Failed to create customer');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Update customer
   const updateCustomer = async (id, customer) => {
-    if (!API_CONFIG.ENABLE_API) {
-      // Use local storage
-      const updated = localCustomers.map(c => c.id === id ? { ...c, ...customer } : c);
-      setLocalCustomers(updated);
-      setCustomers(updated);
-      return { success: true, data: customer };
-    }
-
-    setLoading(true);
-    setError(null);
-
     try {
       const response = await customerService.updateCustomer(id, customer);
       await fetchCustomers(); // Refresh list
@@ -87,24 +80,10 @@ export function useApiCustomers(filters) {
     } catch (err) {
       setError(err.message || 'Failed to update customer');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Delete customer
   const deleteCustomer = async (id) => {
-    if (!API_CONFIG.ENABLE_API) {
-      // Use local storage
-      const filtered = localCustomers.filter(c => c.id !== id);
-      setLocalCustomers(filtered);
-      setCustomers(filtered);
-      return { success: true };
-    }
-
-    setLoading(true);
-    setError(null);
-
     try {
       const response = await customerService.deleteCustomer(id);
       await fetchCustomers(); // Refresh list
@@ -112,41 +91,20 @@ export function useApiCustomers(filters) {
     } catch (err) {
       setError(err.message || 'Failed to delete customer');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Toggle customer status
   const toggleCustomerStatus = async (id) => {
-    if (!API_CONFIG.ENABLE_API) {
-      // Use local storage
-      const updated = localCustomers.map(c => 
-        c.id === id 
-          ? { ...c, status: c.status === 'active' ? 'inactive' : 'active' }
-          : c
-      );
-      setLocalCustomers(updated);
-      setCustomers(updated);
-      return { success: true };
-    }
-
-    setLoading(true);
-    setError(null);
-
     try {
       const response = await customerService.toggleCustomerStatus(id);
       await fetchCustomers(); // Refresh list
       return response;
     } catch (err) {
-      setError(err.message || 'Failed to toggle customer status');
+      setError(err.message || 'Failed to toggle status');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Fetch on mount and when filters change
   useEffect(() => {
     fetchCustomers();
   }, [JSON.stringify(filters)]);
@@ -160,6 +118,6 @@ export function useApiCustomers(filters) {
     createCustomer,
     updateCustomer,
     deleteCustomer,
-    toggleCustomerStatus,
+    toggleCustomerStatus
   };
 }

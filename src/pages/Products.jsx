@@ -1,4 +1,3 @@
-// admin_11/src/pages/Products.jsx
 import { useState } from 'react';
 import { Search, Plus, Filter, Edit2, Trash2, Package, CheckCircle, TrendingUp, Star, X, ChevronDown } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -10,14 +9,13 @@ import { AddProductModal } from '../components/modals/AddProductModal';
 import { EditModal } from '../components/modals/EditModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import { useApiProducts } from '../lib/hooks/useApiProducts'; // ✨ API Hook for list
-import { useDashboardStats } from '../lib/hooks/useDashboardStats'; // ✨ API Hook for stats
+import { useApiProducts } from '../lib/hooks/useApiProducts'; // API Hook
+import { useDashboardStats } from '../lib/hooks/useDashboardStats'; // Stats Hook
 import { showSuccessToast } from '../lib/toast';
 import { toast } from 'sonner@2.0.3';
 
 export function Products() {
   // Filter states
-  const [selectedBranch, setSelectedBranch] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,7 +25,7 @@ export function Products() {
   const [dietFilter, setDietFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
-
+  
   // Modal states
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -36,10 +34,10 @@ export function Products() {
 
   // --- API Hook for Product List ---
   const {
-    products: filteredProducts,
+    products: rawProducts = [], // Default to empty array
     loading: productsLoading,
     error: productsError,
-    total: totalProductsApi, // Total from API
+    total: totalProductsApi,
     createProduct,
     updateProduct,
     deleteProduct
@@ -47,9 +45,9 @@ export function Products() {
     search: searchQuery,
     category: selectedCategory,
     status: selectedStatus,
-    // price: priceFilter, // Note: The hook/service needs to be updated to pass this
-    sortBy: sortBy,
-    sortOrder: sortOrder,
+    // price: priceFilter, // API filter (if supported)
+    // sortBy: sortBy,     // API sort (if supported)
+    // sortOrder: sortOrder,
     page: 1,
     limit: 50
   });
@@ -57,9 +55,29 @@ export function Products() {
   // --- API Hook for Stat Cards ---
   const { 
     stats, 
-    loading: statsLoading, 
-    // error: statsError // You can display this error if you want
+    loading: statsLoading 
   } = useDashboardStats();
+
+  // ✨ FIX 1: Filter out null/undefined items immediately
+  const validProducts = rawProducts.filter(p => p && typeof p === 'object');
+
+  // ✨ FIX 2: Safe Client-Side Sorting (in case API doesn't sort)
+  const sortedProducts = [...validProducts].sort((a, b) => {
+    let compareValue = 0;
+    // Safely access properties with optional chaining and fallbacks
+    const nameA = a?.name || '';
+    const nameB = b?.name || '';
+    const priceA = a?.price || 0;
+    const priceB = b?.price || 0;
+    const stockA = a?.stock || 0;
+    const stockB = b?.stock || 0;
+
+    if (sortBy === 'name') compareValue = nameA.localeCompare(nameB);
+    else if (sortBy === 'price') compareValue = priceA - priceB;
+    else if (sortBy === 'stock') compareValue = stockA - stockB;
+    
+    return sortOrder === 'asc' ? compareValue : -compareValue;
+  });
 
   // Handle Delete
   const handleDeleteProduct = async () => {
@@ -81,13 +99,12 @@ export function Products() {
     setDietFilter('all');
     setSortBy('name');
     setSortOrder('asc');
-    setSelectedBranch('all');
     setSelectedCategory('all');
     setSelectedStatus('all');
     setSearchQuery('');
   };
 
-  // Stat card values, now from the stats hook
+  // Stat card values
   const totalProducts = statsLoading ? '...' : (stats?.totalProducts ?? totalProductsApi ?? 0);
   const availableProducts = statsLoading ? '...' : (stats?.availableProducts ?? 'N/A');
   const todaysRevenue = statsLoading ? '...' : (stats?.todaysRevenue?.toLocaleString() ?? 'N/A');
@@ -205,7 +222,7 @@ export function Products() {
             </Button>
           </div>
 
-          {/* Filter Buttons Row (shown when More is clicked) */}
+          {/* Filter Buttons Row */}
           {moreDropdownOpen && (
             <div className="flex items-center gap-2 flex-wrap p-4 bg-gray-50 rounded-lg">
               <Select value={priceFilter} onValueChange={setPriceFilter}>
@@ -276,74 +293,79 @@ export function Products() {
             </div>
           )}
         </div>
-        
-        {/* --- LOADING & ERROR HANDLING for List --- */}
+
+        {/* ✨ --- LOADING & ERROR HANDLING --- ✨ */}
         {productsLoading && <div className="text-center py-12 text-muted-foreground">Loading products...</div>}
         {productsError && <div className="text-center py-12 text-red-500">Error: {productsError}</div>}
+        
         {!productsLoading && !productsError && (
           <>
             {/* Products Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-6">
-              {filteredProducts.map((product) => (
-                <Card key={product.id} className="overflow-hidden transition-all duration-200 hover:shadow-lg">
-                  <div className="relative h-48 bg-gray-100">
-                    <ImageWithFallback 
-                      src={product.image} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <Badge 
-                      className="absolute top-2 right-2 text-xs"
-                      style={{ 
-                        backgroundColor: product.stock > 0 ? '#e8f5e9' : '#f5f5f5',
-                        color: product.stock > 0 ? '#2e7d32' : '#757575'
-                      }}
-                    >
-                      {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-                    </Badge>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-medium mb-1">{product.name}</h3>
-                    <p className="text-xs text-muted-foreground mb-2">{product.category}</p>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-semibold">₹{product.price}</span>
-                      <span className="text-xs text-muted-foreground">{product.unit}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground mb-3">
-                      Stock: {product.stock} 
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          setSelectedProduct(product);
-                          setEditModalOpen(true);
+              {/* ✨ FIX 3: Map over 'sortedProducts' and guard against null products */}
+              {sortedProducts.map((product) => {
+                if (!product) return null; // Extra safety check
+                return (
+                  <Card key={product.id} className="overflow-hidden transition-all duration-200 hover:shadow-lg">
+                    <div className="relative h-48 bg-gray-100">
+                      <ImageWithFallback 
+                        src={product.image} 
+                        alt={product.name || 'Product Image'}
+                        className="w-full h-full object-cover"
+                      />
+                      <Badge 
+                        className="absolute top-2 right-2 text-xs"
+                        style={{ 
+                          backgroundColor: (product.stock || 0) > 0 ? '#e8f5e9' : '#f5f5f5',
+                          color: (product.stock || 0) > 0 ? '#2e7d32' : '#757575'
                         }}
                       >
-                        <Edit2 className="h-3 w-3 mr-1" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => {
-                          setSelectedProduct(product);
-                          setDeleteModalOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Delete
-                      </Button>
+                        {(product.stock || 0) > 0 ? 'In Stock' : 'Out of Stock'}
+                      </Badge>
                     </div>
-                  </div>
-                </Card>
-              ))}
+                    <div className="p-4">
+                      <h3 className="font-medium mb-1">{product.name || 'Unknown Name'}</h3>
+                      <p className="text-xs text-muted-foreground mb-2">{product.category || 'Uncategorized'}</p>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-semibold">₹{product.price || 0}</span>
+                        <span className="text-xs text-muted-foreground">{product.unit || 'unit'}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mb-3">
+                        Stock: {product.stock || 0} 
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setEditModalOpen(true);
+                          }}
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setDeleteModalOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
 
-            {filteredProducts.length === 0 && (
+            {sortedProducts.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 No products found
               </div>
@@ -356,7 +378,7 @@ export function Products() {
       <AddProductModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
-        onAdd={createProduct} // Wired to API hook
+        onAdd={createProduct} 
       />
 
       {selectedProduct && (
@@ -367,7 +389,7 @@ export function Products() {
               setEditModalOpen(open);
               if (!open) setSelectedProduct(null);
             }}
-            onSave={updateProduct} // Wired to API hook
+            onSave={(updatedData) => updateProduct(selectedProduct.id, updatedData)}
             title="Edit Product"
             data={selectedProduct}
             fields={[
@@ -386,9 +408,9 @@ export function Products() {
               setDeleteModalOpen(open);
               if (!open) setSelectedProduct(null);
             }}
-            onConfirm={handleDeleteProduct} // Wired to API hook
+            onConfirm={handleDeleteProduct}
             title="Delete Product"
-            description={`Are you sure you want to delete ${selectedProduct.name}? This action cannot be undone.`}
+            description={`Are you sure you want to delete ${selectedProduct.name || 'this product'}? This action cannot be undone.`}
           />
         </>
       )}

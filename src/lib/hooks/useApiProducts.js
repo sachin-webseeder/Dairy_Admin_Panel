@@ -2,25 +2,31 @@
 import { useState, useEffect } from 'react';
 import { productService } from '../api/services/productService';
 import { API_CONFIG } from '../api/config';
-import { usePersistentProducts } from '../usePersistentData';
+import { products as defaultProducts } from '../mockData';
 
-/**
- * Hook for managing products with API integration
- * Falls back to localStorage when API is disabled
- */
 export function useApiProducts(filters) {
-  const [localProducts, setLocalProducts] = usePersistentProducts();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [total, setTotal] = useState(0);
 
-  // Fetch products from API
+  // Helper to clean filters (Remove 'all' and empty strings)
+  const cleanFilters = (dirtyFilters) => {
+    const cleaned = {};
+    Object.keys(dirtyFilters).forEach((key) => {
+      const value = dirtyFilters[key];
+      // Only include the filter if it's NOT 'all' and NOT empty
+      if (value !== 'all' && value !== '' && value !== null && value !== undefined) {
+        cleaned[key] = value;
+      }
+    });
+    return cleaned;
+  };
+
   const fetchProducts = async () => {
     if (!API_CONFIG.ENABLE_API) {
-      // Use local data when API is disabled
-      setProducts(localProducts);
-      setTotal(localProducts.length);
+      setProducts(defaultProducts);
+      setTotal(defaultProducts.length);
       return;
     }
 
@@ -28,93 +34,60 @@ export function useApiProducts(filters) {
     setError(null);
 
     try {
-      const response = await productService.getProducts(filters);
-      setProducts(response.data.products || []); // Ensure it's an array
-      setTotal(response.data.total || 0);
+      // ✨ FIX: Clean the filters before sending to API
+      const activeFilters = cleanFilters(filters);
+      
+      const response = await productService.getProducts(activeFilters);
+      
+      // Handle different response structures
+      const productsList = response.products || (response.data && response.data.products) || [];
+      const totalCount = response.total || (response.data && response.data.total) || productsList.length || 0;
+
+      setProducts(productsList);
+      setTotal(totalCount);
+
     } catch (err) {
       setError(err.message || 'Failed to fetch products');
       console.error('Error fetching products:', err);
-      // Fallback to local data on error
-      setProducts(localProducts);
-      setTotal(localProducts.length);
+      setProducts([]); 
     } finally {
       setLoading(false);
     }
   };
 
-  // Create product
   const createProduct = async (product) => {
-    if (!API_CONFIG.ENABLE_API) {
-      const newProduct = { ...product, id: Date.now().toString() };
-      setLocalProducts([...localProducts, newProduct]);
-      setProducts([...products, newProduct]);
-      return { success: true, data: newProduct };
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await productService.createProduct(product);
-      await fetchProducts(); // Refresh list
-      return response;
-    } catch (err) {
-      setError(err.message || 'Failed to create product');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+      try {
+          const response = await productService.createProduct(product);
+          await fetchProducts(); // Refresh list after adding
+          return response;
+      } catch (err) {
+          setError(err.message || 'Failed to create product');
+          throw err;
+      }
   };
-
-  // Update product
+  
   const updateProduct = async (id, product) => {
-    if (!API_CONFIG.ENABLE_API) {
-      const updated = localProducts.map(p => p.id === id ? { ...p, ...product } : p);
-      setLocalProducts(updated);
-      setProducts(updated);
-      return { success: true, data: product };
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await productService.updateProduct(id, product);
-      await fetchProducts(); // Refresh list
-      return response;
-    } catch (err) {
-      setError(err.message || 'Failed to update product');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+      try {
+          const response = await productService.updateProduct(id, product);
+          await fetchProducts();
+          return response;
+      } catch (err) {
+          setError(err.message || 'Failed to update product');
+          throw err;
+      }
   };
 
-  // Delete product
   const deleteProduct = async (id) => {
-    if (!API_CONFIG.ENABLE_API) {
-      const filtered = localProducts.filter(p => p.id !== id);
-      setLocalProducts(filtered);
-      setProducts(filtered);
-      return { success: true };
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await productService.deleteProduct(id);
-      await fetchProducts(); // Refresh list
-      return response;
-    } catch (err) {
-      setError(err.message || 'Failed to delete product');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+      try {
+          const response = await productService.deleteProduct(id);
+          await fetchProducts();
+          return response;
+      } catch (err) {
+          setError(err.message || 'Failed to delete product');
+          throw err;
+      }
   };
 
-  // Fetch on mount and when filters change
   useEffect(() => {
     fetchProducts();
   }, [JSON.stringify(filters)]);

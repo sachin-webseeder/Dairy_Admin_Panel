@@ -2,17 +2,14 @@ import { X, Mail, BarChart3 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-// We assume 'Customer' type is no longer needed or imported
-// import { Customer } from '../../types';
 
-// interface CustomerDetailsModalProps {
-//  open: boolean;
-//  onOpenChange: (open: boolean) => void;
-//  customer: Customer;
-// }
+export function CustomerDetailsModal({ open, onOpenChange, customer }) {
+  // ✨ FIX 1: Safety check - if no customer is passed, don't render
+  if (!customer) return null;
 
-export function CustomerDetailsModal({ open, onOpenChange, customer }) { // Removed ': CustomerDetailsModalProps'
-  const initials = customer.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+  // ✨ FIX 2: Safely handle missing name
+  const safeName = customer.name || "Unknown Customer";
+  const initials = safeName.split(' ').map(n => n[0]).join('').substring(0, 2);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -37,9 +34,10 @@ export function CustomerDetailsModal({ open, onOpenChange, customer }) { // Remo
                   <span className="text-white text-xl font-medium">{initials}</span>
                 </div>
                 <div>
-                  <p className="font-medium">{customer.name}</p>
+                  {/* ✨ FIX: Use safeName */}
+                  <p className="font-medium">{safeName}</p>
                   <Badge className="text-xs mt-1" style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
-                    {customer.status}
+                    {customer.status || 'Active'}
                   </Badge>
                 </div>
               </div>
@@ -47,15 +45,19 @@ export function CustomerDetailsModal({ open, onOpenChange, customer }) { // Remo
               <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{customer.email}</span>
+                  <span>{customer.email || 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Phone:</span>
-                  <span>{customer.phone}</span>
+                  <span>{customer.phone || 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Joined:</span>
-                  <span>{new Date(customer.joinDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                  <span>
+                    {customer.joinDate 
+                      ? new Date(customer.joinDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                      : 'Unknown'}
+                  </span>
                 </div>
               </div>
 
@@ -74,7 +76,7 @@ export function CustomerDetailsModal({ open, onOpenChange, customer }) { // Remo
                 <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-amber-200">
                   <p className="text-xs text-muted-foreground mb-1">Current Tier</p>
                   <p className="text-lg font-semibold text-amber-900">
-                    {customer.membershipTier === 1 ? 'Gold' : customer.membershipTier === 2 ? 'Silver' : 'Bronze'}
+                    {customer.membership || 'Bronze'}
                   </p>
                 </div>
                 <div className="p-3 bg-gray-50 rounded-lg">
@@ -83,7 +85,7 @@ export function CustomerDetailsModal({ open, onOpenChange, customer }) { // Remo
                 </div>
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Status</p>
-                  <p className="font-medium capitalize text-sm">{customer.status}</p>
+                  <p className="font-medium capitalize text-sm">{customer.status || 'Active'}</p>
                 </div>
               </div>
             </div>
@@ -97,66 +99,45 @@ export function CustomerDetailsModal({ open, onOpenChange, customer }) { // Remo
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 p-3 rounded text-center">
-                  <p className="text-2xl font-semibold">{customer.totalOrders}</p>
+                  <p className="text-2xl font-semibold">{customer.totalOrders || 0}</p>
                   <p className="text-xs text-muted-foreground">Total Orders</p>
                 </div>
                 <div className="bg-gray-50 p-3 rounded text-center">
-                  <p className="text-2xl font-semibold">₹{customer.totalSpent.toLocaleString()}</p>
+                  <p className="text-2xl font-semibold">₹{(customer.totalSpent || 0).toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground">Total Spend</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 p-3 rounded text-center">
-                  <p className="text-lg font-semibold">₹{Math.round(customer.totalSpent / customer.totalOrders)}</p>
+                  <p className="text-lg font-semibold">
+                    ₹{customer.totalOrders ? Math.round((customer.totalSpent || 0) / customer.totalOrders) : 0}
+                  </p>
                   <p className="text-xs text-muted-foreground">Avg Order</p>
                 </div>
                 <div className="bg-gray-50 p-3 rounded text-center">
-                  <p className="text-lg font-semibold">{customer.totalOrders * 234}</p>
+                  <p className="text-lg font-semibold">{(customer.totalOrders || 0) * 10}</p>
                   <p className="text-xs text-muted-foreground">Loyalty Points</p>
                 </div>
               </div>
             </div>
 
-            {/* Recent Orders */}
+            {/* Recent Orders - Static for now as API doesn't return nested orders yet */}
             <div className="space-y-2">
               <h3 className="text-sm font-medium flex items-center gap-2">
-                Recent Orders
+                Recent Activity
               </h3>
               <div className="space-y-1.5">
                 <div className="p-2 bg-gray-50 rounded">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium">ORD-2025-089</span>
+                    <span className="font-medium">Last Login</span>
                     <Badge className="text-[10px] h-4" style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
-                      In Progress
+                      Active
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-muted-foreground">23 Sep 2025, 12:15 PM</span>
-                    <span className="text-xs font-semibold">₹234.50</span>
-                  </div>
-                </div>
-                <div className="p-2 bg-gray-50 rounded">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium">ORD-2025-076</span>
-                    <Badge className="text-[10px] h-4" style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
-                      Completed
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-muted-foreground">21 Sep 2025, 05:30 PM</span>
-                    <span className="text-xs font-semibold">₹189.75</span>
-                  </div>
-                </div>
-                <div className="p-2 bg-gray-50 rounded">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium">ORD-2025-063</span>
-                    <Badge className="text-[10px] h-4" style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
-                      Completed
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-muted-foreground">19 Sep 2025, 04:45 PM</span>
-                    <span className="text-xs font-semibold">₹156.20</span>
+                    <span className="text-xs text-muted-foreground">
+                       {new Date().toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               </div>

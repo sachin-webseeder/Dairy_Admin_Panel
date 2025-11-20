@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { slideshowImages } from '../assets/images';
-import { registerUser } from '../lib/auth';
+//import { registerUser } from '../lib/auth';
+import { authService } from '../lib/api/services/authService';
 import { Shield, Zap, TrendingUp, Users, Star, Globe } from 'lucide-react';
+import { toast } from 'sonner@2.0.3';
 
 // Import the CSS file
 import '../styles/signup.css';
@@ -43,7 +45,7 @@ export function Signup({ onSignup, onNavigate }) {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "User",
+    role:  "Admin",
     username: "",
   });
   const [loading, setLoading] = useState(false);
@@ -75,24 +77,32 @@ export function Signup({ onSignup, onNavigate }) {
       return;
     }
 
-    if (!formData.firstName || !formData.email || !formData.password) {
-      setError("Please fill out all required fields.");
-      setLoading(false);
-      return;
-    }
+    // ✨ --- REAL API INTEGRATION --- ✨
+    try {
+      // We send formData directly because it matches the backend expectation:
+      // { firstName, lastName, username, email, password, confirmPassword, role }
+      const response = await authService.register(formData);
 
-    // Simulate API call delay
-    setTimeout(() => {
-      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      const user = registerUser(formData.email, formData.password, fullName, '', formData.role);
-      
-      if (user) {
-        onSignup(user);
+      if (response.success) {
+        toast.success("Account created successfully!");
+        // If the API logs the user in automatically, onSignup(user) might be needed.
+        // Usually, after signup, you redirect to Login.
+        onNavigate('login'); 
       } else {
-        setError("User with this email already exists.");
+        // Handle specific error messages from backend
+        setError(response.message || "Registration failed. Please try again.");
       }
+    } catch (err) {
+      console.error("Signup error:", err);
+      // Handle the 500 or 400 error here
+      if (err.message.includes("500")) {
+         setError("Server error. Username or Email might already exist.");
+      } else {
+         setError(err.message || "An unexpected error occurred.");
+      }
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const currentSlide = slidesData[currentSlideIndex];

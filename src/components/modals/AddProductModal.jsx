@@ -21,12 +21,14 @@ export function AddProductModal({ open, onClose, onAdd }) {
     description: '',
     availableForOrder: true,
     vegetarian: false,
+    imageFile: null,
   });
   const [imagePreview, setImagePreview] = useState(''); // Removed <string> type
 
   const handleImageUpload = (e) => { // Removed e: React.ChangeEvent<HTMLInputElement>
     const file = e.target.files?.[0];
     if (file) {
+      setFormData(prev => ({ ...prev, imageFile: file }));
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result); // Removed 'as string' assertion
@@ -40,6 +42,7 @@ export function AddProductModal({ open, onClose, onAdd }) {
       id: Date.now().toString(),
       name: formData.name,
       category: formData.category,
+      imageFile: formData.imageFile,
       price: parseFloat(formData.price),
       stock: 100, // Default stock
       unit: '1 unit',
@@ -61,6 +64,7 @@ export function AddProductModal({ open, onClose, onAdd }) {
       description: '',
       availableForOrder: true,
       vegetarian: false,
+      imageFile: null,
     });
     setImagePreview('');
   };
