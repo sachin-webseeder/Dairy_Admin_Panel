@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Mail, BarChart3, ArrowLeft, Phone, Calendar, CreditCard } from 'lucide-react';
+import { Mail, BarChart3, ArrowLeft, Phone, Calendar, CreditCard, Crown } from 'lucide-react'; // ✨ Added Crown
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card } from '../components/ui/card';
@@ -19,14 +19,10 @@ export function CustomerDetailsPage() {
       try {
         setLoading(true);
         
-        // ✨ FIX: Fetch ALL customers instead of just one (since the backend might not support GET /:id)
         const response = await customerService.getCustomers();
         
-        // Handle response structure
         const customersList = response.customers || (response.data && response.data.customers) || [];
         
-        // ✨ FIX: Find the specific customer from the list
-        // We check both 'id' and '_id' and ensure we compare strings
         const foundCustomer = customersList.find(c => 
           String(c.id) === String(id) || String(c._id) === String(id)
         );
@@ -35,10 +31,9 @@ export function CustomerDetailsPage() {
           throw new Error("Customer not found");
         }
 
-        // Normalize the data structure
         setCustomer({
           ...foundCustomer,
-          id: foundCustomer._id || foundCustomer.id, // Ensure ID is consistent
+          id: foundCustomer._id || foundCustomer.id,
           name: foundCustomer.name || (foundCustomer.firstName ? `${foundCustomer.firstName} ${foundCustomer.lastName}` : "Unknown Customer"),
           status: foundCustomer.status || 'Active', 
           joinDate: foundCustomer.joinDate || foundCustomer.createdAt,
@@ -80,7 +75,6 @@ export function CustomerDetailsPage() {
     );
   }
 
-  // Safe safeName for initials
   const safeName = customer.name || "Unknown";
   const initials = safeName.split(' ').map(n => n[0]).join('').substring(0, 2);
 
@@ -94,10 +88,6 @@ export function CustomerDetailsPage() {
             Back to List
           </Button>
           <h1 className="text-2xl font-bold text-gray-900">Customer Details</h1>
-        </div>
-        <div className="flex gap-2">
-           <Button variant="outline">Edit Customer</Button>
-           <Button variant="destructive">Delete Customer</Button>
         </div>
       </div>
 
@@ -172,8 +162,9 @@ export function CustomerDetailsPage() {
                                 {customer.membership || 'Bronze'}
                             </p>
                         </div>
-                        <div className="h-12 w-12 bg-white/50 rounded-full flex items-center justify-center text-2xl">
-                            👑
+                        {/* ✨ REPLACED EMOJI WITH ICON HERE */}
+                        <div className="h-12 w-12 bg-white/50 rounded-full flex items-center justify-center">
+                            <Crown className="h-6 w-6 text-amber-600" />
                         </div>
                     </div>
                     

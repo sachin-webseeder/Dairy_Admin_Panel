@@ -71,6 +71,18 @@
   gap: 0;
 }
 
+.illustrationSection .logo h1 {
+  font-size: 1.8rem; /* Smaller font size for Dynasty Premium */
+}
+
+.welcomeMessage .slide-title {
+  font-size: 2rem; /* Smaller font size for Welcome Back / Modern Interface */
+}
+
+.formSection .formContent .header h1 {
+  font-size: 2rem; /* Smaller font size for Welcome Back on form */
+}
+
 /* Left Side - Illustration Section */
 .illustrationSection {
   flex: 1; /* Takes 1 part of available space */
@@ -132,17 +144,18 @@
 }
 
 .illustrationSection .slideshow-content .slide-title {
-  font-size: 36px; /* Larger font for main title */
-  font-weight: bold;
+  font-size: 1.75rem; /* Was 36px/2.5rem - Reduced significantly */
+  font-weight: 700;
   color: white;
-  margin: 0;
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
 }
 
 .illustrationSection .slideshow-content .slide-subtitle {
-  font-size: 18px; /* Subtitle font size */
+  font-size: 1rem; /* Was 18px/1.2rem - Reduced */
   color: #e0e0e0;
   margin: 0;
+  font-weight: 400;
 }
 
 .illustrationSection .slideshow-content .features {
@@ -174,14 +187,13 @@
 }
 
 .illustrationSection .slideshow-content .featureContent h4 {
-  font-size: 16px; /* Feature heading font size */
-  margin: 0;
-  margin-bottom: 4px;
-  font-weight: bold;
+  font-size: 0.95rem; /* Was 16px/1.3rem - Reduced */
+  margin: 0 0 4px 0;
+  font-weight: 600;
 }
 
 .illustrationSection .slideshow-content .featureContent p {
-  font-size: 14px; /* Feature description font size */
+  font-size: 0.8rem; /* Was 14px/1rem - Reduced */
   margin: 0;
   line-height: 1.4;
   color: #e0e0e0;
@@ -195,7 +207,7 @@
 
 .logo h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: white;
 }
@@ -205,16 +217,16 @@
 }
 
 .welcomeMessage h2 {
-  font-size: 2.5rem;
-  margin-bottom: 15px;
+  font-size: 1.4rem; /* Ensure this matches slide-title */
+  margin-bottom: 10px;
   font-weight: 700;
   margin-top: 0;
 }
 
 .welcomeMessage p {
-  font-size: 1.2rem;
+  font-size: 1rem; /* Ensure this matches slide-subtitle */
   opacity: 0.9;
-  line-height: 1.6;
+  line-height: 1.5;
   margin: 0;
 }
 
@@ -420,7 +432,7 @@
 .signupRedirect p {
   color: #718096;
   margin: 0;
-  font-size: 0.75rem; /* text-xs */
+  font-size: 0.7rem; /* text-xs */
 }
 
 .link {
@@ -609,14 +621,14 @@
 }
 
 .formSection .header h1 {
-  font-size: 28px; /* Made smaller as requested */
+  font-size: 24px; /* Made smaller as requested */
   font-weight: 900;
   color: black;
   margin: 0;
 }
 
 .formSection .header p {
-  font-size: 16px; /* Adjusted subtitle font size */
+  font-size: 14px; /* Adjusted subtitle font size */
   color: #555; /* Slightly softer color for subtitle */
   margin: 0;
 }

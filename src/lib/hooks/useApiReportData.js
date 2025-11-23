@@ -13,7 +13,7 @@ import {
 // Mock data map for disabled API
 const mockDataMap = {
   overview: { 
-    stats: { totalOrders: mockOrders.length, totalRevenue: 15000, totalCustomers: mockCustomers.length, activeBranches: 3 },
+    stats: { totalOrders: mockOrders.length, totalRevenue: 15000, totalCustomers: mockCustomers.length, totalProductsSold: mockOrders.reduce((sum, order) => sum + (order.items?.length || 0), 0) },
     revenueData: revenueDataMonthly, // Use this for the chart
     topSellingProducts: mockProducts.slice(0, 5).map(p => ({ ...p, value: 50 })), // Use raw products
   },

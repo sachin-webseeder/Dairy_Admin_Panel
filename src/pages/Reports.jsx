@@ -284,14 +284,18 @@ export const Reports = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-gray-500 mb-1 font-bold">
-                Active Branches
+                Total Products Sold
               </p>
               <h3 className="text-lg font-semibold">
-                {loading && activeTab === 'overview' ? '...' : stats.activeBranches}
+                {/* Calculate total products sold from orders */}
+                {loading && activeTab === 'overview' ? '...' : (
+                   // Sum up the 'items' count from all filtered orders
+                   (data?.orders || []).reduce((sum, order) => sum + (order.items?.length || 0), 0).toLocaleString()
+                )}
               </h3>
             </div>
             <div className="h-9 w-9 bg-purple-50 rounded-full flex items-center justify-center">
-              <Building2 className="h-4 w-4 text-purple-500" />
+              <Package className="h-4 w-4 text-purple-500" /> {/* Changed icon to Package */}
             </div>
           </div>
         </Card>
