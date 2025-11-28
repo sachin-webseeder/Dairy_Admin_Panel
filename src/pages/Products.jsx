@@ -329,7 +329,17 @@ export function Products() {
               {sortedProducts.map((product) => {
                 if (!product) return null;
                 // ✨ Resolve category name
-                const categoryName = categoryMap[product.category] || 'Uncategorized';
+                let categoryName = 'Uncategorized';
+                if (product.category && typeof product.category === 'object' && product.category.name) {
+                   categoryName = product.category.name;
+                } else if (categoryMap[product.category]) {
+                   categoryName = categoryMap[product.category];
+                } else if (typeof product.category === 'string') {
+                   // Try case-insensitive lookup
+                   const found = Object.keys(categoryMap).find(key => key.toLowerCase() === product.category.toLowerCase());
+                   if(found) categoryName = categoryMap[found];
+                   else categoryName = product.category; // Show raw ID if nothing else works
+                }
 
                 return (
                   <Card key={product.id} className="overflow-hidden transition-all duration-200 hover:shadow-lg">
@@ -366,6 +376,14 @@ export function Products() {
                           size="sm"
                           className="flex-1"
                           onClick={() => {
+                            // ✨ FIX: Normalize the product data before editing
+                            // If category is an object, extract its ID. Otherwise use it as is.
+                            const normalizedProduct = {
+                              ...product,
+                              category: product.category && typeof product.category === 'object' 
+                                ? (product.category._id || product.category.id) 
+                                : product.category
+                            };
                             setSelectedProduct(product);
                             setEditModalOpen(true);
                           }}

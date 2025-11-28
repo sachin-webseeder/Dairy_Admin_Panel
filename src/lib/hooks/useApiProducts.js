@@ -42,27 +42,34 @@ export function useApiProducts(filters) {
       
       // ✨ KEY FIX: Map backend fields to frontend fields
       const mappedProducts = rawProducts.map(p => {
-        // Determine the correct image URL
+        // 1. Get the raw image string from backend
         let imageUrl = p.image || p.thumbnail || null;
         
-        if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('blob:')) {
-          // If it's a relative path, prepend the backend URL
-          // IMPORTANT: Use the exact backend URL from your config or .env
-          const backendUrl = API_CONFIG.BASE_URL.replace(/\/api$/, ''); // Remove '/api' suffix if present
-          imageUrl = `${backendUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+        // 2. Determine if it's a full URL or a relative path
+        if (imageUrl) {
+            // Check if it starts with http://, https://, or blob:
+            const isAbsoluteUrl = /^(https?:\/\/|blob:)/i.test(imageUrl);
+            
+            if (!isAbsoluteUrl) {
+               // If relative path (e.g., "/uploads/img.jpg"), prepend backend URL
+               const backendUrl = API_CONFIG.BASE_URL.replace(/\/api$/, '');
+               const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+               imageUrl = `${backendUrl}${cleanPath}`;
+            }
+            // If it IS absolute (e.g. pasted link), leave it as-is
         }
 
         return {
           ...p,
           id: p._id || p.id,
           name: p.dishName || p.name || 'Unknown Product',
-          image: imageUrl, // ✨ Use the fixed URL
-          stock: p.stock || (p.availableQuantities?.[0]?.value) || 0, // Robust stock check
-          unit: p.unit || (p.availableQuantities?.[0]?.label) || 'unit', // Robust unit check
+          image: imageUrl, // Use the processed URL
+          stock: p.stock || (p.availableQuantities?.[0]?.stock) || 0, // Prioritize variant stock if root is 0
+          unit: p.unit || (p.availableQuantities?.[0]?.unit) || 'unit',
           price: p.price || (p.availableQuantities?.[0]?.price) || 0
         };
       });
-      
+
       const totalCount = response.total || (response.data && response.data.total) || mappedProducts.length || 0;
 
       setProducts(mappedProducts);
