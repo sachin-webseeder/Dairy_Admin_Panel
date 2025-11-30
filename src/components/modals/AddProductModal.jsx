@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Plus, Trash2, Link as LinkIcon, X, ChevronDown, ChevronUp, Image as ImageIcon, Check, Power } from 'lucide-react';
+import { Upload, Plus, Trash2, Link as LinkIcon, X, ChevronDown, ChevronUp, Image as ImageIcon, Check, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner@2.0.3';
 import { useNavigate } from 'react-router-dom';
 import { categoryService } from '../../lib/api/services/categoryService';
@@ -109,7 +110,7 @@ function ImageInput({ label, imageData, onChange, className = "" }) {
       </div>
 
       {imageData ? (
-        <div className="relative w-full h-48 border rounded-lg overflow-hidden group bg-gray-50 z-0">
+        <div className="relative w-full h-32 border rounded-lg overflow-hidden group bg-gray-50 z-0">
           <img src={imageData.preview} alt="Preview" className="w-full h-full object-contain" />
           <button
             type="button"
@@ -120,7 +121,7 @@ function ImageInput({ label, imageData, onChange, className = "" }) {
           </button>
         </div>
       ) : (
-        <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors relative overflow-hidden z-0">
+        <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors relative overflow-hidden z-0">
           {inputType === 'file' ? (
             <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center p-4">
               <Upload className="w-8 h-8 mb-2 text-gray-400" />
@@ -216,10 +217,10 @@ function VariantRow({ index, variant, onChange, onRemove, onImageChange }) {
               
               <div className="space-y-1">
                 <Label className="text-xs font-medium">Unit <span className="text-red-500">*</span></Label>
+                {/* ✨ FIX: High Z-Index for Dropdown */}
                 <Select value={variant.unit} onValueChange={(val) => onChange(index, 'unit', val)}>
                   <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                  {/* ✨ FIX: Z-Index 200 allows clicking above modal */}
-                  <SelectContent className="z-[200]">
+                  <SelectContent className="z-[9999]">
                     <SelectItem value="ml">ml</SelectItem>
                     <SelectItem value="kg">kg</SelectItem>
                     <SelectItem value="gm">gm</SelectItem>
@@ -242,17 +243,31 @@ function VariantRow({ index, variant, onChange, onRemove, onImageChange }) {
   );
 }
 
+// --- MAIN COMPONENT ---
+
 export function AddProductModal({ open, onClose, onAdd, categories = [], onCategoryCreate }) {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    name: '', category: '', price: '', originalPrice: '', cost: '', stock: '', volume: '',
-    discountPercent: '', isVIP: false, description: '', mainImage: null, 
-    availableForOrder: true, vegetarian: false, benefits: [], attributes: [],
+    name: '',
+    category: '',
+    price: '',
+    originalPrice: '',
+    cost: '',
+    stock: '',
+    volume: '',
+    discountPercent: '',
+    isVIP: false,
+    description: '',
+    mainImage: null, 
+    availableForOrder: true,
+    vegetarian: false,
+    benefits: [],
+    attributes: [],
   });
 
   const [variants, setVariants] = useState([]);
-  const [variantsOpen, setVariantsOpen] = useState(false); // Closed by default
+  const [variantsOpen, setVariantsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -270,7 +285,7 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
   const handleVariantImageChange = (index, data) => { const newVariants = [...variants]; newVariants[index].imageData = data; setVariants(newVariants); };
   
   const addVariant = () => {
-    if (!variantsOpen) setVariantsOpen(true);
+    setVariantsOpen(true); // Auto open
     setVariants([...variants, { label: '', value: '', unit: 'ml', price: '', stock: '', imageData: null }]);
   };
   const removeVariant = (index) => setVariants(variants.filter((_, i) => i !== index));
@@ -295,14 +310,24 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
       toast.error("Please fill in all mandatory fields (*)");
       return;
     }
+    
     setLoading(true);
-    try { await onAdd({ ...formData, variants }); onClose(); } catch (error) { } finally { setLoading(false); }
+    try {
+      await onAdd({ ...formData, variants });
+      toast.success('Product added successfully');
+      onClose();
+    } catch (error) {
+      console.error('Create product error:', error);
+      toast.error(error?.message || 'Error: An error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      {/* ✨ FIX: 'block' layout for reliable scrolling. z-[100] for modal. */}
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border shadow-lg p-0 block z-[100]">
+      {/* ✨ FIX: Standard block layout, NO z-100 on the modal content itself to prevent context issues */}
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border shadow-lg p-0">
         
         <DialogHeader className="bg-white px-6 py-4 border-b sticky top-0 z-50">
           <DialogTitle className="text-xl font-bold text-gray-800">Add New Product</DialogTitle>
@@ -321,10 +346,8 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
           ) : (
             <form id="product-form" onSubmit={handleSubmit} className="space-y-6">
               
-              {/* ✨ LAYOUT: Top Image */}
-              <div className="w-full">
-                  <ImageInput label="Product Image" imageData={formData.mainImage} onChange={handleMainImageChange} className="h-full" />
-              </div>
+              {/* Image Section */}
+              <div className="w-full"><ImageInput label="Product Image" imageData={formData.mainImage} onChange={handleMainImageChange} className="h-full" /></div>
 
               {/* Main Fields */}
               <div className="space-y-4 bg-white p-4 rounded-lg border shadow-sm">
@@ -333,8 +356,7 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
                       <div className="space-y-1"><Label className="text-xs font-semibold">Category <span className="text-red-500">*</span></Label>
                           <Select value={formData.category} onValueChange={(value) => { if (value === 'create_new') navigate('/category-management?action=create'); else setFormData({ ...formData, category: value }); }}>
                           <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                          {/* ✨ FIX: Z-Index 200 for clickable dropdown */}
-                          <SelectContent className="z-[200]">
+                          <SelectContent>
                               {categories.map((cat) => (<SelectItem key={cat._id || cat.id} value={cat._id || cat.id}>{cat.displayName || cat.name}</SelectItem>))}
                               <SelectItem value="create_new" className="text-blue-600 border-t"><Plus className="h-3 w-3 inline mr-1"/> New Category</SelectItem>
                           </SelectContent>
@@ -380,14 +402,14 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
               {/* Toggles */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <CustomToggle label="Available for Order" checked={formData.availableForOrder} onChange={(c) => setFormData({...formData, availableForOrder: c})} activeColor="bg-green-500" icon={Check} />
-                <CustomToggle label="VIP Only Product" checked={formData.isVIP} onChange={(c) => setFormData({...formData, isVIP: c})} activeColor="bg-purple-500" icon={Plus} />
+                <CustomToggle label="VIP Only Product" checked={formData.isVIP} onChange={(c) => setFormData({...formData, isVIP: c})} activeColor="bg-purple-500" icon={Star} />
               </div>
             </form>
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-white border-t sticky bottom-0 z-10 flex justify-end gap-3">
+        <div className="p-4 bg-white border-t flex justify-end gap-3">
             <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
             <Button type="submit" form="product-form" className="bg-blue-600 hover:bg-blue-700 text-white min-w-[150px]" disabled={loading}>{loading ? 'Saving...' : 'Save Product'}</Button>
         </div>

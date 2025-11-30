@@ -73,9 +73,24 @@ export const productService = {
         formData.append('availableQuantities', JSON.stringify(quantities));
     }
 
+    // Debug: log FormData keys and file names (helps diagnose upload issues)
+    try {
+      if (typeof window !== 'undefined') {
+        for (const pair of formData.entries()) {
+          const [key, val] = pair;
+          if (val instanceof File) {
+            console.debug('[productService] formData', key, 'File:', val.name, val.size, val.type);
+          } else {
+            console.debug('[productService] formData', key, typeof val === 'string' ? val.slice(0, 200) : val);
+          }
+        }
+      }
+    } catch (e) {
+      console.debug('[productService] could not enumerate formData', e);
+    }
+
     return apiClient.post(API_ENDPOINTS.PRODUCTS.CREATE, formData);
   },
-
   async updateProduct(id, productData) {
       const formData = new FormData();
       if(productData.name) formData.append('dishName', productData.name);

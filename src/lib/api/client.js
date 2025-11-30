@@ -26,12 +26,22 @@ class ApiClient {
   }
 
   async handleError(response) {
-    let errorMessage = 'An error occurred';
+    let errorMessage = `Request failed with status ${response.status}`;
+    // Try to parse JSON error first
     try {
       const errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
-    } catch (e) {
-      errorMessage = response.statusText || errorMessage;
+      const msg = errorData?.message || errorData?.error || null;
+      if (msg) errorMessage = `${errorMessage}: ${msg}`;
+      else if (typeof errorData === 'string') errorMessage = `${errorMessage}: ${errorData}`;
+    } catch (jsonErr) {
+      // If JSON parse fails, try to get plain text body
+      try {
+        const text = await response.text();
+        if (text) errorMessage = `${errorMessage}: ${text.slice(0, 200)}`;
+      } catch (textErr) {
+        // fallback to statusText
+        errorMessage = `${errorMessage}: ${response.statusText || 'No response body'}`;
+      }
     }
 
     if (response.status === 401) {
@@ -40,7 +50,9 @@ class ApiClient {
       window.location.href = '/login';
     }
 
-    throw new Error(errorMessage);
+    const err = new Error(errorMessage);
+    err.status = response.status;
+    throw err;
   }
 
   async get(endpoint, params) {
