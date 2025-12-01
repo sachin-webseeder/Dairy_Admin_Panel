@@ -69,6 +69,15 @@ export const API_ENDPOINTS = {
     UPDATE_STATUS: '/orders/status/:id',
   },
 
+  // User Management (Panel Users)
+  USERS: {
+    // ✨ FIX: Added '/users' back to match Postman ({{Base_URL}}/api/users/panel-users)
+    LIST: '/users/panel-users',    
+    CREATE: '/users/panel-users',  
+    UPDATE: '/users/panel-users/:id',
+    DELETE: '/users/panel-users/:id', 
+  },
+
   // Other modules (Keeping standard for now, update as you discover them)
   DELIVERY_STAFF: {
     LIST: '/delivery-staff',

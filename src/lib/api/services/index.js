@@ -14,3 +14,4 @@ export * from './notificationService';
 export * from './walletService';
 export * from './membershipService';
 export * from './homepageService'; // ✨ ADD THIS LINE
+export * from './userService';
