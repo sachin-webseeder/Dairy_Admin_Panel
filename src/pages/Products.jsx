@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, Filter, Edit2, Trash2, Package, CheckCircle, TrendingUp, Star, X, ChevronDown } from 'lucide-react';
+import { Search, Plus, Filter, Edit2, Trash2, Package, CheckCircle, TrendingUp, Star, X, ChevronDown, Layers } from 'lucide-react'; // ✨ Import Layers icon
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
@@ -13,16 +13,17 @@ import { useApiProducts } from '../lib/hooks/useApiProducts';
 import { useDashboardStats } from '../lib/hooks/useDashboardStats';
 import { showSuccessToast } from '../lib/toast';
 import { toast } from 'sonner@2.0.3';
-import { useApiCategories } from '../lib/hooks/useApiCategories'; // ✨ Import this
+import { useApiCategories } from '../lib/hooks/useApiCategories';
+import { useNavigate } from 'react-router-dom'; // ✨ Import useNavigate
 
 export function Products() {
+  const navigate = useNavigate(); // ✨ Initialize useNavigate
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [priceFilter, setPriceFilter] = useState('all');
   const [popularityFilter, setPopularityFilter] = useState('all');
-  const [dietFilter, setDietFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   
@@ -31,10 +32,8 @@ export function Products() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // ✨ 1. Fetch Categories
   const { categories, refetch: refetchCategories } = useApiCategories();
 
-  // ✨ 2. Create Map for filtering (ID -> Name)
   const categoryMap = useMemo(() => {
     const map = {};
     categories.forEach(cat => {
@@ -64,25 +63,21 @@ export function Products() {
     loading: statsLoading 
   } = useDashboardStats();
 
-  // Calculate 'Available' locally
-  const availableProducts = rawProducts.filter(p => (p.stock || 0) > 0).length;
-
-  // Use global stats for others
-  const totalProducts = statsLoading ? '...' : (stats?.totalProducts ?? totalProductsApi ?? 0);
-  const todaysRevenue = statsLoading ? '...' : (stats?.todaysRevenue?.toLocaleString() ?? 'N/A');
-  const avgRating = statsLoading ? '...' : (stats?.avgRating ?? 'N/A');
-
   // Filter Logic
   const validProducts = rawProducts.filter(p => p && typeof p === 'object');
 
   const filteredProducts = validProducts.filter(product => {
     const matchesSearch = product.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // ✨ 3. Fix Category Filtering
     const categoryId = product.category;
-    const productCatName = categoryMap[categoryId] || (typeof categoryId === 'string' ? categoryId.toLowerCase() : '');
-    const filterCatName = selectedCategory.toLowerCase();
     
+    let productCatName = '';
+    if (product.category && typeof product.category === 'object' && product.category.name) {
+        productCatName = product.category.name.toLowerCase().trim();
+    } else {
+        productCatName = (categoryMap[categoryId] || (typeof categoryId === 'string' ? categoryId : '')).toLowerCase().trim();
+    }
+
+    const filterCatName = selectedCategory.toLowerCase().trim();
     const matchesCategory = selectedCategory === 'all' || productCatName === filterCatName;
 
     let matchesStatus = true;
@@ -97,7 +92,6 @@ export function Products() {
     const nameA = a?.name || '';
     const nameB = b?.name || '';
     if (sortBy === 'name') compareValue = nameA.localeCompare(nameB);
-    
     return sortOrder === 'asc' ? compareValue : -compareValue;
   });
 
@@ -130,7 +124,6 @@ export function Products() {
   const handleClearAllFilters = () => {
     setPriceFilter('all');
     setPopularityFilter('all');
-    setDietFilter('all');
     setSortBy('name');
     setSortOrder('asc');
     setSelectedCategory('all');
@@ -138,9 +131,14 @@ export function Products() {
     setSearchQuery('');
   };
 
+  const totalProducts = statsLoading ? '...' : (stats?.totalProducts ?? totalProductsApi ?? 0);
+  const availableProducts = statsLoading ? '...' : (stats?.availableProducts ?? 'N/A');
+  const todaysRevenue = statsLoading ? '...' : (stats?.todaysRevenue?.toLocaleString() ?? 'N/A');
+  const avgRating = statsLoading ? '...' : (stats?.avgRating ?? 'N/A');
+
   return (
     <div className="p-4">
-      {/* Statistics Cards (Same as before) */}
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <Card className="p-4 transition-all duration-200 hover:shadow-md">
           <div className="flex items-start justify-between">
@@ -188,9 +186,9 @@ export function Products() {
         </Card>
       </div>
 
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
+      <Card className="p-6 bg-gray-50/50 border-none shadow-none"> 
+        <div className="space-y-4 mb-6">
+          <div className="flex items-center gap-4 bg-white p-4 rounded-lg border shadow-sm">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
@@ -201,7 +199,6 @@ export function Products() {
               />
             </div>
             
-            {/* ✨ Category Filter Dropdown */}
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-48 border border-gray-300">
                 <SelectValue placeholder="All Categories" />
@@ -248,9 +245,8 @@ export function Products() {
             </Button>
           </div>
 
-          {/* Filter Buttons Row */}
           {moreDropdownOpen && (
-            <div className="flex items-center gap-2 flex-wrap p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2 flex-wrap p-4 bg-white rounded-lg border shadow-sm">
               <Select value={priceFilter} onValueChange={setPriceFilter}>
                 <SelectTrigger className="w-36 border border-gray-300">
                   <SelectValue placeholder="All Prices" />
@@ -272,18 +268,6 @@ export function Products() {
                   <SelectItem value="trending">Trending</SelectItem>
                   <SelectItem value="popular">Popular</SelectItem>
                   <SelectItem value="new">New</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={dietFilter} onValueChange={setDietFilter}>
-                <SelectTrigger className="w-40 border border-gray-300">
-                  <SelectValue placeholder="All Diet Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Diet Types</SelectItem>
-                  <SelectItem value="veg">Vegetarian</SelectItem>
-                  <SelectItem value="vegan">Vegan</SelectItem>
-                  <SelectItem value="organic">Organic</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -325,82 +309,105 @@ export function Products() {
         
         {!productsLoading && !productsError && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mt-6"> 
               {sortedProducts.map((product) => {
                 if (!product) return null;
-                // ✨ Resolve category name
+                
                 let categoryName = 'Uncategorized';
                 if (product.category && typeof product.category === 'object' && product.category.name) {
                    categoryName = product.category.name;
                 } else if (categoryMap[product.category]) {
                    categoryName = categoryMap[product.category];
                 } else if (typeof product.category === 'string') {
-                   // Try case-insensitive lookup
                    const found = Object.keys(categoryMap).find(key => key.toLowerCase() === product.category.toLowerCase());
                    if(found) categoryName = categoryMap[found];
-                   else categoryName = product.category; // Show raw ID if nothing else works
+                   else categoryName = product.category; 
                 }
 
                 return (
-                  <Card key={product.id} className="overflow-hidden transition-all duration-200 hover:shadow-lg">
-                    <div className="relative h-48 bg-gray-100">
-                      <ImageWithFallback 
-                        src={product.image} 
-                        alt={product.name || 'Product Image'}
-                        className="w-full h-full object-cover"
-                      />
-                      <Badge 
-                        className="absolute top-2 right-2 text-xs"
-                        style={{ 
-                          backgroundColor: (product.stock || 0) > 0 ? '#e8f5e9' : '#f5f5f5',
-                          color: (product.stock || 0) > 0 ? '#2e7d32' : '#757575'
-                        }}
-                      >
-                        {(product.stock || 0) > 0 ? 'In Stock' : 'Out of Stock'}
-                      </Badge>
+                  <Card key={product.id} className="overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-200 bg-white flex flex-col h-full">
+                    {/* Standardized image box for all products */}
+                    <div className="w-full h-56 bg-gray-50 border-b flex items-center justify-center p-0">
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-full h-48 flex items-center justify-center bg-white">
+                          <ImageWithFallback
+                            src={product.image}
+                            alt={product.name || 'Product Image'}
+                            className="object-contain w-full h-full max-h-44 max-w-44 mx-auto my-auto"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-medium mb-1">{product.name || 'Unknown Name'}</h3>
-                      {/* ✨ Show resolved category name */}
-                      <p className="text-xs text-muted-foreground mb-2 capitalize">{categoryName}</p>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="font-semibold">₹{product.price || 0}</span>
-                        <span className="text-xs text-muted-foreground">{product.unit || 'unit'}</span>
+                    
+                    <div className="p-5 flex flex-col flex-1">
+                      <div className="mb-4 flex-1">
+                        <h3 className="font-bold text-lg text-gray-900 mb-1 truncate" title={product.name || 'Unknown Name'}>
+                           {product.name || 'Unknown Name'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-2 capitalize font-medium truncate">{categoryName}</p>
+                        
+                        <div className="flex items-end justify-between mt-2 mb-3">
+                             <div>
+                                <span className="text-2xl font-bold text-gray-900">₹{product.price || 0}</span>
+                                {product.unit && <span className="text-sm text-gray-500 ml-1">/ {product.unit}</span>}
+                             </div>
+                        </div>
+
+                        {/* Stock Badge - Now Below Price */}
+                        <Badge
+                          className="w-full justify-center px-2 py-1 text-xs font-semibold shadow-sm mb-3"
+                          style={{
+                            backgroundColor: (product.stock || 0) > 0 ? '#dcfce7' : '#f3f4f6',
+                            color: (product.stock || 0) > 0 ? '#166534' : '#374151',
+                            border: (product.stock || 0) > 0 ? '1px solid #86efac' : '1px solid #d1d5db'
+                          }}
+                        >
+                          {(product.stock || 0) > 0 ? `In Stock: ${product.stock}` : 'Out of Stock'}
+                        </Badge>
                       </div>
-                      <div className="text-xs text-muted-foreground mb-3">
-                        Stock: {product.stock || 0} 
-                      </div>
-                      <div className="flex gap-2">
+
+                      {/* Action buttons */}
+                      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100 mt-auto">
+                        
+                        {/* ✨ NEW: Working Variant Button */}
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1"
+                          className="w-full bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 hover:text-purple-800 transition-colors flex items-center justify-center"
+                          onClick={() => navigate(`/products/${product.id}/variants`)}
+                        >
+                          <Layers className="h-4 w-4 mr-1" />
+                          Variants
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full hover:bg-blue-50 hover:text-blue-600 transition-colors border-gray-300 flex items-center justify-center"
                           onClick={() => {
-                            // ✨ FIX: Normalize the product data before editing
-                            // If category is an object, extract its ID. Otherwise use it as is.
                             const normalizedProduct = {
                               ...product,
                               category: product.category && typeof product.category === 'object' 
                                 ? (product.category._id || product.category.id) 
                                 : product.category
                             };
-                            setSelectedProduct(product);
+                            setSelectedProduct(normalizedProduct);
                             setEditModalOpen(true);
                           }}
                         >
-                          <Edit2 className="h-3 w-3 mr-1" />
+                          <Edit2 className="h-4 w-4 mr-2" />
                           Edit
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="w-full hover:bg-red-50 hover:text-red-600 transition-colors border-gray-300 text-red-500 flex items-center justify-center"
                           onClick={() => {
                             setSelectedProduct(product);
                             setDeleteModalOpen(true);
                           }}
                         >
-                          <Trash2 className="h-3 w-3 mr-1" />
+                          <Trash2 className="h-4 w-4 mr-2" />
                           Delete
                         </Button>
                       </div>
@@ -409,10 +416,13 @@ export function Products() {
                 );
               })}
             </div>
-
             {sortedProducts.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                No products found
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <Package className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">No products found</h3>
+                <p className="text-sm text-gray-500 mt-1">Try adjusting your search or filters.</p>
               </div>
             )}
           </>
@@ -423,8 +433,8 @@ export function Products() {
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         onAdd={createProduct} 
-        categories={categories} // ✨ Pass categories
-        onCategoryCreate={refetchCategories} // ✨ Refresh logic
+        categories={categories} 
+        onCategoryCreate={refetchCategories} 
       />
 
       {selectedProduct && (
@@ -445,9 +455,9 @@ export function Products() {
                 label: 'Category', 
                 type: 'select', 
                 options: categories.map(c => ({ 
-                  label: c.name || c.displayName, 
-                  value: c._id || c.id 
-                })) // ✨ Dynamic Options
+                    label: c.name || c.displayName, 
+                    value: c._id || c.id 
+                }))
               },
               { key: 'price', label: 'Price (₹)', type: 'text' },
               { key: 'stock', label: 'Stock', type: 'number' },

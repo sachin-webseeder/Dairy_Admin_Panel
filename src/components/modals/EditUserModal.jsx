@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-// ✨ REMOVED: X icon import
 import { Check, Power } from "lucide-react";
 import {
   Dialog,
@@ -18,8 +17,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  SelectPortal,
-} from "../ui/select";
+} from "../ui/select"; // ✨ NO 'SelectPortal' here
 import { ROLE_PERMISSIONS, getRoleFromPermissions } from "../../lib/rolePermissions";
 
 // Custom Toggle for Active Status
@@ -68,7 +66,6 @@ export function EditUserModal({ open, onOpenChange, onSave, user }) {
 
   useEffect(() => {
     if (user) {
-      // ✨ FIX: Correctly detect 'active' vs 'inactive' string or boolean
       const userIsActive = user.isActive === true || (user.status && user.status.toLowerCase() === 'active');
       setIsActive(userIsActive);
       
@@ -98,9 +95,7 @@ export function EditUserModal({ open, onOpenChange, onSave, user }) {
     const updatedData = {
       id: user.id,
       permissions: newPermissionsArray,
-      // ✨ FIX: Send 'isActive' as boolean (true/false) which backend expects
       isActive: isActive,
-      // Pass UI helpers back to parent
       role: newRole, 
       status: isActive ? 'active' : 'inactive' 
     };
@@ -123,18 +118,14 @@ export function EditUserModal({ open, onOpenChange, onSave, user }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* ✨ REMOVED: overflow-hidden to fix dropdown clipping */}
-      <DialogContent className="sm:max-w-[600px] bg-white flex flex-col max-h-[90vh] p-0 gap-0">
+      <DialogContent className="sm:max-w-[600px] bg-white flex flex-col max-h-[90vh] p-0 gap-0 block overflow-y-auto">
         
-        {/* ✨ CLEANER HEADER: Removed manual X button */}
-        <DialogHeader className="px-6 py-4 border-b flex-row items-center justify-between space-y-0 sticky top-0 z-10 bg-white">
-          <div>
-            <DialogTitle className="text-base font-medium">Edit User</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">{user?.name}</DialogDescription>
-          </div>
+        <DialogHeader className="px-6 py-4 border-b bg-white sticky top-0 z-10">
+          <DialogTitle className="text-base font-medium">Edit User</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">{user?.name}</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Read-only fields */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>First Name</Label><Input value={user?.firstName || user?.name?.split(' ')[0] || ''} disabled className="bg-gray-50" /></div>
@@ -143,32 +134,29 @@ export function EditUserModal({ open, onOpenChange, onSave, user }) {
             <div className="space-y-2"><Label>Email</Label><Input value={user?.email || ''} disabled className="bg-gray-50" /></div>
             <div className="space-y-2"><Label>Phone</Label><Input value={user?.phone || ''} disabled className="bg-gray-50" /></div>
 
-            {/* Role Select */}
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={role} onValueChange={(val) => {
-                  setRole(val);
-                  const rolePerms = ROLE_PERMISSIONS[val] || [];
-                  setPermissions(prev => {
-                    const next = { ...prev };
-                    Object.keys(next).forEach(k => next[k] = rolePerms.includes(k));
-                    return next;
-                  });
-              }}>
-                <SelectTrigger id="role"><SelectValue placeholder="Select a role" /></SelectTrigger>
-                <SelectPortal>
-                  <SelectContent>
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Role & Permissions</Label>
+              
+              <div className="mb-3">
+                 <Select value={role} onValueChange={(val) => {
+                    setRole(val);
+                    const rolePerms = ROLE_PERMISSIONS[val] || [];
+                    setPermissions(prev => {
+                      const next = { ...prev };
+                      Object.keys(next).forEach(k => next[k] = rolePerms.includes(k));
+                      return next;
+                    });
+                 }}>
+                  <SelectTrigger id="role"><SelectValue placeholder="Select a role" /></SelectTrigger>
+                  {/* ✨ FIX: Z-Index [9999] makes it clickable */}
+                  <SelectContent className="z-[9999]">
                     <SelectItem value="Admin">Admin</SelectItem>
                     <SelectItem value="PanelUser">Panel User</SelectItem>
                     <SelectItem value="Customer">Customer</SelectItem>
                   </SelectContent>
-                </SelectPortal>
-              </Select>
-            </div>
+                </Select>
+              </div>
 
-            {/* Permissions */}
-            <div className="space-y-3">
-              <Label className="text-base font-medium">Permissions</Label>
               <div className="grid grid-cols-2 gap-3 p-4 border rounded-lg bg-gray-50">
                 <PermissionCheckbox permissionKey="dashboard" title="Dashboard" />
                 <PermissionCheckbox permissionKey="products" title="Products" />
@@ -178,7 +166,7 @@ export function EditUserModal({ open, onOpenChange, onSave, user }) {
               </div>
             </div>
 
-            {/* ✨ FIXED TOGGLE: Visible button */}
+            {/* ✨ FIXED: Visible Toggle Button */}
             <CustomToggle 
               label={isActive ? "User is Active" : "User is Inactive"} 
               checked={isActive} 

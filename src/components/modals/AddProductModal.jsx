@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Plus, Trash2, Link as LinkIcon, X, ChevronDown, ChevronUp, Image as ImageIcon, Check, Star } from 'lucide-react';
+import { Upload, Plus, Trash2, Link as LinkIcon, X, ChevronDown, ChevronUp, Image as ImageIcon, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner@2.0.3';
 import { useNavigate } from 'react-router-dom';
 import { categoryService } from '../../lib/api/services/categoryService';
+import { Switch } from '../ui/switch';
+import { Checkbox } from '../ui/checkbox';
 
 // --- HELPER COMPONENTS ---
 
@@ -110,7 +111,7 @@ function ImageInput({ label, imageData, onChange, className = "" }) {
       </div>
 
       {imageData ? (
-        <div className="relative w-full h-32 border rounded-lg overflow-hidden group bg-gray-50 z-0">
+        <div className="relative w-full h-48 border rounded-lg overflow-hidden group bg-gray-50 z-0">
           <img src={imageData.preview} alt="Preview" className="w-full h-full object-contain" />
           <button
             type="button"
@@ -121,7 +122,7 @@ function ImageInput({ label, imageData, onChange, className = "" }) {
           </button>
         </div>
       ) : (
-        <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors relative overflow-hidden z-0">
+        <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors relative overflow-hidden z-0">
           {inputType === 'file' ? (
             <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center p-4">
               <Upload className="w-8 h-8 mb-2 text-gray-400" />
@@ -217,7 +218,7 @@ function VariantRow({ index, variant, onChange, onRemove, onImageChange }) {
               
               <div className="space-y-1">
                 <Label className="text-xs font-medium">Unit <span className="text-red-500">*</span></Label>
-                {/* ✨ FIX: High Z-Index for Dropdown */}
+                {/* High Z-Index for Dropdown */}
                 <Select value={variant.unit} onValueChange={(val) => onChange(index, 'unit', val)}>
                   <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent className="z-[9999]">
@@ -281,17 +282,33 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
   }, [open]);
 
   const handleMainImageChange = (data) => setFormData(prev => ({ ...prev, mainImage: data }));
-  const handleVariantChange = (index, field, value) => { const newVariants = [...variants]; newVariants[index][field] = value; setVariants(newVariants); };
-  const handleVariantImageChange = (index, data) => { const newVariants = [...variants]; newVariants[index].imageData = data; setVariants(newVariants); };
-  
+
+  const handleVariantChange = (index, field, value) => {
+    const newVariants = [...variants];
+    newVariants[index][field] = value;
+    setVariants(newVariants);
+  };
+
+  const handleVariantImageChange = (index, data) => {
+    const newVariants = [...variants];
+    newVariants[index].imageData = data;
+    setVariants(newVariants);
+  };
+
   const addVariant = () => {
-    setVariantsOpen(true); // Auto open
+    if (!variantsOpen) setVariantsOpen(true);
     setVariants([...variants, { label: '', value: '', unit: 'ml', price: '', stock: '', imageData: null }]);
   };
-  const removeVariant = (index) => setVariants(variants.filter((_, i) => i !== index));
+
+  const removeVariant = (index) => {
+    setVariants(variants.filter((_, i) => i !== index));
+  };
 
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim()) { toast.error("Category name cannot be empty"); return; }
+    if (!newCategoryName.trim()) {
+      toast.error("Category name cannot be empty");
+      return;
+    }
     try {
       setLoading(true);
       const response = await categoryService.createCategory({ name: newCategoryName, displayName: newCategoryName });
@@ -301,7 +318,11 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
       setFormData(prev => ({ ...prev, category: newCategory._id || newCategory.id }));
       setIsCreatingCategory(false);
       setNewCategoryName('');
-    } catch (error) { toast.error("Failed to create category"); } finally { setLoading(false); }
+    } catch (error) {
+      toast.error("Failed to create category");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -313,12 +334,10 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
     
     setLoading(true);
     try {
-      await onAdd({ ...formData, variants });
-      toast.success('Product added successfully');
+      await onAdd({ ...formData, variants }); 
       onClose();
     } catch (error) {
-      console.error('Create product error:', error);
-      toast.error(error?.message || 'Error: An error occurred');
+      // Error handled by parent
     } finally {
       setLoading(false);
     }
@@ -326,8 +345,8 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      {/* ✨ FIX: Standard block layout, NO z-100 on the modal content itself to prevent context issues */}
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border shadow-lg p-0">
+      {/* Use block layout for reliable scrolling */}
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border shadow-lg p-0 block">
         
         <DialogHeader className="bg-white px-6 py-4 border-b sticky top-0 z-50">
           <DialogTitle className="text-xl font-bold text-gray-800">Add New Product</DialogTitle>
@@ -347,17 +366,33 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
             <form id="product-form" onSubmit={handleSubmit} className="space-y-6">
               
               {/* Image Section */}
-              <div className="w-full"><ImageInput label="Product Image" imageData={formData.mainImage} onChange={handleMainImageChange} className="h-full" /></div>
+              <div className="w-full">
+                  <ImageInput 
+                      label="Product Image" 
+                      imageData={formData.mainImage} 
+                      onChange={handleMainImageChange}
+                      className="h-full" 
+                  />
+              </div>
 
               {/* Main Fields */}
               <div className="space-y-4 bg-white p-4 rounded-lg border shadow-sm">
                   <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1"><Label className="text-xs font-semibold">Product Name <span className="text-red-500">*</span></Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Butter Chicken" className="h-9 text-xs" /></div>
                       <div className="space-y-1"><Label className="text-xs font-semibold">Category <span className="text-red-500">*</span></Label>
-                          <Select value={formData.category} onValueChange={(value) => { if (value === 'create_new') navigate('/category-management?action=create'); else setFormData({ ...formData, category: value }); }}>
+                          <Select 
+                          value={formData.category} 
+                          onValueChange={(value) => {
+                              if (value === 'create_new') navigate('/category-management?action=create');
+                              else setFormData({ ...formData, category: value });
+                          }}
+                          >
                           <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                          <SelectContent>
-                              {categories.map((cat) => (<SelectItem key={cat._id || cat.id} value={cat._id || cat.id}>{cat.displayName || cat.name}</SelectItem>))}
+                          {/* FIX: Z-Index 9999 for dropdown */}
+                          <SelectContent className="z-[9999]">
+                              {categories.map((cat) => (
+                              <SelectItem key={cat._id || cat.id} value={cat._id || cat.id}>{cat.displayName || cat.name}</SelectItem>
+                              ))}
                               <SelectItem value="create_new" className="text-blue-600 border-t"><Plus className="h-3 w-3 inline mr-1"/> New Category</SelectItem>
                           </SelectContent>
                           </Select>
@@ -387,31 +422,71 @@ export function AddProductModal({ open, onClose, onAdd, categories = [], onCateg
 
               {/* Variants */}
               <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
-                <div className="flex justify-between items-center p-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors border-b" onClick={() => setVariantsOpen(!variantsOpen)}>
-                  <div className="flex items-center gap-2">{variantsOpen ? <ChevronUp className="h-4 w-4 text-gray-600"/> : <ChevronDown className="h-4 w-4 text-gray-600"/>}<Label className="text-sm font-bold cursor-pointer text-gray-700">Variants / Quantities</Label><span className="text-xs text-muted-foreground bg-white px-2 py-0.5 rounded-full border">{variants.length} added</span></div>
-                  <Button type="button" variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); addVariant(); }} className="h-7 text-xs bg-white hover:bg-blue-50 text-blue-600 border-blue-200"><Plus className="h-3 w-3 mr-1"/> Add Variant</Button>
+                <div 
+                  className="flex justify-between items-center p-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors border-b"
+                  onClick={() => setVariantsOpen(!variantsOpen)}
+                >
+                  <div className="flex items-center gap-2">
+                      {variantsOpen ? <ChevronUp className="h-4 w-4 text-gray-600"/> : <ChevronDown className="h-4 w-4 text-gray-600"/>}
+                      <Label className="text-sm font-bold cursor-pointer text-gray-700">Variants / Quantities</Label>
+                      <span className="text-xs text-muted-foreground bg-white px-2 py-0.5 rounded-full border">{variants.length} added</span>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); addVariant(); }} className="h-7 text-xs bg-white hover:bg-blue-50 text-blue-600 border-blue-200">
+                      <Plus className="h-3 w-3 mr-1"/> Add Variant
+                  </Button>
                 </div>
+                
                 {variantsOpen && (
                   <div className="p-4 space-y-4 bg-gray-50/30">
                     {variants.length === 0 && <p className="text-xs text-center text-muted-foreground py-2">No variants added yet.</p>}
-                    {variants.map((variant, index) => <VariantRow key={index} index={index} variant={variant} onChange={handleVariantChange} onRemove={removeVariant} onImageChange={handleVariantImageChange} />)}
+                    {variants.map((variant, index) => (
+                      <VariantRow 
+                        key={index} 
+                        index={index} 
+                        variant={variant} 
+                        onChange={handleVariantChange} 
+                        onRemove={removeVariant}
+                        onImageChange={handleVariantImageChange} 
+                      />
+                    ))}
                   </div>
                 )}
               </div>
 
               {/* Toggles */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <CustomToggle label="Available for Order" checked={formData.availableForOrder} onChange={(c) => setFormData({...formData, availableForOrder: c})} activeColor="bg-green-500" icon={Check} />
-                <CustomToggle label="VIP Only Product" checked={formData.isVIP} onChange={(c) => setFormData({...formData, isVIP: c})} activeColor="bg-purple-500" icon={Star} />
+                <CustomToggle 
+                  label="Available for Order" 
+                  checked={formData.availableForOrder} 
+                  onChange={(c) => setFormData({...formData, availableForOrder: c})}
+                  activeColor="bg-green-500"
+                  icon={Check}
+                />
+                
+                <CustomToggle 
+                  label="VIP Only Product" 
+                  checked={formData.isVIP} 
+                  onChange={(c) => setFormData({...formData, isVIP: c})}
+                  activeColor="bg-purple-500"
+                  icon={Plus} // Or Crown
+                />
               </div>
+              
+               <div className="flex items-center space-x-3 bg-white p-3 rounded-lg border shadow-sm w-fit">
+                <Checkbox id="veg" checked={formData.vegetarian} onCheckedChange={(c) => setFormData({...formData, vegetarian: c})} />
+                <Label htmlFor="veg" className="text-xs font-medium cursor-pointer">Vegetarian</Label>
+              </div>
+
             </form>
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-white border-t flex justify-end gap-3">
+        <div className="p-4 bg-white border-t sticky bottom-0 z-10 flex justify-end gap-3">
             <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
-            <Button type="submit" form="product-form" className="bg-blue-600 hover:bg-blue-700 text-white min-w-[150px]" disabled={loading}>{loading ? 'Saving...' : 'Save Product'}</Button>
+            <Button type="submit" form="product-form" className="bg-blue-600 hover:bg-blue-700 text-white min-w-[150px]" disabled={loading}>
+            {loading ? 'Saving...' : 'Save Product'}
+            </Button>
         </div>
       </DialogContent>
     </Dialog>

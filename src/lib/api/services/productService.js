@@ -108,4 +108,41 @@ export const productService = {
   async toggleProductStatus(id) {
     return apiClient.patch(buildUrl(API_ENDPOINTS.PRODUCTS.TOGGLE_STATUS, { id }));
   },
+
+  // Variant Management
+  async getProductById(id) {
+    return apiClient.get(buildUrl(API_ENDPOINTS.PRODUCTS.GET, { id }));
+  },
+
+  async addVariantToProduct(productId, variantData) {
+    const formData = new FormData();
+
+    // Append text fields
+    formData.append('label', variantData.label);
+    formData.append('value', variantData.value);
+    formData.append('unit', variantData.unit);
+    formData.append('price', variantData.price);
+    formData.append('stock', variantData.stock);
+
+    // Handle image attachment
+    if (variantData.imageData) {
+      if (variantData.imageData.type === 'file') {
+        formData.append('image', variantData.imageData.value);
+      } else if (variantData.imageData.type === 'url') {
+        formData.append('imageUrl', variantData.imageData.value);
+      }
+    }
+
+    // Construct URL: e.g., /products/123/variants
+    const url = buildUrl(API_ENDPOINTS.PRODUCTS.VARIANTS.CREATE, { id: productId });
+    return apiClient.post(url, formData);
+  },
+
+  async deleteVariant(productId, variantId) {
+    const url = buildUrl(API_ENDPOINTS.PRODUCTS.VARIANTS.DELETE, {
+      id: productId,
+      variantId: variantId,
+    });
+    return apiClient.delete(url);
+  },
 };

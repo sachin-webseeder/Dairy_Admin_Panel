@@ -49,6 +49,10 @@ export const API_ENDPOINTS = {
     UPDATE: '/products/update-product/:id', // Postman: PUT /api/products/update-product/:id
     DELETE: '/products/delete-product/:id', // Postman: DELETE /api/products/delete-product/:id
     TOGGLE_STATUS: '/products/toggle/:id', // Assumed pattern
+    VARIANTS: {
+      CREATE: '/products/:id/variants', // Add variant to product
+      DELETE: '/products/:id/variants/:variantId', // Delete variant from product
+    },
   },
 
   CATEGORIES: {

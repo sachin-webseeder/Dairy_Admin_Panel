@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-// ✨ REMOVED: X icon import (Dialog handles it)
-import { ChevronDown, Check } from "lucide-react";
+import { X, ChevronDown, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +16,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  SelectPortal,
-} from "../ui/select";
+} from "../ui/select"; // ✨ NO 'SelectPortal' here
 import { Checkbox } from "../ui/checkbox";
 import { ROLE_PERMISSIONS } from "../../lib/rolePermissions";
 
@@ -69,7 +67,7 @@ export function AddUserModal({ open, onOpenChange, onSave }) {
       phone: formData.phone,
       password: formData.password,
       permissions: permissionsArray,
-      role: formData.role, 
+      role: formData.role,
       isActive: true
     };
 
@@ -94,16 +92,14 @@ export function AddUserModal({ open, onOpenChange, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* ✨ REMOVED: overflow-hidden from DialogContent to allow dropdowns to pop out */}
-      <DialogContent className="sm:max-w-[600px] bg-white flex flex-col max-h-[90vh] p-0 gap-0">
+      <DialogContent className="sm:max-w-[600px] bg-white flex flex-col max-h-[90vh] p-0 gap-0 block overflow-y-auto">
         
-        {/* ✨ CLEANER HEADER: Removed manual X button */}
         <DialogHeader className="px-6 py-4 border-b bg-white sticky top-0 z-10">
           <DialogTitle className="text-base font-medium">Add New User</DialogTitle>
           <DialogDescription className="sr-only">Create a new user.</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 p-6 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex-1 p-6">
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} required /></div>
@@ -117,13 +113,12 @@ export function AddUserModal({ open, onOpenChange, onSave }) {
               <Label htmlFor="role">Role</Label>
               <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
                 <SelectTrigger id="role"><SelectValue placeholder="Select a role" /></SelectTrigger>
-                <SelectPortal>
-                  <SelectContent>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="PanelUser">Panel User</SelectItem>
-                    <SelectItem value="Customer">Customer</SelectItem>
-                  </SelectContent>
-                </SelectPortal>
+                {/* ✨ FIX: Z-Index [9999] makes it clickable */}
+                <SelectContent className="z-[9999]">
+                  <SelectItem value="Admin">Admin</SelectItem>
+                  <SelectItem value="PanelUser">Panel User</SelectItem>
+                  <SelectItem value="Customer">Customer</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
