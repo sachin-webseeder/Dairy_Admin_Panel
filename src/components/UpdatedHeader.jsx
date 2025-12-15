@@ -1,10 +1,9 @@
-import { Bell, Search, ChevronDown, User, Settings, HelpCircle, Globe, LogOut } from 'lucide-react';
+import { Bell, Search, ChevronDown, User, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { notifications } from '../lib/mockData';
-// import { Notification } from '../types'; // This type import is removed
 import { useState, useEffect } from 'react';
 import { cn } from './ui/utils';
 import { AlertTriangle, CheckCircle, Info, AlertCircle } from 'lucide-react';
@@ -25,8 +24,6 @@ const notificationColors = {
   warning: 'text-yellow-600',
 };
 
-// The 'HeaderProps' interface is removed as it's TypeScript-specific.
-
 export function UpdatedHeader({ 
   onNavigate,
   onLogout, 
@@ -34,10 +31,9 @@ export function UpdatedHeader({
   userName = 'John Doe', 
   userRole = 'Super Admin',
   currentPage = 'Dashboard',
-  pageTitle,
-  pageSubtitle
-}) { // The ': HeaderProps' type annotation is removed
-  const [notifs, setNotifs] = useState(notifications); // The '<Notification[]>' generic is removed
+  pageTitle
+}) {
+  const [notifs, setNotifs] = useState(notifications);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -60,16 +56,6 @@ export function UpdatedHeader({
     onNavigate('profile');
   };
 
-  const handleSettingsClick = () => {
-    setProfileOpen(false);
-    onNavigate('updated-settings');
-  };
-
-  const handleHelpSupportClick = () => {
-    setProfileOpen(false);
-    onNavigate('help-support');
-  };
-
   const formattedTime = currentTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
@@ -83,7 +69,8 @@ export function UpdatedHeader({
   });
 
   return (
-    <header className="h-12 border-b border-border bg-white px-4 flex items-center justify-between sticky top-0 z-20 transition-all duration-300 text-xs">
+    // FIX: Added 'z-40' to stay above content but below sidebar (which is z-50)
+    <header className="h-12 border-b border-border bg-white px-4 flex items-center justify-between sticky top-0 z-40 transition-all duration-300 text-xs shadow-sm">
       <div className="flex items-center gap-4">
         {/* Page Title */}
         <div className="flex items-center gap-2">
@@ -150,7 +137,7 @@ export function UpdatedHeader({
                     </Badge>
                   )}
                 </div>
-                <div className="max-h-96 overflow-y-auto">
+                <div className="max-h-96 overflow-y-auto custom-scrollbar">
                   {notifs.map((notification) => {
                     const Icon = notificationIcons[notification.type];
                     return (
@@ -224,7 +211,6 @@ export function UpdatedHeader({
                 onClick={() => setProfileOpen(false)}
               />
               <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                {/* Profile Header */}
                 <div className="p-4 bg-gray-50">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
@@ -245,7 +231,7 @@ export function UpdatedHeader({
 
                 <Separator />
 
-                {/* Menu Items */}
+                {/* MODIFIED: Only My Profile and Sign Out remain */}
                 <div className="p-2">
                   <button
                     onClick={handleProfileClick}
@@ -254,34 +240,10 @@ export function UpdatedHeader({
                     <User className="h-4 w-4 text-gray-600" />
                     <span>My Profile</span>
                   </button>
-                  
-                  <button
-                    onClick={handleSettingsClick}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-left"
-                  >
-                    <Settings className="h-4 w-4 text-gray-600" />
-                    <span>Account Settings</span>
-                  </button>
-                  
-                  <button
-                    onClick={handleHelpSupportClick}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-left"
-                  >
-                    <HelpCircle className="h-4 w-4 text-gray-600" />
-                    <span>Help & Support</span>
-                  </button>
-                  
-                  <button
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-left"
-                  >
-                    <Globe className="h-4 w-4 text-gray-600" />
-                    <span>Language</span>
-                  </button>
                 </div>
 
                 <Separator />
 
-                {/* Sign Out */}
                 <div className="p-2">
                   <button
                     onClick={onLogout}

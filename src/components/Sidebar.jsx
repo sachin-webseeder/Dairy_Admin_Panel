@@ -9,7 +9,7 @@ import {
   TrendingUp,
   FileText
 } from 'lucide-react';
-import { cn } from './ui/utils';
+import { cn } './ui/utils';
 
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
