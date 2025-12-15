@@ -6,7 +6,8 @@ import { Separator } from '../components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { User, Mail, Phone, Shield } from 'lucide-react';
 
-export default function ProfileSettings() {
+// ✨ CHANGED: Removed 'default' so it matches 'import { ProfileSettings }' in App.jsx
+export function ProfileSettings() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div>
@@ -31,7 +32,6 @@ export default function ProfileSettings() {
         <CardContent className="space-y-6 pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* Full Name */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
@@ -40,7 +40,6 @@ export default function ProfileSettings() {
               <Input defaultValue="Dynasty Admin" />
             </div>
 
-            {/* Role (Read Only) */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-muted-foreground" />
@@ -49,7 +48,6 @@ export default function ProfileSettings() {
               <Input defaultValue="Super Admin" disabled className="bg-gray-50" />
             </div>
 
-            {/* Email (Read Only) */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
@@ -59,7 +57,6 @@ export default function ProfileSettings() {
               <p className="text-xs text-muted-foreground">Contact support to change email</p>
             </div>
 
-            {/* Phone Number */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
