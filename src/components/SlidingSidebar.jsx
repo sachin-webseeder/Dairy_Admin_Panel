@@ -4,44 +4,35 @@ import {
   Wallet, Crown, Layout, Settings, LogOut, 
   HelpCircle, FolderOpen, BarChart3, Bell
 } from 'lucide-react';
-import { cn } from '../components/ui/utils';
+import { cn } from './ui/utils';
 
-// Single flat menu structure in your requested order
 const MENU_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' }, // Public
+  { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
   { icon: UserCog, label: 'User Management', id: 'user-management', permission: 'userManagement' },
   { icon: Package, label: 'Products', id: 'products', permission: 'products' },
   { icon: FolderOpen, label: 'Category', id: 'category-management', permission: 'categoryManagement' },
   { icon: ShoppingCart, label: 'Orders', id: 'orders', permission: 'orders' },
   { icon: Users, label: 'Customers', id: 'customers', permission: 'customers' },
-  // Delivery Staff REMOVED
   { icon: Wallet, label: 'Wallet', id: 'wallet', permission: 'wallet' },
   { icon: Crown, label: 'Membership', id: 'membership', permission: 'membership' },
   { icon: BarChart3, label: 'Reports', id: 'reports', permission: 'reports' },
   { icon: Layout, label: 'Home Page', id: 'home-page', permission: 'homepage' },
   { icon: Bell, label: 'Push Notifications', id: 'notifications', permission: 'notifications' },
-  { icon: Settings, label: 'Settings', id: 'updated-settings' }, // Public
-  // Profile REMOVED (Moved to Header)
-  { icon: HelpCircle, label: 'Help & Support', id: 'help-support' }, // Public
+  { icon: Settings, label: 'Settings', id: 'updated-settings' },
+  { icon: HelpCircle, label: 'Help & Support', id: 'help-support' },
 ];
 
 export function SlidingSidebar({ currentPage, onPageChange, onLogout, userRole = "Admin", currentUser }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Filter items based on permissions
   const filteredItems = useMemo(() => {
     const userPerms = currentUser?.permissions || [];
     const currentRole = (userRole || '').toLowerCase();
     const isAdmin = currentRole === 'admin' || currentRole === 'super admin';
 
     return MENU_ITEMS.filter(item => {
-      // 1. If Admin/Super Admin, show EVERYTHING
       if (isAdmin) return true;
-
-      // 2. If item has NO permission key (like Dashboard/Settings), show it to everyone
       if (!item.permission) return true;
-      
-      // 3. For other roles, check if permission exists
       return userPerms.includes(item.permission);
     });
   }, [currentUser, userRole]);
@@ -55,23 +46,22 @@ export function SlidingSidebar({ currentPage, onPageChange, onLogout, userRole =
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-100 flex items-center h-20 flex-shrink-0 overflow-hidden bg-white relative">
+      <div className="p-4 border-b border-gray-100 flex items-center h-20 flex-shrink-0 overflow-hidden bg-white relative z-20">
         <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-sm relative z-10">
           <span className="text-white font-bold text-xl">D</span>
         </div>
         
+        {/* FIX: hidden class added here */}
         <div className={cn(
           "ml-3 flex flex-col justify-center transition-all duration-300 overflow-hidden whitespace-nowrap min-w-[150px]",
-          isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"
+          isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none hidden"
         )}>
           <span className="font-bold text-xl text-red-600">Dynasty Premium</span>
           <span className="text-xs text-gray-500 font-medium">Welcome {userRole}</span>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 custom-scrollbar bg-white">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 custom-scrollbar bg-white relative z-10">
         <div className="space-y-1">
           {filteredItems.map((item) => {
             const Icon = item.icon;
@@ -96,9 +86,10 @@ export function SlidingSidebar({ currentPage, onPageChange, onLogout, userRole =
                   <Icon size={22} strokeWidth={1.5} />
                 </div>
                 
+                {/* FIX: hidden class added here */}
                 <span className={cn(
                   "ml-3 font-medium whitespace-nowrap transition-all duration-300 overflow-hidden text-left",
-                  isExpanded ? "opacity-100 w-32" : "opacity-0 w-0"
+                  isExpanded ? "opacity-100 w-32 delay-100" : "opacity-0 w-0 hidden"
                 )}>
                   {item.label}
                 </span>
@@ -112,8 +103,7 @@ export function SlidingSidebar({ currentPage, onPageChange, onLogout, userRole =
         </div>
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-100 mt-auto bg-white relative">
+      <div className="p-4 border-t border-gray-100 mt-auto bg-white relative z-20">
         <button
           onClick={onLogout}
           className="w-full flex items-center p-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-red-50 hover:text-red-600 group"
@@ -123,7 +113,7 @@ export function SlidingSidebar({ currentPage, onPageChange, onLogout, userRole =
           </div>
           <span className={cn(
             "ml-3 font-medium whitespace-nowrap transition-all duration-300 overflow-hidden",
-            isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
+            isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"
           )}>
             Logout
           </span>
