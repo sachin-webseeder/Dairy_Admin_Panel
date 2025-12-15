@@ -33,7 +33,7 @@ export function AddUserModal({ open, onOpenChange, onSave }) {
   // Initial permissions state
   const [permissions, setPermissions] = useState({
     dashboard: false, products: false, categoryManagement: false, orders: false, customers: false,
-    deliveryStaff: false, membership: false, profile: false, analytics: false,
+    deliveryStaff: false, membership: false,  analytics: false,
     auditLogs: false, reports: false, userManagement: false, wallet: false,
     billing: false, notifications: false, contentManagement: false,
     homepage: false, settings: false, helpSupport: false, integrations: false,
@@ -67,8 +67,12 @@ export function AddUserModal({ open, onOpenChange, onSave }) {
       phone: formData.phone,
       password: formData.password,
       permissions: permissionsArray,
+      
+      // FIX 1: Send "PanelUser" explicitly so they get panel access
       role: "PanelUser", 
-      isActive: true
+
+      // FIX 2: Rename 'isActive' to 'isEnabled' to match Schema
+      isEnabled: true 
     };
 
     onSave(newUser);
