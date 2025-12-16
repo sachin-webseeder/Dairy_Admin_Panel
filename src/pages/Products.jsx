@@ -1,6 +1,6 @@
 // Products.jsx - Full Final Code
 import { useState, useMemo } from 'react';
-import { Search, Plus, Filter, Edit2, Trash2, Package, CheckCircle, TrendingUp, Star, X, ChevronDown, Layers } from 'lucide-react';
+import { Search, Plus, Filter, Edit2, Trash2, Package, CheckCircle, TrendingUp, Star, X, ChevronDown, Layers, RefreshCw, Download } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
@@ -151,6 +151,22 @@ export function Products() {
 
   return (
     <div className="p-4">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Products / Management</h2>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" className="gap-2" onClick={() => { if (refetch) refetch(); }}>
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => toast.info("Exporting...")}>
+            <Download className="h-4 w-4" /> Export
+          </Button>
+          <Button className="bg-red-500 hover:bg-red-600 gap-2" onClick={() => setAddModalOpen(true)}>
+            <Plus className="h-4 w-4" /> Add Product
+          </Button>
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <Card className="p-4 transition-all duration-200 hover:shadow-md">
           <div className="flex items-start justify-between">
@@ -206,9 +222,6 @@ export function Products() {
             </Select>
             <Button variant="outline" onClick={() => setMoreDropdownOpen(!moreDropdownOpen)} className="gap-2 border border-gray-300">
               <Filter className="h-4 w-4" /> More <ChevronDown className="h-4 w-4" />
-            </Button>
-            <Button className="bg-red-500 hover:bg-red-600 border border-red-500" onClick={() => setAddModalOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Add Product
             </Button>
           </div>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UserPlus, Search, Edit2, Trash2, Download, Filter, Users as UsersIcon, UserCheck, ChevronDown, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { UserPlus, Search, Edit2, Trash2, Download, Filter, Users as UsersIcon, UserCheck, ChevronDown, X, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
@@ -9,7 +9,7 @@ import { AddUserModal } from '../components/modals/AddUserModal';
 import { EditUserModal } from '../components/modals/EditUserModal';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { showSuccessToast } from '../lib/toast';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { useApiUsers } from '../lib/hooks/useApiUsers';
 
 export function UserManagement() {
@@ -30,14 +30,14 @@ export function UserManagement() {
 
   // ✨ API Hook
   const { 
-    users: userList, loading, error, createUser, updateUser, deleteUser, toggleUserStatus 
+    users: userList, loading, error, createUser, updateUser, deleteUser, toggleUserStatus, refreshUsers 
   } = useApiUsers({ search: searchQuery });
 
-  // ... (handlers remain the same)
   const handleAddUser = async (userData) => { try { await createUser(userData); showSuccessToast('User created!'); setAddModalOpen(false); } catch (err) { toast.error(err.message); } };
   const handleEditUser = async (updatedData) => { try { await updateUser(updatedData.id, updatedData); showSuccessToast('User updated!'); setEditModalOpen(false); } catch (err) { toast.error(err.message); } };
   const handleDeleteUser = async () => { if (selectedUser) { try { await deleteUser(selectedUser.id); showSuccessToast('User deleted!'); setDeleteModalOpen(false); setSelectedUser(null); } catch (err) { toast.error(err.message); } } };
   const handleClearFilters = () => { setRoleFilter('all'); setModuleFilter('all'); setSortBy('name'); setSortOrder('asc'); };
+  const handleExport = () => { console.log("Exporting user data..."); };
 
   // Filtering & Sorting (Client-side for now)
   const filteredUsers = userList.filter(user => {
@@ -60,19 +60,47 @@ export function UserManagement() {
     u.isActive === true || 
     (u.status && u.status.toLowerCase() === 'active')
   ).length;
-  const modules = ['All Modules', 'Dashboard', 'User Management', 'Settings']; // Add more as needed
+  const modules = ['All Modules', 'Dashboard', 'User Management', 'Settings']; 
   const sortOptions = [{ value: 'name', label: 'Sort by Name' }, { value: 'email', label: 'Sort by Email' }, { value: 'role', label: 'Sort by Role' }];
 
   return (
     <div className="p-6">
-      {/* Header & Stats - ✨ RESTORED ORIGINAL LAYOUT */}
+      {/* Header & Stats - ✨ RESTORED ORIGINAL LAYOUT WITH NEW BUTTONS */}
       <div className="mb-6 flex items-center justify-between">
-        <div><h2>User Management</h2><p className="text-muted-foreground">Manage system users and their roles</p></div>
-        <div className="flex gap-3"><Button variant="outline"><Download className="h-4 w-4 mr-2" /> Export</Button><Button className="bg-red-500 hover:bg-red-600" onClick={() => setAddModalOpen(true)}><UserPlus className="h-4 w-4 mr-2" /> Add User</Button></div>
+        <div>
+            <h2>User Management</h2>
+            <p className="text-muted-foreground">Manage system users and their roles</p>
+        </div>
+        <div className="flex gap-2">
+           {/* --- STANDARD BUTTONS INTEGRATED HERE --- */}
+           <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={refreshUsers} // Wired to hook
+            className="transition-all duration-200 h-9 text-xs border border-gray-300"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Refresh
+          </Button>
+          <Button 
+            size="sm"
+            onClick={handleExport}
+            className="transition-all duration-200 h-9 text-xs bg-red-500 hover:bg-red-600 text-white border border-red-500"
+          >
+            <Download className="h-3 w-3 mr-1" /> 
+            Export
+          </Button>
+          <Button 
+            className="bg-red-500 hover:bg-red-600 text-white h-9 text-xs" 
+            onClick={() => setAddModalOpen(true)}
+          >
+            <UserPlus className="h-3 w-3 mr-1" /> 
+            Add User
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
-      {/* ✨ UPDATED: Standardized sizing to match other pages */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="p-4 transition-all duration-200 hover:shadow-md">
           <div className="flex items-start justify-between">
@@ -111,7 +139,7 @@ export function UserManagement() {
         </Card>
       </div>
 
-      {/* Filters & Table - ✨ RESTORED ORIGINAL LAYOUT */}
+      {/* Filters & Table */}
       <div className="bg-white rounded-lg border border-gray-200">
         <div className="p-4 border-b">
           <div className="flex gap-3">

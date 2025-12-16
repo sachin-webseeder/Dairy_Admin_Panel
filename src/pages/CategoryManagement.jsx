@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Search, Plus, Edit2, Trash2, FolderOpen, Upload, Image as ImageIcon, Check, Power } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, FolderOpen, Upload, Image as ImageIcon, Check, Power, RefreshCw, Download } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
@@ -8,7 +8,7 @@ import { Label } from '../components/ui/label';
 import { useApiCategories } from '../lib/hooks/useApiCategories';
 import { categoryService } from '../lib/api/services/categoryService';
 import { showSuccessToast } from '../lib/toast';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 // Reusing CustomToggle logic locally
@@ -140,13 +140,48 @@ export function CategoryManagement() {
     }
   }
 
+  const handleExport = () => {
+    console.log("Exporting categories...");
+  };
+
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Category Management</h1>
-        <Button onClick={() => handleOpenModal()} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4 mr-2" /> Add Category
-        </Button>
+      {/* Header with Actions - FIXED ALIGNMENT */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Category Management</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage product categories and hierarchy.</p>
+        </div>
+        
+        {/* Buttons Container: Removed w-full to prevent stretching */}
+        <div className="flex items-center gap-2">
+           <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={refetch}
+            className="transition-all duration-200 h-9 text-xs border border-gray-300"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Refresh
+          </Button>
+          <Button 
+            size="sm" 
+            onClick={handleExport}
+            className="transition-all duration-200 h-9 text-xs bg-red-500 hover:bg-red-600 text-white border border-red-500"
+          >
+            <Download className="h-3 w-3 mr-1" />
+            Export
+          </Button>
+          <Button 
+            size="sm" 
+            onClick={() => handleOpenModal()} 
+            // Removed w-full so it only takes needed width
+            className="transition-all duration-200 h-9 text-xs bg-red-500 hover:bg-red-600 text-white border border-red-500"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Category
+          </Button>
+        </div>
       </div>
 
       <Card className="p-6">
@@ -164,16 +199,15 @@ export function CategoryManagement() {
           {loading ? <p>Loading...</p> : filteredCategories.map(cat => (
             <Card key={cat._id || cat.id} className="p-4 flex items-center justify-between hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-4">
-                {/* ✨ LARGER IMAGE */}
                 <div className="h-20 w-20 bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden border shadow-sm">
                   {cat.image ? (
-                     <ImageWithFallback 
+                      <ImageWithFallback 
                         src={cat.image} 
                         alt={cat.name} 
                         className="w-full h-full object-cover product-image"
-                     />
+                      />
                   ) : (
-                     <FolderOpen className="h-8 w-8 text-blue-600" />
+                      <FolderOpen className="h-8 w-8 text-blue-600" />
                   )}
                 </div>
                 
@@ -202,7 +236,6 @@ export function CategoryManagement() {
           </DialogHeader>
           
           <div className="p-6 space-y-6">
-            {/* Image Upload */}
             <div className="flex justify-center">
                <div 
                   className="h-32 w-32 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 overflow-hidden relative transition-colors"
@@ -249,14 +282,13 @@ export function CategoryManagement() {
               />
             </div>
             
-            {/* ✨ NEW CUSTOM TOGGLE */}
             <CustomToggle 
               label={formData.isActive ? "Category is Active" : "Category is Inactive"} 
               checked={formData.isActive}
               onChange={(c) => setFormData({...formData, isActive: c})}
             />
 
-            <Button onClick={handleSubmit} className="w-full bg-blue-600 hover:bg-blue-700 h-11">
+            <Button onClick={handleSubmit} className="w-full bg-red-500 hover:bg-red-600 h-11 text-white">
                 {editingCategory ? 'Update Category' : 'Create Category'}
             </Button>
           </div>
