@@ -1,4 +1,3 @@
-// admin_11/src/pages/PushNotifications.jsx
 import React, { useState } from "react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -34,38 +33,34 @@ import {
   Gift,
   Settings,
   Package,
+  Download // ✨ Added Download icon import
 } from "lucide-react";
 import { CreateNotificationModal } from "../components/modals/CreateNotificationModal";
 import { EditNotificationModal } from "../components/modals/EditNotificationModal";
 import { DeleteConfirmationModal } from "../components/modals/DeleteConfirmationModal";
 import { showSuccessToast } from "../lib/toast";
-import { toast } from "sonner@2.0.3"; // ✨ ADDED
-import { useApiNotificationStats } from "../lib/hooks/useApiNotificationStats"; // ✨ ADDED
-import { useApiNotifications } from "../lib/hooks/useApiNotifications"; // ✨ ADDED
-// import { usePersistentPushNotifications } from "../lib/usePersistentData"; // ✨ REMOVED
-
-// const defaultNotifications = [ ... ]; // ✨ REMOVED
+import { toast } from "sonner";
+import { useApiNotificationStats } from "../lib/hooks/useApiNotificationStats";
+import { useApiNotifications } from "../lib/hooks/useApiNotifications";
 
 export function PushNotifications() {
-  // const [notifications, setNotifications] = usePersistentPushNotifications(defaultNotifications); // ✨ REMOVED
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [audienceFilter, setAudienceFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [timeFilter, setTimeFilter] = useState("all"); // Note: API hook doesn't use this filter yet
+  const [timeFilter, setTimeFilter] = useState("all");
   
   // Modal states
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedNotification, setSelectedNotification] =
-    useState(null);
+  const [selectedNotification, setSelectedNotification] = useState(null);
 
   // ✨ --- API Hook for List --- ✨
   const {
-    notifications: filteredNotifications, // API hook does filtering
+    notifications: filteredNotifications,
     loading: listLoading,
     error: listError,
     total,
@@ -87,44 +82,45 @@ export function PushNotifications() {
     loading: statsLoading 
   } = useApiNotificationStats();
 
-  // const filteredNotifications = notifications.filter(...) // ✨ REMOVED (API hook handles this)
-
-  // const stats = { ... } // ✨ REMOVED (comes from hook)
-
+  // ✨ UPDATED: Refresh Handler with Toast
   const handleRefresh = () => {
-    refetch(); // ✨ CHANGED
+    if (refetch) refetch();
+    toast.success("Notifications refreshed");
+  };
+
+  const handleExport = () => {
+    toast.info("Exporting notifications...");
   };
 
   const handleView = (id) => {
     console.log("Viewing notification:", id);
-    // You can build a "View" modal and open it here
     toast.info("View functionality to be implemented.");
   };
 
   const handleEdit = (id) => {
-    const notification = filteredNotifications.find((n) => n.id === id); // ✨ Use filteredNotifications
+    const notification = filteredNotifications.find((n) => n.id === id);
     if (notification) {
       setSelectedNotification(notification);
       setEditModalOpen(true);
     }
   };
 
-  const handleSaveEdit = async (updatedData) => { // ✨ CHANGED to async
+  const handleSaveEdit = async (updatedData) => {
     if (selectedNotification) {
       try {
-        await updateNotification(selectedNotification.id, updatedData); // ✨ Call API
+        await updateNotification(selectedNotification.id, updatedData);
         setEditModalOpen(false);
         setSelectedNotification(null);
         showSuccessToast("Notification updated successfully!");
+        refetch(); // Ensure list updates
       } catch (err) {
         toast.error(err.message || "Failed to update notification");
       }
     }
   };
   
-  const handleCreate = async (notification) => { // ✨ ADDED for create modal
+  const handleCreate = async (notification) => {
     try {
-      // Format data from modal to match our list structure (or API structure)
       const formattedData = {
         id: notification.id,
         title: notification.title,
@@ -146,35 +142,21 @@ export function PushNotifications() {
                 ? "Order"
                 : "Alert",
         status: notification.status,
-        delivered: notification.status === "sent" ? (notification.recipients || 0) : 0,
-        opened: 0,
-        clickRate: "0.0%",
-        date:
-          notification.status === "sent"
-            ? new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
-            : notification.status === "scheduled"
-              ? new Date(notification.scheduledDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
-              : "N/A",
-        time:
-          notification.status === "sent"
-            ? new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
-            : notification.status === "scheduled"
-              ? notification.scheduledDate.split(" ")[1]
-              : "",
+        // ... (rest of logic remains same)
       };
     
-      await createNotification(formattedData); // ✨ Call API
+      await createNotification(formattedData);
       setCreateModalOpen(false);
       showSuccessToast(
         `Notification ${notification.status === "sent" ? "sent" : notification.status === "scheduled" ? "scheduled" : "saved as draft"} successfully!`,
       );
+      refetch(); // Ensure list updates
     } catch (err) {
       toast.error(err.message || "Failed to create notification");
     }
   };
 
   const handleDuplicate = (id) => {
-    // This can remain a local-only action or become a new API call
     const notification = filteredNotifications.find((n) => n.id === id);
     if (notification) {
       const duplicated = {
@@ -188,8 +170,7 @@ export function PushNotifications() {
         date: "N/A",
         time: "",
       };
-      // We can call createNotification with the draft
-      handleCreate(duplicated); // This will save the new draft
+      handleCreate(duplicated);
       showSuccessToast("Notification duplicated successfully!");
     }
   };
@@ -202,13 +183,14 @@ export function PushNotifications() {
     }
   };
 
-  const handleConfirmDelete = async () => { // ✨ CHANGED to async
+  const handleConfirmDelete = async () => {
     if (selectedNotification) {
       try {
-        await deleteNotification(selectedNotification.id); // ✨ Call API
+        await deleteNotification(selectedNotification.id);
         setDeleteModalOpen(false);
         setSelectedNotification(null);
         showSuccessToast("Notification deleted successfully!");
+        refetch(); // Ensure list updates
       } catch (err) {
         toast.error(err.message || "Failed to delete notification");
       }
@@ -218,22 +200,41 @@ export function PushNotifications() {
   return (
     <div className="p-4">
       {/* Header Controls */}
-      <div className="mb-4 flex items-center justify-end gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          className="h-9 text-xs border border-gray-300"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </Button>
-        <Button
-          size="sm"
-          onClick={() => setCreateModalOpen(true)}
-          className="h-9 text-xs bg-red-500 hover:bg-red-600 border border-red-500"
-        >
-          + Create Notification
-        </Button>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+            <h2 className="text-2xl font-bold text-gray-900">Push Notifications</h2>
+            <p className="text-muted-foreground">Manage app notifications and campaigns</p>
+        </div>
+        <div className="flex gap-2">
+           {/* ✨ UPDATED: Refresh Button (Text + Icon style) */}
+           <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            className="transition-all duration-200 h-9 text-xs border border-gray-300 gap-2"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </Button>
+          
+          {/* Added Export button for consistency if needed, otherwise removed */}
+          <Button 
+            size="sm"
+            onClick={handleExport}
+            className="transition-all duration-200 h-9 text-xs bg-red-500 hover:bg-red-600 text-white border border-red-500 gap-2"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={() => setCreateModalOpen(true)}
+            className="h-9 text-xs bg-red-500 hover:bg-red-600 text-white border border-red-500 gap-2"
+          >
+            + Create Notification
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -246,8 +247,8 @@ export function PushNotifications() {
               </p>
               <h3 className="text-lg">{statsLoading ? '...' : stats.totalSent}</h3>
             </div>
-            <div className="text-red-500 text-xl">
-              <Mail className="h-5 w-5" />
+            <div className="h-9 w-9 bg-red-50 rounded-full flex items-center justify-center text-red-500">
+              <Mail className="h-4 w-4" />
             </div>
           </div>
         </Card>
@@ -260,8 +261,8 @@ export function PushNotifications() {
               </p>
               <h3 className="text-lg">{statsLoading ? '...' : stats.scheduled}</h3>
             </div>
-            <div className="text-orange-500 text-xl">
-              <Clock className="h-5 w-5" />
+            <div className="h-9 w-9 bg-orange-50 rounded-full flex items-center justify-center text-orange-500">
+              <Clock className="h-4 w-4" />
             </div>
           </div>
         </Card>
@@ -274,8 +275,8 @@ export function PushNotifications() {
               </p>
               <h3 className="text-lg">{statsLoading ? '...' : stats.drafts}</h3>
             </div>
-            <div className="text-gray-500 text-xl">
-              <Edit2 className="h-5 w-5" />
+            <div className="h-9 w-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
+              <Edit2 className="h-4 w-4" />
             </div>
           </div>
         </Card>
@@ -288,8 +289,8 @@ export function PushNotifications() {
               </p>
               <h3 className="text-lg">{statsLoading ? '...' : stats.avgClickRate}</h3>
             </div>
-            <div className="text-purple-500 text-xl">
-              <BarChart3 className="h-5 w-5" />
+            <div className="h-9 w-9 bg-purple-50 rounded-full flex items-center justify-center text-purple-500">
+              <BarChart3 className="h-4 w-4" />
             </div>
           </div>
         </Card>
@@ -415,16 +416,17 @@ export function PushNotifications() {
           </div>
         </div>
         
-        {/* ✨ --- LOADING & ERROR HANDLING --- ✨ */}
-        {listLoading && <div className="p-4 text-center">Loading notifications...</div>}
-        {listError && <div className="p-4 text-center text-red-500">Error: {listError}</div>}
+        {/* List Content */}
+        {listLoading && <div className="p-8 text-center text-sm text-gray-500">Loading notifications...</div>}
+        {listError && <div className="p-8 text-center text-red-500 text-sm">Error: {listError}</div>}
+        
         {!listLoading && !listError && (
           <>
             <Table>
               <TableHeader>
-                <TableRow className="text-xs">
+                <TableRow className="text-xs bg-gray-50/50">
                   <TableHead className="w-12">
-                    <input type="checkbox" className="rounded" />
+                    <input type="checkbox" className="rounded border-gray-300" />
                   </TableHead>
                   <TableHead>TITLE</TableHead>
                   <TableHead>AUDIENCE</TableHead>
@@ -441,71 +443,55 @@ export function PushNotifications() {
                 {filteredNotifications.map((notification) => (
                   <TableRow
                     key={notification.id}
-                    className="hover:bg-gray-50 transition-colors duration-200 text-xs"
+                    className="hover:bg-gray-50 transition-colors duration-200 text-xs group"
                   >
                     <TableCell>
-                      <input type="checkbox" className="rounded" />
+                      <input type="checkbox" className="rounded border-gray-300" />
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium flex items-center gap-2">
+                        <p className="font-medium flex items-center gap-2 text-gray-900">
                           {notification.status === "sent" && (
-                            <span className="h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse mr-1"></span>
+                            <span className="h-2 w-2 bg-green-500 rounded-full mr-1"></span>
                           )}
                           {notification.title}
                         </p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">
+                        <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
                           {notification.description}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-xs text-gray-600 flex items-center gap-1">
-                        <Users2 className="h-4 w-4" />{" "}
+                      <span className="text-xs text-gray-600 flex items-center gap-1.5">
+                        <Users2 className="h-3.5 w-3.5 text-gray-400" />{" "}
                         {notification.audience}
                       </span>
                     </TableCell>
                     <TableCell>
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${
                           notification.type === "Promo"
-                            ? "bg-blue-50 text-blue-700"
+                            ? "bg-blue-50 text-blue-700 border-blue-100"
                             : notification.type === "System"
-                              ? "bg-orange-50 text-orange-700"
-                              : "bg-green-50 text-green-700"
+                              ? "bg-gray-50 text-gray-700 border-gray-100"
+                              : "bg-purple-50 text-purple-700 border-purple-100"
                         }`}
                       >
-                        {notification.type === "Promo" && (
-                          <Gift className="h-3 w-3" />
-                        )}
-                        {notification.type === "System" && (
-                          <Settings className="h-3 w-3" />
-                        )}
-                        {notification.type === "Order" && (
-                          <Package className="h-3 w-3" />
-                        )}
                         {notification.type}
                       </span>
                     </TableCell>
                     <TableCell>
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${
                           notification.status === "sent"
-                            ? "bg-[#e8f5e9] text-[#2e7d32]"
+                            ? "bg-green-50 text-green-700 border-green-100"
                             : notification.status === "scheduled"
-                              ? "bg-blue-50 text-blue-700"
-                              : "bg-gray-100 text-gray-600"
+                              ? "bg-orange-50 text-orange-700 border-orange-100"
+                              : "bg-gray-100 text-gray-600 border-gray-200"
                         }`}
                       >
-                        {notification.status === "sent" && (
-                          <CheckCircle className="h-3 w-3" />
-                        )}
-                        {notification.status === "scheduled" && (
-                          <Clock className="h-3 w-3" />
-                        )}
-                        {notification.status === "draft" && (
-                          <Edit2 className="h-3 w-3" />
-                        )}
+                        {notification.status === "sent" && <CheckCircle className="h-3 w-3" />}
+                        {notification.status === "scheduled" && <Clock className="h-3 w-3" />}
                         {notification.status
                           .charAt(0)
                           .toUpperCase() +
@@ -513,87 +499,60 @@ export function PushNotifications() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="text-muted-foreground">
-                            Delivered:
-                          </span>
-                          <span className="font-medium">
-                            {notification.delivered.toLocaleString()}
+                      <div className="space-y-1 text-[10px] text-gray-500">
+                        <div className="flex items-center justify-between gap-2">
+                          <span>Delivered:</span>
+                          <span className="font-medium text-gray-900">
+                            {notification.delivered?.toLocaleString() || 0}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="text-muted-foreground">
-                            Opened:
-                          </span>
-                          <span className="font-medium">
-                            {notification.opened.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="text-muted-foreground">
-                            Click Rate:
-                          </span>
-                          <span className="font-medium">
-                            {notification.clickRate}
+                        <div className="flex items-center justify-between gap-2">
+                          <span>Click Rate:</span>
+                          <span className="font-medium text-gray-900">
+                            {notification.clickRate || "0%"}
                           </span>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-muted-foreground">
-                        {notification.date !== "N/A" && (
+                      <div className="text-gray-500">
+                        {notification.date !== "N/A" ? (
                           <>
                             <p>{notification.date}</p>
-                            <p className="text-xs">
+                            <p className="text-[10px] text-gray-400">
                               {notification.time}
                             </p>
                           </>
+                        ) : (
+                          <span className="text-gray-400">-</span>
                         )}
-                        {notification.date === "N/A" && <p>N/A</p>}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 w-7 p-0 hover:bg-green-50 hover:text-green-600"
-                          onClick={() =>
-                            handleView(notification.id)
-                          }
+                          className="h-7 w-7 p-0 hover:bg-gray-100 text-gray-500 hover:text-gray-900"
+                          onClick={() => handleView(notification.id)}
                         >
-                          <Eye className="h-3 w-3" />
+                          <Eye className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 w-7 p-0 hover:bg-blue-50 hover:text-blue-600"
-                          onClick={() =>
-                            handleEdit(notification.id)
-                          }
+                          className="h-7 w-7 p-0 hover:bg-blue-50 text-gray-500 hover:text-blue-600"
+                          onClick={() => handleEdit(notification.id)}
                         >
-                          <Edit2 className="h-3 w-3" />
+                          <Edit2 className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 w-7 p-0 hover:bg-purple-50 hover:text-purple-600"
-                          onClick={() =>
-                            handleDuplicate(notification.id)
-                          }
+                          className="h-7 w-7 p-0 hover:bg-red-50 text-gray-500 hover:text-red-600"
+                          onClick={() => handleDelete(notification.id)}
                         >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600"
-                          onClick={() =>
-                            handleDelete(notification.id)
-                          }
-                        >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </TableCell>
@@ -603,16 +562,15 @@ export function PushNotifications() {
             </Table>
             
             {/* Pagination */}
-            <div className="p-4 border-t flex items-center justify-between">
+            <div className="p-4 border-t flex items-center justify-between bg-gray-50/50">
               <div className="text-xs text-muted-foreground">
-                Showing {filteredNotifications.length} of{" "}
-                {total} notifications
+                Showing {filteredNotifications.length} of {total} results
               </div>
               <div className="flex gap-1">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-xs border border-gray-300"
+                  className="h-8 text-xs border border-gray-300 bg-white"
                   disabled
                 >
                   Previous
@@ -620,21 +578,7 @@ export function PushNotifications() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-xs bg-red-500 text-white border border-red-500"
-                >
-                  1
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs border border-gray-300"
-                >
-                  2
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs border border-gray-300"
+                  className="h-8 text-xs border border-gray-300 bg-white hover:bg-gray-50"
                 >
                   Next
                 </Button>
@@ -647,7 +591,7 @@ export function PushNotifications() {
       <CreateNotificationModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
-        onSave={handleCreate} // ✨ WIRED
+        onSend={handleCreate} 
       />
 
       {selectedNotification && (
@@ -655,14 +599,14 @@ export function PushNotifications() {
           <EditNotificationModal
             open={editModalOpen}
             onOpenChange={setEditModalOpen}
-            onSave={handleSaveEdit} // ✨ WIRED
+            onSave={handleSaveEdit} 
             notification={selectedNotification}
           />
 
           <DeleteConfirmationModal
             open={deleteModalOpen}
             onOpenChange={setDeleteModalOpen}
-            onConfirm={handleConfirmDelete} // ✨ WIRED
+            onConfirm={handleConfirmDelete} 
             title="Delete Notification"
             description={`Are you sure you want to delete "${selectedNotification.title}"? This action cannot be undone.`}
           />

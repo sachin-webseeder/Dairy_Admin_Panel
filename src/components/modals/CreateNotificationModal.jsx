@@ -1,494 +1,223 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { useState, useRef } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Checkbox } from '../ui/checkbox';
-import { Upload, Bell, Battery, Wifi, Signal } from 'lucide-react';
-import { branches } from '../../lib/mockData';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Bell, Upload, X } from 'lucide-react';
+import { toast } from 'sonner';
 
-export function CreateNotificationModal({ open, onOpenChange, onSave }) {
+export function CreateNotificationModal({ open, onOpenChange, onSend }) {
   const [activeTab, setActiveTab] = useState('create');
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
-  const [type, setType] = useState('promotional');
-  const [targetAudience, setTargetAudience] = useState('all');
-  const [image, setImage] = useState(null);
-  const [selectedRoles, setSelectedRoles] = useState([]);
-  const [selectedBranches, setSelectedBranches] = useState([]);
-  const [deliveryMode, setDeliveryMode] = useState('send-now');
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [scheduledTime, setScheduledTime] = useState('');
-  const [recurring, setRecurring] = useState('none');
+  const [imagePreview, setImagePreview] = useState('');
+  const fileInputRef = useRef(null);
+  
+  const [formData, setFormData] = useState({
+    title: '',
+    message: '',
+    type: 'Promotional',
+    targetAudience: 'All Users',
+    image: null
+  });
 
-  const handleImageUpload = (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+      setFormData(prev => ({ ...prev, image: file }));
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  const handleRoleToggle = (role) => {
-    setSelectedRoles(prev =>
-      prev.includes(role)
-        ? prev.filter(r => r !== role)
-        : [...prev, role]
-    );
+  const handleRemoveImage = () => {
+    setFormData(prev => ({ ...prev, image: null }));
+    setImagePreview('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleBranchToggle = (branchId) => {
-    setSelectedBranches(prev =>
-      prev.includes(branchId)
-        ? prev.filter(b => b !== branchId)
-        : [...prev, branchId]
-    );
-  };
-
-  const handleSendNow = () => {
-    const notification = {
-      id: Date.now().toString(),
-      title,
-      message,
-      type,
-      targetAudience,
-      selectedRoles,
-      selectedBranches,
-      image,
-      status: 'sent',
-      sentDate: new Date().toISOString(),
-      recipients: calculateRecipients()
-    };
-    
-    if (onSave) {
-      onSave(notification);
+  const handleSubmit = () => {
+    if (!formData.title || !formData.message) {
+      toast.error("Title and Message are required");
+      return;
     }
-    
-    handleCancel();
-  };
-
-  const handleSchedule = () => {
-    const notification = {
-      id: Date.now().toString(),
-      title,
-      message,
-      type,
-      targetAudience,
-      selectedRoles,
-      selectedBranches,
-      image,
-      status: 'scheduled',
-      scheduledDate: `${scheduledDate} ${scheduledTime}`,
-      recurring,
-      recipients: calculateRecipients()
-    };
-    
-    if (onSave) {
-      onSave(notification);
-    }
-    
-    handleCancel();
-  };
-
-  const handleSaveDraft = () => {
-    const notification = {
-      id: Date.now().toString(),
-      title,
-      message,
-      type,
-      targetAudience,
-      selectedRoles,
-      selectedBranches,
-      image,
-      status: 'draft',
-      savedDate: new Date().toISOString(),
-      recipients: calculateRecipients()
-    };
-    
-    if (onSave) {
-      onSave(notification);
-    }
-    
-    handleCancel();
-  };
-
-  const calculateRecipients = () => {
-    // This would calculate based on actual user data in production
-    if (targetAudience === 'all') return 1250;
-    if (targetAudience === 'branches') return selectedBranches.length * 50;
-    if (targetAudience === 'role') return selectedRoles.length * 100;
-    if (targetAudience === 'specific-customers') return 0;
-    return 0;
-  };
-
-  const handleCancel = () => {
-    setTitle('');
-    setMessage('');
-    setType('promotional');
-    setTargetAudience('all');
-    setImage(null);
-    setSelectedRoles([]);
-    setSelectedBranches([]);
-    setDeliveryMode('send-now');
-    setScheduledDate('');
-    setScheduledTime('');
-    setRecurring('none');
-    setActiveTab('create');
+    // Handle the send action (assuming parent passes onSend)
+    if (onSend) onSend(formData);
     onOpenChange(false);
-  };
-
-  const isFormValid = () => {
-    if (!title || !message) return false;
-    if (deliveryMode === 'schedule' && (!scheduledDate || !scheduledTime)) return false;
-    return true;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="border-b pb-4">
-          <DialogTitle className="text-xs">Create New Notification</DialogTitle>
-          <DialogDescription className="sr-only">
-            Create and send push notifications to users
-          </DialogDescription>
-        </DialogHeader>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-white border-b">
-            <TabsTrigger 
-              value="create" 
-              className="text-xs data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none"
+      <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] flex flex-col p-0 gap-0 bg-white rounded-xl overflow-hidden shadow-2xl">
+        
+        {/* Header */}
+        {/* ✨ FIX: Changed to flex-col and added padding/spacing for stacked layout */}
+        <div className="px-6 py-4 border-b bg-gray-50 flex-shrink-0 flex flex-col items-start">
+          <DialogTitle className="text-xl font-bold text-gray-900">Create New Notification</DialogTitle>
+          
+          {/* Custom Tabs - Stacked below title */}
+          <div className="flex bg-gray-200 p-1 rounded-lg mt-4">
+            <button
+              onClick={() => setActiveTab('create')}
+              className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                activeTab === 'create' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
             >
               Create
-            </TabsTrigger>
-            <TabsTrigger 
-              value="preview" 
-              className="text-xs data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none"
+            </button>
+            <button
+              onClick={() => setActiveTab('preview')}
+              className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                activeTab === 'preview' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
             >
               Preview
-            </TabsTrigger>
-          </TabsList>
+            </button>
+          </div>
+        </div>
 
-          {/* Create Tab */}
-          <TabsContent value="create" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-xs">
-                Title <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="title"
-                placeholder="Enter notification title"
-                className="text-xs h-9"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="message" className="text-xs">
-                Message <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="message"
-                placeholder="Enter notification message"
-                className="text-xs min-h-[100px] resize-none"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="type" className="text-xs">Type</Label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger className="text-xs h-9">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="promotional" className="text-xs">Promotional</SelectItem>
-                  <SelectItem value="system" className="text-xs">System</SelectItem>
-                  <SelectItem value="order" className="text-xs">Order</SelectItem>
-                  <SelectItem value="alert" className="text-xs">Alert</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs">Image (Optional)</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
-                <input
-                  type="file"
-                  id="image-upload"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
+        {/* Content Body */}
+        <div className="flex-1 overflow-y-auto p-6 bg-white">
+          
+          {/* CREATE TAB */}
+          <div className={activeTab === 'create' ? 'block' : 'hidden'}>
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label>Title <span className="text-red-500">*</span></Label>
+                <Input 
+                  placeholder="Enter notification title" 
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  className="bg-gray-50 border-gray-200"
                 />
-                <label htmlFor="image-upload" className="cursor-pointer">
-                  <div className="text-blue-500 text-xs mb-1">Upload Image</div>
-                  {image && (
-                    <div className="mt-2">
-                      <img src={image} alt="Preview" className="max-h-32 mx-auto rounded" />
-                    </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Message <span className="text-red-500">*</span></Label>
+                <Textarea 
+                  placeholder="Enter notification message" 
+                  className="resize-none h-24 bg-gray-50 border-gray-200"
+                  value={formData.message}
+                  onChange={(e) => setFormData({...formData, message: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Select 
+                    value={formData.type} 
+                    onValueChange={(val) => setFormData({...formData, type: val})}
+                  >
+                    <SelectTrigger className="bg-gray-50 border-gray-200"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Promotional">Promotional</SelectItem>
+                      <SelectItem value="System">System Alert</SelectItem>
+                      <SelectItem value="Update">App Update</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Target Audience</Label>
+                  <Select 
+                    value={formData.targetAudience} 
+                    onValueChange={(val) => setFormData({...formData, targetAudience: val})}
+                  >
+                    <SelectTrigger className="bg-gray-50 border-gray-200"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All Users">All Users</SelectItem>
+                      <SelectItem value="Active Users">Active Users (Last 7 days)</SelectItem>
+                      <SelectItem value="Inactive Users">Inactive Users</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Image (Optional)</Label>
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors h-32 relative overflow-hidden group bg-gray-50/50"
+                >
+                  {imagePreview ? (
+                    <>
+                      <img src={imagePreview} alt="Preview" className="h-full w-full object-contain" />
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleRemoveImage(); }}
+                        className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                      <span className="text-xs text-gray-500 font-medium">Click to Upload Image</span>
+                    </>
                   )}
-                </label>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleFileChange} 
+                  />
+                </div>
               </div>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs">Target Audience</Label>
-              <RadioGroup value={targetAudience} onValueChange={setTargetAudience}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="all" id="all-users" className="h-4 w-4" />
-                  <Label htmlFor="all-users" className="text-xs font-normal cursor-pointer">
-                    All Users
-                  </Label>
+          {/* PREVIEW TAB */}
+          <div className={activeTab === 'preview' ? 'flex flex-col items-center justify-center h-full min-h-[420px]' : 'hidden'}>
+             <div className="relative w-[280px] h-[520px] bg-black rounded-[40px] border-8 border-gray-800 shadow-2xl overflow-hidden ring-4 ring-gray-100 transform scale-95">
+                {/* Status Bar Mock */}
+                <div className="absolute top-0 w-full h-8 bg-black text-white flex justify-between px-6 items-center text-[10px] font-medium z-20">
+                  <span>9:41</span>
+                  <span>100%</span>
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="branches" id="specific-branches" className="h-4 w-4" />
-                  <Label htmlFor="specific-branches" className="text-xs font-normal cursor-pointer">
-                    Specific Branches
-                  </Label>
-                </div>
-                {targetAudience === 'branches' && (
-                  <div className="ml-6 mt-2 space-y-2 border-l-2 border-gray-200 pl-4">
-                    {branches.map((branch) => (
-                      <div key={branch.id} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`branch-${branch.id}`}
-                          className="h-4 w-4"
-                          checked={selectedBranches.includes(branch.id)}
-                          onCheckedChange={() => handleBranchToggle(branch.id)}
-                        />
-                        <Label htmlFor={`branch-${branch.id}`} className="text-xs font-normal cursor-pointer">
-                          {branch.name}
-                        </Label>
+                {/* Screen Content */}
+                <div className="w-full h-full bg-gray-100 pt-12 px-3 flex flex-col items-center">
+                   {/* Date Mock */}
+                   <div className="text-gray-400 text-[10px] mb-4 font-medium">Wednesday, 7 June</div>
+
+                   {/* Notification Toast */}
+                   <div className="w-full bg-white/90 backdrop-blur-md rounded-2xl p-3 shadow-lg flex gap-3 animate-in slide-in-from-top-4 duration-500 mb-2">
+                      <div className="h-10 w-10 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0 text-white shadow-sm">
+                        <Bell className="h-5 w-5 fill-current" />
                       </div>
-                    ))}
-                  </div>
-                )}
-                
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="role" id="by-role" className="h-4 w-4" />
-                  <Label htmlFor="by-role" className="text-xs font-normal cursor-pointer">
-                    By Role
-                  </Label>
-                </div>
-                {targetAudience === 'role' && (
-                  <div className="ml-6 mt-2 space-y-2 border-l-2 border-gray-200 pl-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="role-delivery-staff" 
-                        className="h-4 w-4"
-                        checked={selectedRoles.includes('delivery-staff')}
-                        onCheckedChange={() => handleRoleToggle('delivery-staff')}
-                      />
-                      <Label htmlFor="role-delivery-staff" className="text-xs font-normal cursor-pointer">
-                        Delivery Staff
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="role-branch-admins" 
-                        className="h-4 w-4"
-                        checked={selectedRoles.includes('branch-admins')}
-                        onCheckedChange={() => handleRoleToggle('branch-admins')}
-                      />
-                      <Label htmlFor="role-branch-admins" className="text-xs font-normal cursor-pointer">
-                        Branch Admins
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="role-customers" 
-                        className="h-4 w-4"
-                        checked={selectedRoles.includes('customers')}
-                        onCheckedChange={() => handleRoleToggle('customers')}
-                      />
-                      <Label htmlFor="role-customers" className="text-xs font-normal cursor-pointer">
-                        Customers
-                      </Label>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="specific-customers" id="specific-customers" className="h-4 w-4" />
-                  <Label htmlFor="specific-customers" className="text-xs font-normal cursor-pointer">
-                    Specific Customers
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs">Delivery</Label>
-              <RadioGroup value={deliveryMode} onValueChange={setDeliveryMode}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="send-now" id="send-now" className="h-4 w-4" />
-                  <Label htmlFor="send-now" className="text-xs font-normal cursor-pointer">
-                    Send Now
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="schedule" id="schedule" className="h-4 w-4" />
-                  <Label htmlFor="schedule" className="text-xs font-normal cursor-pointer">
-                    Schedule
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="draft" id="draft" className="h-4 w-4" />
-                  <Label htmlFor="draft" className="text-xs font-normal cursor-pointer">
-                    Save as Draft
-                  </Label>
-                </div>
-              </RadioGroup>
-              
-              {deliveryMode === 'schedule' && (
-                <div className="ml-6 mt-2 space-y-3">
-                  <div className="flex gap-2">
-                    <div className="flex-1 space-y-1">
-                      <Label className="text-xs">Date</Label>
-                      <Input
-                        type="date"
-                        className="text-xs h-9"
-                        value={scheduledDate}
-                        onChange={(e) => setScheduledDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <Label className="text-xs">Time</Label>
-                      <Input
-                        type="time"
-                        className="text-xs h-9"
-                        value={scheduledTime}
-                        onChange={(e) => setScheduledTime(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <Label className="text-xs">Recurring</Label>
-                    <Select value={recurring} onValueChange={setRecurring}>
-                      <SelectTrigger className="text-xs h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none" className="text-xs">None</SelectItem>
-                        <SelectItem value="daily" className="text-xs">Daily</SelectItem>
-                        <SelectItem value="weekly" className="text-xs">Weekly</SelectItem>
-                        <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Preview Tab */}
-          <TabsContent value="preview" className="pt-4">
-            <div className="flex items-center justify-center py-8">
-              {/* Mobile Phone Mockup */}
-              <div className="relative w-80 h-[600px] bg-black rounded-[40px] p-3 shadow-2xl">
-                {/* Phone Screen */}
-                <div className="w-full h-full bg-white rounded-[32px] overflow-hidden flex flex-col">
-                  {/* Status Bar */}
-                  <div className="bg-white px-6 pt-3 pb-2 flex items-center justify-between">
-                    <span className="text-xs">
-                      {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false })}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <Signal className="h-3 w-3" />
-                      <Wifi className="h-3 w-3" />
-                      <Battery className="h-3 w-3" />
-                      <span className="text-xs">100%</span>
-                    </div>
-                  </div>
-
-                  {/* Notification */}
-                  <div className="bg-gray-50 p-4 m-4 rounded-xl shadow-md border-l-4 border-blue-500">
-                    <div className="flex items-start gap-3">
-                      {/* App Icon */}
-                      <div className="h-10 w-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Bell className="h-5 w-5 text-white" />
-                      </div>
-                      
-                      {/* Notification Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-600">Your App</span>
-                          <span className="text-xs text-gray-400">now</span>
+                      <div className="flex-1 min-w-0 text-left">
+                        <div className="flex justify-between items-start">
+                          <h4 className="text-xs font-bold text-gray-900 truncate">Dynasty App</h4>
+                          <span className="text-[10px] text-gray-400">now</span>
                         </div>
-                        <h4 className="text-sm mb-1 truncate">
-                          {title || 'Weekend Special Offer!'}
-                        </h4>
-                        <p className="text-xs text-gray-600 line-clamp-2">
-                          {message || 'Get 50% off on all pizzas this weekend. Limited time offer!'}
+                        <p className="text-xs font-semibold text-gray-800 mt-0.5 truncate">{formData.title || "Special Offer!"}</p>
+                        <p className="text-[10px] text-gray-500 leading-tight mt-0.5 line-clamp-2">
+                          {formData.message || "Get 50% off on your next order. Limited time offer!"}
                         </p>
                       </div>
-                    </div>
-                  </div>
+                   </div>
 
-                  {/* Preview Label */}
-                  <div className="flex-1 flex items-center justify-center">
-                    <p className="text-xs text-gray-400">Preview on mobile device</p>
-                  </div>
+                   {/* Mock App Background (Wallpaper) */}
+                   <div className="mt-auto mb-12 opacity-5">
+                      <div className="text-6xl font-bold text-gray-900 text-center">12:30</div>
+                   </div>
                 </div>
+             </div>
+             <p className="text-xs text-gray-400 mt-4 font-medium">Lock Screen Preview</p>
+          </div>
 
-                {/* Phone Notch */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl"></div>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+        </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            className="flex-1 h-9 text-xs"
+        {/* Footer */}
+        <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 flex-shrink-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="h-10">Cancel</Button>
+          <Button 
+            className="bg-red-500 hover:bg-red-600 text-white h-10 px-6" 
+            onClick={handleSubmit}
           >
-            Cancel
+            Send Notification
           </Button>
-          {deliveryMode === 'draft' ? (
-            <Button
-              onClick={handleSaveDraft}
-              className="flex-1 bg-gray-600 hover:bg-gray-700 h-9 text-xs"
-              disabled={!isFormValid()}
-            >
-              Save Draft
-            </Button>
-          ) : deliveryMode === 'schedule' ? (
-            <Button
-              onClick={handleSchedule}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 h-9 text-xs"
-              disabled={!isFormValid()}
-            >
-              Schedule
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSendNow}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 h-9 text-xs"
-              disabled={!isFormValid()}
-            >
-              Send Now
-            </Button>
-          )}
         </div>
       </DialogContent>
     </Dialog>
