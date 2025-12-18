@@ -1,153 +1,194 @@
-import { useState, useCallback, useEffect } from "react";
-import { X, ChevronDown, Check } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "../ui/dialog";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select"; // ✨ NO 'SelectPortal' here
-import { Checkbox } from "../ui/checkbox";
-import { ROLE_PERMISSIONS } from "../../lib/rolePermissions";
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Check, X, Shield } from 'lucide-react';
+import { toast } from 'sonner';
+
+// Permissions list from your controller
+const PANEL_PERMISSIONS = [
+  "dashboard", "inventory", "orders", "delivery", "customers", "reports", 
+  "products", "settings", "userManagement", "profile", "membership", 
+  "analytics", "auditLogs", "billing", "content", "wallet", 
+  "helpSupport", "apiAccess"
+];
 
 export function AddUserModal({ open, onOpenChange, onSave }) {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    password: "",
-    role: "PanelUser",
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    password: '',
+    permissions: ['dashboard', 'orders'] // Default as per controller
   });
 
-  // Initial permissions state
-  const [permissions, setPermissions] = useState({
-    dashboard: false, products: false, categoryManagement: false, orders: false, customers: false,
-    deliveryStaff: false, membership: false,  analytics: false,
-    auditLogs: false, reports: false, userManagement: false, wallet: false,
-    billing: false, notifications: false, contentManagement: false,
-    homepage: false, settings: false, helpSupport: false, integrations: false,
-    apiAccess: false, security: false,
-  });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-  // Update permissions when role changes
-  useEffect(() => {
-    const rolePerms = ROLE_PERMISSIONS[formData.role] || [];
-    setPermissions(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(key => {
-        next[key] = rolePerms.includes(key);
-      });
-      return next;
+  const togglePermission = (permission) => {
+    setFormData(prev => {
+      const current = prev.permissions;
+      if (current.includes(permission)) {
+        return { ...prev, permissions: current.filter(p => p !== permission) };
+      } else {
+        return { ...prev, permissions: [...current, permission] };
+      }
     });
-  }, [formData.role]);
+  };
 
-  const handlePermissionChange = useCallback((key) => {
-    setPermissions((prev) => ({ ...prev, [key]: !prev[key] }));
-  }, []);
+  const toggleAllPermissions = () => {
+    if (formData.permissions.length === PANEL_PERMISSIONS.length) {
+      setFormData(prev => ({ ...prev, permissions: [] }));
+    } else {
+      setFormData(prev => ({ ...prev, permissions: [...PANEL_PERMISSIONS] }));
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const permissionsArray = Object.keys(permissions).filter(key => permissions[key]);
+    
+    // Basic Validation
+    if (!formData.firstName || !formData.email || !formData.phone || !formData.password) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
 
-    const newUser = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      password: formData.password,
-      permissions: permissionsArray,
-      
-      // FIX 1: Send "PanelUser" explicitly so they get panel access
-      role: "PanelUser", 
-
-      // FIX 2: Rename 'isActive' to 'isEnabled' to match Schema
-      isEnabled: true 
-    };
-
-    onSave(newUser);
-    onOpenChange(false);
-    setFormData({ firstName: "", lastName: "", email: "", phone: "", password: "", role: "PanelUser" });
+    // Pass data to parent handler
+    onSave(formData);
+    
+    // Reset form (optional, depending on UX preference)
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      password: '',
+      permissions: ['dashboard', 'orders']
+    });
   };
-
-  const PermissionCheckbox = ({ permissionKey, title }) => (
-    <div className="flex items-center space-x-2">
-      <Checkbox
-        id={permissionKey}
-        checked={permissions[permissionKey]}
-        onCheckedChange={() => handlePermissionChange(permissionKey)}
-        className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-      />
-      <Label htmlFor={permissionKey} className="text-sm font-normal cursor-pointer">
-        {title}
-      </Label>
-    </div>
-  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] bg-white flex flex-col max-h-[90vh] p-0 gap-0 block overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0 bg-white rounded-xl">
         
-        <DialogHeader className="px-6 py-4 border-b bg-white sticky top-0 z-10">
-          <DialogTitle className="text-base font-medium">Add New User</DialogTitle>
-          <DialogDescription className="sr-only">Create a new user.</DialogDescription>
-        </DialogHeader>
+        {/* Header */}
+        <div className="px-6 py-4 border-b bg-gray-50 flex-shrink-0">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Add New Panel User</DialogTitle>
+            <DialogDescription className="text-sm text-gray-500">
+              Create a new staff account with specific permissions.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 p-6">
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label htmlFor="firstName">First Name</Label><Input id="firstName" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} required /></div>
-              <div className="space-y-2"><Label htmlFor="lastName">Last Name</Label><Input id="lastName" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} required /></div>
-            </div>
-            <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required /></div>
-            <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required /></div>
-            <div className="space-y-2"><Label htmlFor="password">Password</Label><Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required /></div>
+        {/* Scrollable Form Body */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <form id="add-user-form" onSubmit={handleSubmit} className="space-y-6">
             
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={formData.role} onValueChange={(value) => {console.log('Selected Role:', value); setFormData({ ...formData, role: value });}}>
-                <SelectTrigger id="role"><SelectValue placeholder="Select a role" /></SelectTrigger>
-                {/* ✨ FIX: Z-Index [9999] makes it clickable */}
-                <SelectContent className="z-[9999]">
-                  <SelectItem value="Super Admin">Super Admin</SelectItem>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="PanelUser">Panel User</SelectItem>
-                  <SelectItem value="Customer">Customer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Personal Details */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <span className="h-6 w-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs">1</span>
+                Personal Information
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+                  <Input id="firstName" name="firstName" placeholder="e.g. John" value={formData.firstName} onChange={handleChange} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input id="lastName" name="lastName" placeholder="e.g. Doe" value={formData.lastName} onChange={handleChange} />
+                </div>
+              </div>
 
-            <div className="space-y-3">
-              <Label className="text-base font-medium">Permissions</Label>
-              <div className="grid grid-cols-2 gap-3 p-4 border rounded-lg bg-gray-50">
-                <PermissionCheckbox permissionKey="dashboard" title="Dashboard" />
-                <PermissionCheckbox permissionKey="products" title="Products" />
-                {/* ✨ ADDED: Category Management permission */}
-                <PermissionCheckbox permissionKey="categoryManagement" title="Category Management" />
-                <PermissionCheckbox permissionKey="orders" title="Orders" />
-                <PermissionCheckbox permissionKey="customers" title="Customers" />
-                <PermissionCheckbox permissionKey="userManagement" title="User Management" />
-                <PermissionCheckbox permissionKey="settings" title="Settings" />
-                <PermissionCheckbox permissionKey="reports" title="Reports" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+                  <Input id="email" name="email" type="email" placeholder="john@example.com" value={formData.email} onChange={handleChange} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
+                  <Input id="phone" name="phone" placeholder="+91 9876543210" value={formData.phone} onChange={handleChange} required />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+                <Input id="password" name="password" type="password" placeholder="••••••••" value={formData.password} onChange={handleChange} required />
               </div>
             </div>
-          </div>
-          
-          <div className="mt-6 pt-4 border-t flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Add User</Button>
-          </div>
-        </form>
+
+            <div className="h-px bg-gray-100 my-2" />
+
+            {/* Permissions */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <span className="h-6 w-6 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-xs">2</span>
+                  Access Permissions
+                </h3>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={toggleAllPermissions}
+                  className="text-xs h-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                >
+                  {formData.permissions.length === PANEL_PERMISSIONS.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {PANEL_PERMISSIONS.map((perm) => {
+                  const isSelected = formData.permissions.includes(perm);
+                  // Format permission name (camelCase to Title Case)
+                  const label = perm.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                  
+                  return (
+                    <div 
+                      key={perm}
+                      onClick={() => togglePermission(perm)}
+                      className={`
+                        flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all duration-200 select-none
+                        ${isSelected 
+                          ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                          : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'}
+                      `}
+                    >
+                      <div className={`
+                        h-5 w-5 rounded border flex items-center justify-center transition-colors
+                        ${isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white border-gray-300'}
+                      `}>
+                        {isSelected && <Check className="h-3.5 w-3.5" />}
+                      </div>
+                      <span className={`text-xs font-medium ${isSelected ? 'text-blue-700' : 'text-gray-600'}`}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 flex-shrink-0">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" form="add-user-form" className="bg-red-500 hover:bg-red-600 text-white px-6">
+            Create User
+          </Button>
+        </div>
+
       </DialogContent>
     </Dialog>
   );

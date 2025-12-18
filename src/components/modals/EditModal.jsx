@@ -67,21 +67,21 @@ export function EditModal({ open, onOpenChange, onSave, title, data, fields }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* ✨ FIX: Added p-1 to outer container to prevent focus ring clipping */}
-      <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] p-0 flex flex-col bg-white rounded-xl shadow-2xl my-4">
+      {/* ✨ FIX: Updated container styling to match reference image */}
+      <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] p-0 flex flex-col bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden my-4">
         
-        {/* Header */}
-        <div className="px-8 py-5 border-b bg-gray-50/80 backdrop-blur-sm flex-shrink-0 z-10 rounded-t-xl">
+        {/* ✨ FIX: Header with gray background and border */}
+        <div className="px-6 py-4 border-b bg-gray-50 flex-shrink-0">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">{title}</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-gray-900">{title}</DialogTitle>
             <DialogDescription className="text-sm text-gray-500 mt-1">
               Update the product details below.
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        {/* Scrollable Form Body */}
-        <div className="flex-1 overflow-y-auto p-8">
+        {/* ✨ FIX: Increased padding for form content */}
+        <div className="flex-1 overflow-y-auto p-6">
           <form id="edit-form" onSubmit={handleSubmit} className="grid grid-cols-2 gap-x-6 gap-y-6">
             {fields.map((field) => {
               const half = isHalfWidth(field);
@@ -157,12 +157,12 @@ export function EditModal({ open, onOpenChange, onSave, title, data, fields }) {
           </form>
         </div>
 
-        {/* Footer */}
-        <div className="px-8 py-5 border-t bg-gray-50 flex justify-end gap-3 flex-shrink-0 rounded-b-xl">
+        {/* ✨ FIX: Footer with gray background and border */}
+        <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 flex-shrink-0">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-10 px-5 text-gray-700">
             Cancel
           </Button>
-          <Button type="submit" form="edit-form" className="bg-red-500 hover:bg-red-600 text-white h-10 px-8 font-medium shadow-sm transition-all hover:shadow-md">
+          <Button type="submit" form="edit-form" className="bg-red-500 hover:bg-red-600 text-white h-10 px-6 font-medium shadow-sm transition-all hover:shadow-md">
             Save Changes
           </Button>
         </div>

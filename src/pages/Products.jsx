@@ -81,49 +81,70 @@ export function Products() {
 
   const handleUpdateProduct = async (updatedData) => {
     if (!selectedProduct) return;
-
-    // ✨ FIX: Robust ID check (handles _id or id)
+    
+    // 1. Validate ID
     const productId = selectedProduct._id || selectedProduct.id;
     if (!productId) {
         toast.error("Error: Product ID is missing");
         return;
     }
 
+    const toastId = toast.loading("Updating product...");
+
     try {
       const payload = new FormData();
 
-      // ✨ FIX: Send both 'name' and 'dishName' to ensure backend accepts it
+      // 2. Prepare Name
       const name = updatedData.dishName || updatedData.name;
       if (name) {
           payload.append('dishName', name.trim());
           payload.append('name', name.trim());
       }
 
-      // ✨ FIX: Always append these fields if they exist in the form data
-      if (updatedData.category) payload.append('category', updatedData.category);
-      if (updatedData.price !== undefined) payload.append('price', updatedData.price);
-      if (updatedData.originalPrice !== undefined) payload.append('originalPrice', updatedData.originalPrice);
-      if (updatedData.cost !== undefined) payload.append('cost', updatedData.cost);
-      if (updatedData.stock !== undefined) payload.append('stock', updatedData.stock);
-      if (updatedData.volume) payload.append('volume', updatedData.volume);
+      // 3. Prepare other fields (Convert to string explicitly to be safe)
+      if (updatedData.category) payload.append('category', String(updatedData.category));
       
+      // ✨ FORCE NUMBERS: Ensure we send the new price values
+      if (updatedData.price !== undefined && updatedData.price !== null) {
+          payload.append('price', String(updatedData.price));
+      }
+      if (updatedData.originalPrice !== undefined && updatedData.originalPrice !== null) {
+          payload.append('originalPrice', String(updatedData.originalPrice));
+      }
+      if (updatedData.cost !== undefined && updatedData.cost !== null) {
+          payload.append('cost', String(updatedData.cost));
+      }
+      if (updatedData.stock !== undefined && updatedData.stock !== null) {
+          payload.append('stock', String(updatedData.stock));
+      }
+      if (updatedData.volume) payload.append('volume', String(updatedData.volume));
+      
+      // 4. Handle Image
       if (updatedData.image instanceof File) {
         payload.append('image', updatedData.image);
       }
 
+      // 5. Send Request
       await updateProduct(productId, payload);
 
+      toast.dismiss(toastId);
       showSuccessToast('Product updated successfully!');
 
-      // ✨ Refresh data immediately and then again after a delay to ensure sync
-      if (refetch) refetch();
-      setTimeout(() => {
-          if (refetch) refetch();
-      }, 500);
-
+      // 6. ✨ Aggressive Refresh Strategy
+      // Update UI immediately (close modal)
       setEditModalOpen(false);
       setSelectedProduct(null);
+
+      // Fetch immediately
+      if (refetch) refetch();
+      
+      // Fetch again after 1.5 seconds to catch slow database writes
+      setTimeout(() => {
+          if (refetch) refetch();
+      }, 1500);
+
     } catch (err) {
+      toast.dismiss(toastId);
       console.error("Update failed:", err);
       toast.error(err.message || 'Failed to update product');
     }
@@ -176,7 +197,6 @@ export function Products() {
       </div>
 
       <Card className="p-6 bg-gray-50/50 border-none shadow-none">
-        {/* ✨ FIX: Reduced bottom margin (mb-2) to bring list closer */}
         <div className="space-y-4 mb-2">
           <div className="flex items-center gap-4 bg-white p-4 rounded-lg border shadow-sm">
             <div className="relative flex-1">
@@ -216,7 +236,6 @@ export function Products() {
           )}
         </div>
 
-        {/* ✨ FIX: Reduced top margin (mt-2) to reduce gap */}
         {!productsLoading && !productsError && sortedProducts.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-2">
             {sortedProducts.map((product) => {
@@ -240,6 +259,7 @@ export function Products() {
                       </h3>
                       <p className="text-xs text-gray-500 capitalize mb-2 truncate">{categoryName}</p>
                       <div className="flex items-center justify-between mt-3">
+                        {/* ✨ Display Price */}
                         <span className="text-2xl font-bold text-gray-900">₹{product.price || 0}</span>
                       </div>
                     </div>

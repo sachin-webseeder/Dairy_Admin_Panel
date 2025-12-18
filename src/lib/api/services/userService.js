@@ -1,42 +1,30 @@
 import { apiClient } from '../client';
-import { API_ENDPOINTS, buildUrl } from '../config';
+// Removed API_ENDPOINTS import as we are using hardcoded paths for the new backend structure
 
 export const userService = {
-  /**
-   * Get all panel users
-   */
-  async getUsers(filters) {
-    return apiClient.get(API_ENDPOINTS.USERS.LIST, filters);
+  // GET all panel users
+  // The backend returns: { success: true, users: [...], stats: {...} }
+  getUsers: async () => {
+    // ✨ FIX: Removed .data because apiClient interceptor likely handles it
+    return apiClient.get('/users/panel-users'); 
   },
 
-  /**
-   * Create a new panel user
-   */
-  async createUser(userData) {
-    // userData: { firstName, lastName, email, phone, password, permissions: [] }
-    return apiClient.post(API_ENDPOINTS.USERS.CREATE, userData);
+  // CREATE a new panel user
+  // Payload expects: { firstName, lastName, email, phone, password, permissions }
+  createUser: async (userData) => {
+    // ✨ FIX: Removed .data
+    return apiClient.post('/users/panel-users', userData);
   },
 
-  /**
-   * Update a panel user
-   */
-  async updateUser(id, userData) {
-    // userData: { permissions: [], isActive: true/false, ... }
-    return apiClient.put(buildUrl(API_ENDPOINTS.USERS.UPDATE, { id }), userData);
+  // UPDATE panel user
+  updateUser: async (id, userData) => {
+    // ✨ FIX: Removed .data
+    return apiClient.put(`/users/panel-users/${id}`, userData);
   },
 
-  /**
-   * Delete a panel user
-   */
-  async deleteUser(id) {
-    return apiClient.delete(buildUrl(API_ENDPOINTS.USERS.DELETE, { id }));
-  },
-  
-  /**
-   * Toggle user status (using update)
-   */
-  async toggleUserStatus(id, currentStatus) {
-    const isActive = currentStatus === 'active' ? false : true; // Backend expects boolean
-    return apiClient.put(buildUrl(API_ENDPOINTS.USERS.UPDATE, { id }), { isActive });
+  // DELETE panel user
+  deleteUser: async (id) => {
+    // ✨ FIX: Removed .data
+    return apiClient.delete(`/users/panel-users/${id}`);
   }
 };
