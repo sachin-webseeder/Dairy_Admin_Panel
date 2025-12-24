@@ -1,182 +1,172 @@
-import { X, ShoppingBag, User, CreditCard, Package, MapPin, Calendar, Crown } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Badge } from '../ui/badge';
-// Removed type import: import { Order } from '../../types';
-import { customers } from '../../lib/mockData';
-
-// Removed TypeScript interface: OrderDetailsModalProps
+import { Button } from '../ui/button';
+import { Separator } from '../ui/separator'; 
+import { MapPin, Phone, User, CreditCard, Package } from 'lucide-react'; // Removed X import
 
 export function OrderDetailsModal({ open, onOpenChange, order }) {
-  // Get customer membership from customers data
-  const customer = customers.find(c => c.name === order.customerName);
-  const membershipTierName = customer?.membershipTier === 1 ? 'Gold' : customer?.membershipTier === 2 ? 'Silver' : 'Bronze';
-  
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-        return { backgroundColor: '#e8f5e9', color: '#2e7d32' };
-      case 'pending':
-        return { backgroundColor: '#fff3e0', color: '#e65100' };
-      case 'cancelled':
-        return { backgroundColor: '#f5f5f5', color: '#616161' };
-      default:
-        return { backgroundColor: '#e3f2fd', color: '#1565c0' };
-    }
-  };
+  if (!order) return null;
 
-  const getMembershipColor = (membership) => {
-    switch (membership) {
-      case 'Gold':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'Silver':
-        return 'bg-gray-100 text-gray-700 border-gray-300';
-      case 'Bronze':
-        return 'bg-orange-50 text-orange-700 border-orange-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
+  const customerName = order.customer?.firstName || order.customerName || 'Unknown Customer';
+  const customerPhone = order.customer?.phone || 'N/A';
+  
+  const initials = customerName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  const address = order.address 
+    ? `${order.address.flat || ''}, ${order.address.area || ''}, ${order.address.city || ''} - ${order.address.pincode || ''}`
+    : 'No address provided';
+
+  const orderDate = order.createdAt 
+    ? new Date(order.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+    : 'N/A';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Order Details</DialogTitle>
-          <DialogDescription>
-            Order ID: #{order.id.split('-')[1]}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-6">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0 gap-0 bg-white rounded-lg shadow-xl">
+        
+        {/* Header */}
+        <div className="px-6 py-4 border-b sticky top-0 bg-white z-10">
+          <div>
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              Order #{order.orderNumber || order._id?.slice(-6)}
+              <Badge variant="outline" className={`ml-2 capitalize ${
+                order.orderStatus === 'Delivered' ? 'bg-green-50 text-green-700 border-green-200' :
+                order.orderStatus === 'Cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
+                'bg-blue-50 text-blue-700 border-blue-200'
+              }`}>
+                {order.orderStatus || 'Pending'}
+              </Badge>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-1">
+              Placed on {orderDate}
+            </DialogDescription>
+          </div>
+          {/* ❌ Removed the manual Close Button here because DialogContent adds one automatically */}
+        </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            {/* Left Column - Order Info */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <ShoppingBag className="h-4 w-4" /> Order Information
-              </h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Order ID</p>
-                    <p className="font-medium text-sm">#{order.id.split('-')[1]}</p>
-                  </div>
-                  <Badge style={getStatusColor(order.status)} className="text-xs">
-                    {order.status}
-                  </Badge>
+        <div className="p-6 space-y-6">
+          
+          {/* 1. Customer & Address Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-500" /> Customer Details
+              </h4>
+              <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border">
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+                  {initials}
                 </div>
-
-                <div className="flex items-center gap-2 text-xs">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Order Date:</span>
-                  <span className="font-medium">
-                    {new Date(order.date).toLocaleDateString('en-GB', { 
-                      day: '2-digit', 
-                      month: 'short', 
-                      year: 'numeric' 
-                    })}
-                  </span>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{customerName}</p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                    <Phone className="h-3 w-3" /> {customerPhone}
+                  </p>
                 </div>
-
-                <div className="flex items-center gap-2 text-xs">
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Payment:</span>
-                  <span className="font-medium capitalize">{order.payment || 'N/A'}</span>
-                </div>
-
-                <div className="flex items-center gap-2 text-xs">
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Total Items:</span>
-                  <span className="font-medium">{order.items}</span>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <p className="text-xs font-medium text-blue-800 mb-1">Total Amount</p>
-                <p className="text-2xl font-semibold text-blue-900">₹{order.total.toLocaleString()}</p>
               </div>
             </div>
 
-            {/* Right Column - Customer Info */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <User className="h-4 w-4" /> Customer Information
-              </h3>
-              
-              <div className="space-y-3">
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">Customer Name</p>
-                  <p className="font-medium">{order.customerName}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Crown className="h-3 w-3 text-muted-foreground" />
-                    <Badge 
-                      variant="secondary"
-                      className={`${getMembershipColor(membershipTierName)} text-xs`}
-                    >
-                      {membershipTierName}
-                    </Badge>
-                  </div>
-                </div>
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-gray-500" /> Delivery Address
+              </h4>
+              <div className="bg-gray-50 p-3 rounded-lg border h-full">
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {address}
+                </p>
+                {order.address?.type && (
+                  <Badge variant="secondary" className="mt-2 text-[10px] h-5 bg-white border">
+                    {order.address.type}
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Products Section */}
-          {order.products && order.products.length > 0 && (
-            <div className="pt-4 border-t">
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Package className="h-4 w-4" /> Order Items
-              </h3>
-              <div className="space-y-2">
-                {order.products.map((product, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{product.productName}</p>
-                      <p className="text-xs text-muted-foreground">₹{product.price} × {product.quantity}</p>
-                    </div>
-                    <p className="font-medium text-sm">₹{(product.price * product.quantity).toFixed(2)}</p>
-                  </div>
-                ))}
+          <Separator className="bg-gray-100" />
+
+          {/* 2. Order Items */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+              <Package className="h-4 w-4 text-gray-500" /> Order Items
+            </h4>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-500 border-b">
+                  <tr>
+                    <th className="px-4 py-2 font-medium">Item</th>
+                    <th className="px-4 py-2 font-medium text-right">Price</th>
+                    <th className="px-4 py-2 font-medium text-right">Qty</th>
+                    <th className="px-4 py-2 font-medium text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {order.items?.map((item, index) => (
+                    <tr key={index} className="hover:bg-gray-50/50">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900">{item.name || item.product?.dishName || 'Unknown Item'}</p>
+                        {item.variant && <p className="text-xs text-gray-500">{item.variant}</p>}
+                      </td>
+                      <td className="px-4 py-3 text-right">₹{item.price}</td>
+                      <td className="px-4 py-3 text-right">x{item.quantity}</td>
+                      <td className="px-4 py-3 text-right font-medium">₹{item.price * item.quantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 3. Payment Summary */}
+          <div className="bg-blue-50/50 rounded-lg p-4 border border-blue-100 space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">Subtotal</span>
+              <span className="font-medium">₹{order.totalAmount || order.finalAmount}</span>
+            </div>
+            {order.discountApplied > 0 && (
+              <div className="flex justify-between items-center text-sm text-green-600">
+                <span>Discount</span>
+                <span>- ₹{order.discountApplied}</span>
               </div>
+            )}
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">Delivery Fee</span>
+              <span className="font-medium">Free</span>
+            </div>
+            <Separator className="bg-blue-200 my-2" />
+            <div className="flex justify-between items-center text-base font-bold text-gray-900">
+              <span>Grand Total</span>
+              <span>₹{order.finalAmount}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-blue-100 text-xs text-gray-500">
+              <CreditCard className="h-3 w-3" />
+              <span>Payment via <span className="font-semibold text-gray-700">{order.paymentMethod}</span></span>
+              <Badge className={order.paymentStatus === 'Paid' ? 'bg-green-100 text-green-700 ml-auto' : 'bg-yellow-100 text-yellow-700 ml-auto'}>
+                {order.paymentStatus}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Notes if available */}
+          {order.notes && (
+            <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded border border-dashed">
+              <span className="font-semibold">Note:</span> {order.notes}
             </div>
           )}
 
-          {/* Order Summary */}
-          <div className="pt-4 border-t">
-            <h3 className="text-sm font-medium mb-3">Order Summary</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Items</span>
-                <span className="font-medium">{order.items}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status</span>
-                <Badge style={getStatusColor(order.status)} className="text-xs">
-                  {order.status}
-                </Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Payment Method</span>
-                <span className="font-medium capitalize">{order.payment || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t font-semibold">
-                <span>Total</span>
-                <span className="text-blue-600">₹{order.total.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Close Button */}
-          <div className="flex justify-end pt-4 border-t">
-            <Button
-              onClick={() => onOpenChange(false)}
-              className="bg-gray-200 text-gray-800 hover:bg-gray-300 h-9 text-xs"
-            >
-              Close
-            </Button>
-          </div>
         </div>
+
+        {/* Footer Actions */}
+        <div className="p-4 border-t bg-gray-50 flex justify-end gap-3">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button className="bg-blue-600 hover:bg-blue-700">Download Invoice</Button>
+        </div>
+
       </DialogContent>
     </Dialog>
   );
