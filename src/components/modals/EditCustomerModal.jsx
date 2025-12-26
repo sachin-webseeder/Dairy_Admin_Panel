@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-// ✨ REMOVED 'X' from imports
-import { User, Mail, Phone, Shield, Award } from 'lucide-react';
+// ✅ Import all necessary icons
+import { User, Mail, Phone, Shield, Crown, Star, Percent, Diamond, Truck } from 'lucide-react';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -37,6 +37,54 @@ export function EditCustomerModal({ open, onOpenChange, onSave, customer }) {
     onOpenChange(false);
   };
 
+  // ✅ HELPER: Get Icon and Color Class based on Tier Name
+  const getTierDetails = (tierName) => {
+    const name = (tierName || '').toLowerCase();
+    const baseClass = "h-4 w-4 mr-2";
+
+    if (name.includes('platinum')) {
+      return {
+        icon: <Crown className={`${baseClass} text-slate-500 fill-slate-200`} />,
+        colorClass: "text-slate-600"
+      };
+    }
+    if (name.includes('gold')) {
+      return {
+        icon: <Crown className={`${baseClass} text-yellow-500 fill-yellow-100`} />,
+        colorClass: "text-yellow-600"
+      };
+    }
+    if (name.includes('silver')) {
+      return {
+        icon: <Star className={`${baseClass} text-gray-400 fill-gray-100`} />,
+        colorClass: "text-gray-500"
+      };
+    }
+    if (name.includes('bronze')) {
+      return {
+        // ✅ Copper/Orange for Bronze
+        icon: <Percent className={`${baseClass} text-orange-700 fill-orange-700/20`} />,
+        colorClass: "text-orange-700"
+      };
+    }
+    if (name.includes('diamond')) {
+      return {
+        // ✅ Red for Diamond
+        icon: <Diamond className={`${baseClass} text-red-600 fill-red-100`} />,
+        colorClass: "text-red-600"
+      };
+    }
+
+    // Default
+    return {
+      icon: <Truck className={`${baseClass} text-blue-500`} />,
+      colorClass: "text-blue-600"
+    };
+  };
+
+  // Helper to render the currently selected value content
+  const selectedTier = getTierDetails(formData.membership);
+
   if (!customer && open) return null; 
 
   return (
@@ -49,7 +97,6 @@ export function EditCustomerModal({ open, onOpenChange, onSave, customer }) {
             <h2 className="text-2xl font-bold text-gray-900">Edit Customer</h2>
             <p className="text-sm text-gray-500 mt-1">Update customer details and account settings.</p>
           </div>
-          {/* ✨ REMOVED THE CUSTOM 'X' BUTTON HERE. The default one will show. */}
         </div>
 
         {/* Scrollable Content */}
@@ -150,22 +197,36 @@ export function EditCustomerModal({ open, onOpenChange, onSave, customer }) {
                   </Select>
                 </div>
 
+                {/* ✅ UPDATED MEMBERSHIP SELECT */}
                 <div className="space-y-2">
                   <Label htmlFor="membership" className="text-sm font-medium text-gray-700">Membership Tier</Label>
                   <Select 
                     value={formData.membership} 
                     onValueChange={(value) => setFormData({ ...formData, membership: value })}
                   >
+                    {/* Trigger: Shows currently selected value with icon/color */}
                     <SelectTrigger id="membership" className="bg-gray-50 border-gray-200 focus:bg-white transition-colors">
                       <div className="flex items-center gap-2">
-                        <Award className="h-4 w-4 text-amber-500" />
-                        <SelectValue placeholder="Select membership" />
+                        {selectedTier.icon}
+                        <span className={`font-medium ${selectedTier.colorClass}`}>
+                          {formData.membership}
+                        </span>
                       </div>
                     </SelectTrigger>
+                    
+                    {/* Content: List of options with icons/colors */}
                     <SelectContent>
-                      <SelectItem value="Gold">Gold</SelectItem>
-                      <SelectItem value="Silver">Silver</SelectItem>
-                      <SelectItem value="Bronze">Bronze</SelectItem>
+                      {['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'].map((tier) => {
+                        const style = getTierDetails(tier);
+                        return (
+                          <SelectItem key={tier} value={tier}>
+                            <div className="flex items-center gap-2">
+                              {style.icon}
+                              <span className={style.colorClass}>{tier}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>

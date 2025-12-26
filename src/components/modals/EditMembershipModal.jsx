@@ -1,169 +1,87 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-// Assuming these UI components are available from paths relative to this file
-// If they are from a library like shadcn/ui, the imports would be different,
-// e.g., import { Dialog } from '@/components/ui/dialog';
-// Since the original path was '../ui/dialog', I will keep that structure.
+import { 
+  X, Crown, Star, Percent, Truck, Shield, Zap, Diamond 
+} from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
+import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
-export function EditMembershipModal({ isOpen, onClose, onEditMembership, customer }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    membership: 'Bronze',
-    status: 'active',
-  });
+export function EditMembershipModal({ open, onOpenChange, onSave, plan }) {
+  const [formData, setFormData] = useState({ name: '', price: '', minOrders: '', minSpend: '', discount: '', benefitsText: '', icon: 'Truck' });
 
   useEffect(() => {
-    if (customer) {
+    if (plan && open) {
       setFormData({
-        name: customer.name || '',
-        email: customer.email || '',
-        phone: customer.phone || '',
-        membership: customer.membership || 'Bronze',
-        status: customer.status || 'active',
+        name: plan.name || '',
+        price: plan.price || 0,
+        minOrders: plan.minOrders || 0,
+        minSpend: plan.minSpend || 0,
+        discount: plan.discount || 0,
+        benefitsText: Array.isArray(plan.benefits) ? plan.benefits.join('\n') : '',
+        icon: plan.icon || 'Truck'
       });
     }
-  }, [customer, isOpen]);
+  }, [plan, open]);
+
+  const handleChange = (field, value) => { setFormData(prev => ({ ...prev, [field]: value })); };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (customer) {
-      const updatedMembership = {
-        ...customer,
-        ...formData,
-      };
-      onEditMembership(updatedMembership);
-      onClose();
+    if (plan) {
+      const benefitsArray = formData.benefitsText.split('\n').map(line => line.trim()).filter(line => line !== '');
+      onSave({ ...plan, ...formData, price: Number(formData.price), minOrders: Number(formData.minOrders), minSpend: Number(formData.minSpend), discount: Number(formData.discount), benefits: benefitsArray });
+      onOpenChange(false);
+    }
+  };
+
+  const renderIcon = (iconName) => {
+    const baseClass = "h-4 w-4 mr-2";
+    switch (iconName) {
+      case 'Crown': return <Crown className={`${baseClass} text-yellow-500 fill-yellow-100`} />;
+      case 'Platinum Crown': return <Crown className={`${baseClass} text-slate-500 fill-slate-200`} />;
+      case 'Star': return <Star className={`${baseClass} text-gray-400 fill-gray-100`} />;
+      case 'Percent': return <Percent className={`${baseClass} text-orange-700 fill-orange-700/20`} />; // Copper
+      case 'Diamond': return <Diamond className={`${baseClass} text-red-600 fill-red-100`} />;
+      case 'Truck': return <Truck className={`${baseClass} text-blue-500`} />;
+      case 'Shield': return <Shield className={`${baseClass} text-emerald-500`} />;
+      case 'Zap': return <Zap className={`${baseClass} text-purple-500`} />;
+      default: return <Truck className={`${baseClass} text-gray-500`} />;
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="p-0 gap-0 bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col [&>button]:hidden sm:max-w-md">
-        <DialogHeader className="sr-only">
-          <DialogTitle>Edit Membership</DialogTitle>
-          <DialogDescription>Edit membership details</DialogDescription>
-        </DialogHeader>
-        
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
-          <h2 className="text-base font-medium">Edit Membership</h2>
-          <button
-            type="button"
-            onClick={() => onClose()}
-            className="h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto p-0 gap-0 bg-white rounded-lg shadow-xl border border-gray-200">
+        <div className="px-6 py-4 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+          <div><DialogTitle className="text-lg font-bold text-gray-900">Edit Tier</DialogTitle><DialogDescription className="text-xs text-muted-foreground mt-1">Modify details</DialogDescription></div>
         </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <form onSubmit={handleSubmit} id="edit-membership-form">
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-xs font-normal">
-                  Customer Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="h-9 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs font-normal">
-                  Email <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  className="h-9 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="phone" className="text-xs font-normal">
-                  Phone <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  required
-                  className="h-9 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="membership" className="text-xs font-normal">
-                  Membership Tier <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.membership}
-                  onValueChange={(value) => setFormData({ ...formData, membership: value })}
-                >
-                  <SelectTrigger className="h-9 text-xs">
-                    <SelectValue placeholder="Select tier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Gold" className="text-xs">Gold</SelectItem>
-                    <SelectItem value="Silver" className="text-xs">Silver</SelectItem>
-                    <SelectItem value="Bronze" className="text-xs">Bronze</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="status" className="text-xs font-normal">
-                  Status <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger className="h-9 text-xs">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active" className="text-xs">Active</SelectItem>
-                    <SelectItem value="inactive" className="text-xs">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="p-6">
+          <form id="edit-membership-form" onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-gray-700">Tier Name</Label><Input value={formData.name} onChange={(e) => handleChange('name', e.target.value)} required className="h-9 text-xs" /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-gray-700">Price (₹)</Label><Input type="number" value={formData.price} onChange={(e) => handleChange('price', e.target.value)} required className="h-9 text-xs" /></div>
             </div>
+            <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-gray-700">Tier Icon</Label>
+                <Select value={formData.icon} onValueChange={(val) => handleChange('icon', val)}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select icon" /></SelectTrigger>
+                    <SelectContent>{['Truck', 'Crown', 'Platinum Crown', 'Star', 'Percent', 'Diamond', 'Shield', 'Zap'].map((icon) => (<SelectItem key={icon} value={icon} className="text-xs"><div className="flex items-center">{renderIcon(icon)}<span>{icon}</span></div></SelectItem>))}</SelectContent>
+                </Select>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-gray-700">Min Orders</Label><Input type="number" value={formData.minOrders} onChange={(e) => handleChange('minOrders', e.target.value)} className="h-9 text-xs" /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-gray-700">Min Spend</Label><Input type="number" value={formData.minSpend} onChange={(e) => handleChange('minSpend', e.target.value)} className="h-9 text-xs" /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-gray-700">Discount (%)</Label><Input type="number" value={formData.discount} onChange={(e) => handleChange('discount', e.target.value)} className="h-9 text-xs" /></div>
+            </div>
+            <div className="space-y-1.5 pt-2 border-t mt-2"><Label className="text-xs font-semibold text-gray-700">Benefits (One per line)</Label><Textarea value={formData.benefitsText} onChange={(e) => handleChange('benefitsText', e.target.value)} className="min-h-[100px] text-xs resize-none" /></div>
           </form>
         </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t shrink-0">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onClose()}
-            className="h-9 text-xs px-4"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form="edit-membership-form"
-            className="bg-blue-600 hover:bg-blue-700 h-9 text-xs px-4"
-          >
-            Update
-          </Button>
+        <div className="p-4 border-t bg-gray-50 flex justify-end gap-3 sticky bottom-0 z-10">
+          <Button variant="outline" type="button" onClick={() => onOpenChange(false)} className="h-9 text-xs border-gray-300 bg-white">Cancel</Button>
+          <button type="submit" form="edit-membership-form" className="inline-flex items-center justify-center rounded-md text-xs font-bold h-9 px-6 bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Update Tier</button>
         </div>
       </DialogContent>
     </Dialog>

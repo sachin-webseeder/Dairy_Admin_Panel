@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { DeliveryBoysCard } from '../components/DeliveryBoysCard';
+// import { DeliveryBoysCard } from '../components/DeliveryBoysCard'; // 🔴 COMMENTED OUT
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -233,7 +233,6 @@ export function Dashboard() {
                 )}
                 {!isLoading && safeOrdersList.slice(0, 5).map((order) => {
                   
-                  // ✅ FIX: DATA MAPPING FOR NEW API
                   const customerName = order.customer?.firstName || "Unknown";
                   const initials = customerName.charAt(0);
                   const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A';
@@ -301,9 +300,11 @@ export function Dashboard() {
         </Card>
       </div>
 
+      {/* 🔴 COMMENTED OUT DELIVERY BOYS SECTION
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DeliveryBoysCard />
-      </div>
+      </div> 
+      */}
     </div>
   );
 }
